@@ -3,6 +3,17 @@ const NAMED_FUNCTION_MESSAGE =
   "Declare a named function instead of assigning an arrow function to a variable - fold the condition inside the function body.";
 const IMPORT_WORK_MESSAGE = "Importing a module must do no work: move this inside a function the caller runs.";
 
+export const POSITIONAL_PARAMETER_SYNTAX = [
+  {
+    selector: ":matches(FunctionDeclaration, TSDeclareFunction)[params.length>1]",
+    message: "A function with 2+ parameters takes one destructured object parameter."
+  },
+  {
+    selector: "MethodDefinition[kind!='constructor'] > FunctionExpression[params.length>1]",
+    message: "A method with 2+ parameters takes one destructured object parameter."
+  }
+];
+
 export const GOOGLE_SYNTAX = [
   {
     selector: `${IS_NOT_ELSE_IF} > LogicalExpression.test`,
@@ -29,14 +40,7 @@ export const GOOGLE_SYNTAX = [
     selector: "ForInStatement",
     message: "Use for...of over Object.keys/entries instead of for...in (Google style)."
   },
-  {
-    selector: ":matches(FunctionDeclaration, TSDeclareFunction)[params.length>1]",
-    message: "A function with 2+ parameters takes one destructured object parameter."
-  },
-  {
-    selector: "MethodDefinition[kind!='constructor'] > FunctionExpression[params.length>1]",
-    message: "A method with 2+ parameters takes one destructured object parameter."
-  },
+  ...POSITIONAL_PARAMETER_SYNTAX,
   {
     selector:
       ":matches(FunctionDeclaration, FunctionExpression, ArrowFunctionExpression)[returnType]:not([returnType.typeAnnotation.type='TSTypePredicate'])",
