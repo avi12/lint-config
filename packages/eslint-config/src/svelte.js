@@ -16,6 +16,11 @@ export function svelte({ formatter, overrides = {} } = {}) {
   return [
     ...svelteEslint.configs["flat/recommended"],
     {
+      // Svelte's recommended config parses *.svelte.ts with the plain JS parser, which cannot read the types
+      files: ["**/*.svelte.ts"],
+      languageOptions: { parser: typescriptEslint.parser, globals: globals.node }
+    },
+    {
       files: ["**/*.svelte"],
       languageOptions: {
         parser: svelteParser,
