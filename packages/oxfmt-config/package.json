@@ -1,6 +1,6 @@
 {
   "name": "oxfmt-config-avi12",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "oxfmt preset: 2 spaces, double quotes, no trailing commas, 120 columns, sorted imports",
   "license": "Apache-2.0",
   "files": [

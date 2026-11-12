@@ -1,6 +1,6 @@
 {
   "name": "biome-config-avi12",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Optional minimal Biome preset: only what oxlint cannot do (floating promises through Biome's own inference)",
   "license": "Apache-2.0",
   "files": [

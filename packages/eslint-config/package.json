@@ -1,6 +1,6 @@
 {
   "name": "eslint-config-avi12",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "ESLint flat config: what oxlint and oxfmt cannot do, Svelte template rules and custom layout rules, no type-aware parsing",
   "license": "Apache-2.0",
   "files": [
