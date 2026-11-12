@@ -4,11 +4,13 @@
   "type": "module",
   "packageManager": "pnpm@11.13.1",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\""
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.0",
+    "avi12-lint": "workspace:*",
     "eslint": "^10.14.0",
+    "eslint-config-avi12": "workspace:*",
     "eslint-plugin-svelte": "^3.24.1",
     "fallow": "2.103.0",
     "oxfmt": "0.78.0",

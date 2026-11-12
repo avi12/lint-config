@@ -1,0 +1,6 @@
+{
+  "extends": [
+    "./node_modules/oxlint-config-avi12/oxlint.json",
+    "./node_modules/oxlint-plugin-naming/preset.json"
+  ]
+}

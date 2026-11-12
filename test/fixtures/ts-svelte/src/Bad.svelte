@@ -1,0 +1,12 @@
+<script lang="ts">
+  const MANY = 2;
+  const label = MANY > 1 ? "many" : "one";
+</script>
+
+<p>{MANY > 1 ? "a" : "b"} {label}</p>
+
+<style>
+  p {
+    color: red !important;
+  }
+</style>

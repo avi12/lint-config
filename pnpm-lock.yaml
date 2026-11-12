@@ -11,9 +11,15 @@ importers:
       '@biomejs/biome':
         specifier: ^2.2.0
         version: 2.6.6
+      avi12-lint:
+        specifier: workspace:*
+        version: link:packages/avi12-lint
       eslint:
         specifier: ^10.14.0
         version: 10.14.0
+      eslint-config-avi12:
+        specifier: workspace:*
+        version: link:packages/eslint-config
       eslint-plugin-svelte:
         specifier: ^3.24.1
         version: 3.24.1(eslint@10.14.0)(svelte@5.57.3(@typescript-eslint/types@8.72.2))
