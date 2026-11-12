@@ -1,29 +1,55 @@
 #!/usr/bin/env node
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import path from "node:path";
 
+import { changedFiles, stagedFiles } from "../src/changed-files.js";
 import { plan } from "../src/plan.js";
 
 const args = process.argv.slice(2);
-const isFix = args.includes("--fix");
 const concurrencyIndex = args.indexOf("--concurrency");
 const requested = concurrencyIndex === -1 ? process.env["AVI12_LINT_CONCURRENCY"] : args[concurrencyIndex + 1];
+const isStaged = args.includes("--staged");
+const isChanged = args.includes("--changed");
+let files;
+if (isStaged) {
+  files = stagedFiles();
+} else if (isChanged) {
+  files = changedFiles();
+}
+
 const steps = plan({
   hasFile: existsSync,
-  isFix,
-  concurrency: requested
+  isFix: args.includes("--fix"),
+  concurrency: requested,
+  changedFiles: files,
+  platform: process.platform
 });
 
-let failed = 0;
-for (const { name, command } of steps) {
-  console.log(`avi12-lint: ${name}`);
-  const result = spawnSync("pnpm", ["exec", ...command], {
-    stdio: "inherit",
-    shell: true
+function run({ name, command, env }) {
+  return new Promise(resolve => {
+    const child = spawn("pnpm", ["exec", ...command], {
+      shell: true,
+      env: {
+        ...process.env,
+        ...Object.fromEntries(Object.entries(env).map(([key, value]) => [key, path.resolve(value)]))
+      }
+    });
+    const chunks = [];
+    child.stdout.on("data", chunk => chunks.push(chunk));
+    child.stderr.on("data", chunk => chunks.push(chunk));
+    child.on("close", status => {
+      console.log(`avi12-lint: ${name}`);
+      process.stdout.write(Buffer.concat(chunks));
+      resolve(status === 0 ? 0 : 1);
+    });
   });
-  const hasFailed = result.status !== 0;
-  if (hasFailed) {
-    failed++;
-  }
 }
-process.exit(failed === 0 ? 0 : 1);
+
+const parallel = steps.filter(({ isParallel }) => isParallel);
+const serial = steps.filter(({ isParallel }) => !isParallel);
+const results = await Promise.all(parallel.map(run));
+for (const step of serial) {
+  results.push(await run(step));
+}
+process.exit(results.includes(1) ? 1 : 0);
