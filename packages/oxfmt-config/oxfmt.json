@@ -10,5 +10,20 @@
   "arrowParens": "avoid",
   "endOfLine": "lf",
   "sortImports": { "sortSideEffects": true },
-  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/build/**", "**/coverage/**", "**/.svelte-kit/**"]
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/.svelte-kit/**",
+    "**/.wxt/**",
+    "**/.output/**",
+    "**/.claude/**",
+    "**/_locales/**",
+    "**/locales/**",
+    "**/pnpm-lock.yaml",
+    "**/package-lock.json",
+    "**/yarn.lock",
+    "**/bun.lock"
+  ]
 }

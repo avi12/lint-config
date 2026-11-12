@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { plan } from "avi12-lint/plan";
@@ -195,4 +196,27 @@ test("changed mode skips a tool with no matching file and honours an override", 
     name: "eslint"
   });
   assert.equal(command[command.indexOf("--concurrency") + 1], "3");
+});
+
+test("oxfmt is given the repo ignore files and the preset ignore globs as exclusions", () => {
+  const steps = plan({
+    hasFile: file => file === ".oxfmtrc.json" || file === ".gitignore",
+    oxfmtIgnores: ["**/.claude/**", "**/_locales/**"]
+  });
+  assert.deepEqual(steps.find(({ name }) => name === "oxfmt").command, [
+    "oxfmt",
+    "--check",
+    "--ignore-path",
+    ".gitignore",
+    '"!**/.claude/**"',
+    '"!**/_locales/**"',
+    "."
+  ]);
+});
+
+test("the oxfmt preset ignores agent folders, locale data, lock files and generated output", () => {
+  const { ignorePatterns } = JSON.parse(readFileSync("packages/oxfmt-config/oxfmt.json", "utf8"));
+  for (const glob of ["**/.claude/**", "**/_locales/**", "**/pnpm-lock.yaml", "**/.wxt/**", "**/.output/**"]) {
+    assert.ok(ignorePatterns.includes(glob), glob);
+  }
 });

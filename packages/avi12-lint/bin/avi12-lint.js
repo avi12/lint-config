@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 
 import { changedFiles, stagedFiles } from "../src/changed-files.js";
@@ -31,12 +32,24 @@ function repoHasSvelte() {
   return status === 0 ? stdout.trim() !== "" : true;
 }
 
+const OXFMT_PRESET = "oxfmt-config-avi12/oxfmt.json";
+
+function presetIgnores() {
+  try {
+    const resolved = createRequire(path.join(process.cwd(), "package.json")).resolve(OXFMT_PRESET);
+    return JSON.parse(readFileSync(resolved, "utf8")).ignorePatterns ?? [];
+  } catch {
+    return [];
+  }
+}
+
 const steps = plan({
   hasFile: existsSync,
   hasSvelte: repoHasSvelte(),
   isFix: args.includes("--fix"),
   concurrency: requested,
   changedFiles: files,
+  oxfmtIgnores: presetIgnores(),
   platform: process.platform
 });
 

@@ -10,6 +10,7 @@ const TSRS_BINARY = `${BIN_DIRECTORY}/tsrs`;
 const TSRS_LINT_BINARY = `${BIN_DIRECTORY}/tsrs-lint`;
 const FALLOW_BINARY = `${BIN_DIRECTORY}/fallow`;
 const WINDOWS_LAUNCHER_EXTENSION = ".CMD";
+const IGNORE_FILES = [".gitignore", ".prettierignore"];
 const SCRIPT_PATTERN = /\.(?:[cm]?[jt]s|svelte)$/;
 const SVELTE_PATTERN = /\.svelte(?:\.[cm]?[jt]s)?$/;
 const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
@@ -21,11 +22,21 @@ const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
  * race on the same file, and oxlint fixes twice around oxfmt because one pass leaves fixes that overlap.
  * ESLint is the Svelte layer only: it is planned when it has a config and `hasSvelte` (the repo holds Svelte
  * files) is true, and it is given the Svelte files alone.
+ * oxfmt is given the consumer's `.gitignore` and `.prettierignore` plus `oxfmtIgnores` (globs, the preset's default
+ * ignore set), because oxfmt has no `extends` and a copied config cannot inherit them.
  * `isFix` turns the checkers into fixers; `concurrency` reaches ESLint clamped to 1-4 (2 when absent).
  * `changedFiles`, when given, narrows oxlint, ESLint, stylelint and fallow to those files and drops ESLint to
  * concurrency 1 unless `concurrency` says otherwise; tsrs always checks the whole project. Pure, so it is testable.
  */
-export function plan({ hasFile, hasSvelte = false, isFix = false, concurrency, changedFiles, platform = "linux" }) {
+export function plan({
+  hasFile,
+  hasSvelte = false,
+  isFix = false,
+  concurrency,
+  changedFiles,
+  oxfmtIgnores = [],
+  platform = "linux"
+}) {
   function hasAny(names) {
     return names.some(hasFile);
   }
@@ -91,7 +102,12 @@ export function plan({ hasFile, hasSvelte = false, isFix = false, concurrency, c
   if (hasFile(OXFMT_CONFIG)) {
     steps.push({
       name: "oxfmt",
-      command: ["oxfmt", ...(isFix ? [] : ["--check"])],
+      command: [
+        "oxfmt",
+        ...(isFix ? [] : ["--check"]),
+        ...IGNORE_FILES.filter(hasFile).flatMap(file => ["--ignore-path", file]),
+        ...(oxfmtIgnores.length > 0 ? [...oxfmtIgnores.map(glob => `"!${glob}"`), "."] : [])
+      ],
       env: {},
       isParallel
     });
