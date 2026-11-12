@@ -7,10 +7,12 @@
   "sideEffects": false,
   "exports": {
     ".": "./naming.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset.json": "./preset.json"
   },
   "files": [
-    "naming.js"
+    "naming.js",
+    "preset.json"
   ],
   "peerDependencies": {
     "oxlint": ">=1.90.0"
