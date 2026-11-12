@@ -83,3 +83,16 @@ test("the wxt preset allows default exports in entrypoints and declarations only
   assert.deepEqual(preset.overrides[0].files, ["**/entrypoints/**", "**/*.d.ts"]);
   assert.equal(preset.overrides[0].rules["no-restricted-exports"], "off");
 });
+
+test("house/no-magic-numbers exempts numeric literal types anywhere and flags bare numbers", () => {
+  const source = [
+    "export type Narrowed = Exclude<string, 720 | 480>;",
+    "export type Bound = Record<string, 30>;",
+    "export const LIMIT = 720;",
+    "export const doubled = [LIMIT].map(value => value * 2);",
+    "export const bad = [LIMIT].map(value => value + 720);",
+    ""
+  ].join("\n");
+  const findings = lintSource({ source }).filter(finding => finding.includes("magic"));
+  assert.deepEqual(findings, ["house(no-magic-numbers)@5"]);
+});

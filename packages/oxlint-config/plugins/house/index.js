@@ -2,6 +2,7 @@ import expandNestedObjectExpression from "./expand-nested-object-expression.js";
 import expandNestedTypeLiteral from "./expand-nested-type-literal.js";
 import multilineArgumentParenthesisNewline from "./multiline-arg-paren-newline.js";
 import noEmDash from "./no-em-dash.js";
+import noMagicNumbers from "./no-magic-numbers.js";
 import { GOOGLE_SYNTAX, HOUSE_SYNTAX, POSITIONAL_PARAMETER_SYNTAX, TREE_SHAKING_SYNTAX } from "./syntax.js";
 
 function createSyntaxRule(entries) {
@@ -34,6 +35,7 @@ export default {
     "expand-nested-type-literal": expandNestedTypeLiteral,
     "multiline-arg-paren-newline": multilineArgumentParenthesisNewline,
     "no-em-dash": noEmDash,
+    "no-magic-numbers": noMagicNumbers,
     "google-syntax": createSyntaxRule(GOOGLE_SYNTAX),
     "house-syntax": createSyntaxRule(HOUSE_SYNTAX),
     "positional-parameters": createSyntaxRule(POSITIONAL_PARAMETER_SYNTAX),

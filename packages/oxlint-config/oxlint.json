@@ -165,15 +165,7 @@
         "ignoreTypes": true
       }
     ],
-    "no-magic-numbers": [
-      "error",
-      {
-        "ignore": [0, 1, -1, 2],
-        "enforceConst": true,
-        "ignoreTypeIndexes": true,
-        "ignoreNumericLiteralTypes": true
-      }
-    ],
+    "no-magic-numbers": "off",
     "no-restricted-globals": [
       "error",
       {
@@ -265,6 +257,7 @@
     "house/expand-nested-type-literal": "error",
     "house/multiline-arg-paren-newline": "error",
     "house/no-em-dash": "error",
+    "house/no-magic-numbers": "error",
     "house/google-syntax": "error",
     "house/house-syntax": "error",
     "house/positional-parameters": "error"
@@ -279,7 +272,7 @@
     {
       "files": ["**/*.test.ts", "test/**/*.ts"],
       "rules": {
-        "no-magic-numbers": "off",
+        "house/no-magic-numbers": "off",
         "max-nested-callbacks": "off"
       }
     },
