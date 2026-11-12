@@ -3,7 +3,8 @@
  * and markup. CLAUDE.md: use a hyphen.
  */
 
-const EM_DASH = /—/gu;
+const EM_DASH_CODE_POINT = 0x2014;
+const EM_DASH = new RegExp(String.fromCodePoint(EM_DASH_CODE_POINT), "gu");
 
 export default {
   meta: {

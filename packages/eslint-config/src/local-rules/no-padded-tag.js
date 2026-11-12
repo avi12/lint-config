@@ -10,10 +10,11 @@
  *   </script>
  */
 
-function checkElement(context, node) {
+function checkElement({ context, node }) {
   const { sourceCode } = context;
   const { startTag, endTag } = node;
-  if (!startTag || !endTag) {
+  const isUnpaired = !startTag || !endTag;
+  if (isUnpaired) {
     return;
   }
 
@@ -23,7 +24,8 @@ function checkElement(context, node) {
 
   const leadingBlankPattern = /^(\r?\n)([ \t]*\r?\n)+/;
   const leadingMatch = leadingBlankPattern.exec(inner);
-  if (leadingMatch) {
+  const hasLeadingBlank = Boolean(leadingMatch);
+  if (hasLeadingBlank) {
     const fullMatchLength = leadingMatch[0].length;
     const replacement = leadingMatch[1];
     context.report({
@@ -37,7 +39,8 @@ function checkElement(context, node) {
 
   const trailingBlankPattern = /(\r?\n)([ \t]*\r?\n)+([ \t]*)$/;
   const trailingMatch = trailingBlankPattern.exec(inner);
-  if (trailingMatch) {
+  const hasTrailingBlank = Boolean(trailingMatch);
+  if (hasTrailingBlank) {
     const fullMatchLength = trailingMatch[0].length;
     const [, leading, , trailing] = trailingMatch;
     const replacement = `${leading}${trailing}`;
@@ -64,7 +67,10 @@ export default {
   },
   create(context) {
     function handle(node) {
-      checkElement(context, node);
+      checkElement({
+        context,
+        node
+      });
     }
 
     return {

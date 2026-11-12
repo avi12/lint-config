@@ -25,7 +25,8 @@ const inlineArgumentTypes = new Set([
 ]);
 
 function getEffectiveType(argument) {
-  if (argument.type === "TSSatisfiesExpression" || argument.type === "TSAsExpression") {
+  const isWrapped = argument.type === "TSSatisfiesExpression" || argument.type === "TSAsExpression";
+  if (isWrapped) {
     return argument.expression.type;
   }
 
@@ -49,7 +50,8 @@ export default {
 
     return {
       CallExpression(node) {
-        if (node.arguments.length === 0) {
+        const hasNoArguments = node.arguments.length === 0;
+        if (hasNoArguments) {
           return;
         }
 
@@ -79,12 +81,13 @@ export default {
           const prefixLength = openingParenthesis.loc.end.column;
           const argumentsEndLength =
             lastArgument.loc.end.column + (closingParenthesis.loc.start.line === lastArgument.loc.end.line ? 1 : 0);
-          const resultingLineLength =
-            prefixLength +
-            (firstArgument.loc.start.line === lastArgument.loc.end.line
-              ? lastArgument.loc.end.column - firstArgument.loc.start.column + 1
-              : argumentsEndLength);
-          if (resultingLineLength > MAX_LINE_LENGTH) {
+          const isSingleLine = firstArgument.loc.start.line === lastArgument.loc.end.line;
+          const argumentsWidth = isSingleLine
+            ? lastArgument.loc.end.column - firstArgument.loc.start.column + 1
+            : argumentsEndLength;
+          const resultingLineLength = prefixLength + argumentsWidth;
+          const isTooLong = resultingLineLength > MAX_LINE_LENGTH;
+          if (isTooLong) {
             return;
           }
 
@@ -100,7 +103,8 @@ export default {
 
         const baseIndent = " ".repeat(node.loc.start.column);
         const argumentIndent = `${baseIndent}  `;
-        if (openingParenthesis.loc.end.line === firstArgument.loc.start.line) {
+        const isFirstArgumentInline = openingParenthesis.loc.end.line === firstArgument.loc.start.line;
+        if (isFirstArgumentInline) {
           context.report({
             node,
             messageId: "argumentOnNewLine",
@@ -108,7 +112,8 @@ export default {
           });
         }
 
-        if (closingParenthesis.loc.start.line === lastArgument.loc.end.line) {
+        const isClosingInline = closingParenthesis.loc.start.line === lastArgument.loc.end.line;
+        if (isClosingInline) {
           context.report({
             node,
             messageId: "closingParenOnNewLine",

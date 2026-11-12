@@ -1,4 +1,4 @@
-function getLineIndentCount(sourceCode, token) {
+function getLineIndentCount({ sourceCode, token }) {
   const lineText = sourceCode.lines[token.loc.start.line - 1];
   const match = lineText.match(/^(\s*)/);
   return match ? match[1].length : 0;
@@ -9,18 +9,23 @@ export function createExpandBlockVisitor({ context, getItems, requiresMultiline,
 
   return node => {
     const items = getItems(node);
-    if (items.length === 0 || !requiresMultiline(node)) {
+    const isSkipped = items.length === 0 || !requiresMultiline(node);
+    if (isSkipped) {
       return;
     }
 
     const openBrace = sourceCode.getFirstToken(node);
     const closeBrace = sourceCode.getLastToken(node);
-    const lineIndentCount = getLineIndentCount(sourceCode, openBrace);
+    const lineIndentCount = getLineIndentCount({
+      sourceCode,
+      token: openBrace
+    });
     const baseIndent = " ".repeat(lineIndentCount);
     const itemIndent = `${baseIndent}  `;
 
     const firstItem = items[0];
-    if (openBrace.loc.end.line === firstItem.loc.start.line) {
+    const isFirstItemOnBraceLine = openBrace.loc.end.line === firstItem.loc.start.line;
+    if (isFirstItemOnBraceLine) {
       context.report({
         node,
         messageId: messageIds.afterOpenBrace,
@@ -31,7 +36,8 @@ export function createExpandBlockVisitor({ context, getItems, requiresMultiline,
     for (let itemIndex = 1; itemIndex < items.length; itemIndex++) {
       const previousItem = items[itemIndex - 1];
       const currentItem = items[itemIndex];
-      if (previousItem.loc.end.line !== currentItem.loc.start.line) {
+      const isOnNewLine = previousItem.loc.end.line !== currentItem.loc.start.line;
+      if (isOnNewLine) {
         continue;
       }
 
@@ -44,7 +50,8 @@ export function createExpandBlockVisitor({ context, getItems, requiresMultiline,
     }
 
     const lastItem = items[items.length - 1];
-    if (closeBrace.loc.start.line === lastItem.loc.end.line) {
+    const isCloseBraceOnItemLine = closeBrace.loc.start.line === lastItem.loc.end.line;
+    if (isCloseBraceOnItemLine) {
       context.report({
         node,
         messageId: messageIds.beforeCloseBrace,

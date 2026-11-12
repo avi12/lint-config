@@ -46,7 +46,8 @@ function crossToolOverlaps({ cwd, file }) {
   const overlaps = [];
   for (const [name, options] of oxlint) {
     const other = eslintBases.get(normalize(name));
-    if (other !== undefined) {
+    const hasOverlap = other !== undefined;
+    if (hasOverlap) {
       const kind = other.options === options ? "duplicate" : "conflict";
       overlaps.push(`${kind} ${normalize(name)}: eslint ${other.name}${other.options} | oxlint ${name}${options}`);
     }

@@ -25,23 +25,29 @@
 
 import { createExpandBlockVisitor } from "./expand-block.js";
 
+const SCOPE_BOUNDARY_TYPES = new Set([
+  "FunctionDeclaration",
+  "FunctionExpression",
+  "ArrowFunctionExpression",
+  "Program"
+]);
+
 function propertyHasDirectObjectExpression(property) {
-  return property.type === "Property" && property.value?.type === "ObjectExpression";
+  const isProperty = property.type === "Property";
+  return isProperty && property.value?.type === "ObjectExpression";
 }
 
 function isInsideLogicalExpression(node) {
   let current = node.parent;
   while (current) {
-    if (current.type === "LogicalExpression" && (current.operator === "&&" || current.operator === "||")) {
+    const isShortCircuit =
+      current.type === "LogicalExpression" && (current.operator === "&&" || current.operator === "||");
+    if (isShortCircuit) {
       return true;
     }
 
-    if (
-      current.type === "FunctionDeclaration" ||
-      current.type === "FunctionExpression" ||
-      current.type === "ArrowFunctionExpression" ||
-      current.type === "Program"
-    ) {
+    const isScopeBoundary = SCOPE_BOUNDARY_TYPES.has(current.type);
+    if (isScopeBoundary) {
       return false;
     }
 
@@ -52,7 +58,8 @@ function isInsideLogicalExpression(node) {
 }
 
 function isPropertyValueInMultilineObject(node) {
-  if (node.parent?.type !== "Property") {
+  const isNotProperty = node.parent?.type !== "Property";
+  if (isNotProperty) {
     return false;
   }
 

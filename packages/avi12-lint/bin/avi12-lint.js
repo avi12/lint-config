@@ -21,7 +21,8 @@ for (const { name, command } of steps) {
     stdio: "inherit",
     shell: true
   });
-  if (result.status !== 0) {
+  const hasFailed = result.status !== 0;
+  if (hasFailed) {
     failed++;
   }
 }

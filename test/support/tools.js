@@ -86,10 +86,13 @@ export function eslintRules({ cwd, file }) {
   return rules;
 }
 
-function collectOxlintRules(configPath, rules) {
+function collectOxlintRules({ configPath, rules }) {
   const config = JSON.parse(readFileSync(configPath, "utf8"));
   for (const parent of config.extends ?? []) {
-    collectOxlintRules(resolve(dirname(configPath), parent), rules);
+    collectOxlintRules({
+      configPath: resolve(dirname(configPath), parent),
+      rules
+    });
   }
   for (const [name, value] of Object.entries(config.rules ?? {})) {
     const [severity, ...options] = Array.isArray(value) ? value : [value];
@@ -105,5 +108,8 @@ function collectOxlintRules(configPath, rules) {
 
 /** The rules oxlint has switched on after following a directory's `extends` chain, mapped to their JSON options. */
 export function oxlintRules({ cwd }) {
-  return collectOxlintRules(join(cwd, ".oxlintrc.json"), new Map());
+  return collectOxlintRules({
+    configPath: join(cwd, ".oxlintrc.json"),
+    rules: new Map()
+  });
 }

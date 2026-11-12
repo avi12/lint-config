@@ -24,29 +24,39 @@ const FORMATS = {
 };
 const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
 
+function isNullishType(member) {
+  return member.type === "TSNullKeyword" || member.type === "TSUndefinedKeyword";
+}
+
 function isBooleanType(annotation) {
   const type = annotation?.typeAnnotation ?? annotation;
-  if (type == null) {
+  const isMissingType = type == null;
+  if (isMissingType) {
     return false;
   }
 
-  if (type.type === "TSUnionType") {
-    function isNullish(member) {
-      return member.type === "TSNullKeyword" || member.type === "TSUndefinedKeyword";
+  const isUnion = type.type === "TSUnionType";
+  if (isUnion) {
+    const rest = type.types.filter(member => !isNullishType(member));
+    const isOptionalSingle = rest.length === 1 && rest.length < type.types.length;
+    if (isOptionalSingle) {
+      return isBooleanType(rest[0]);
     }
-    const rest = type.types.filter(member => !isNullish(member));
-    return rest.length === 1 && rest.length < type.types.length ? isBooleanType(rest[0]) : false;
+
+    return false;
   }
 
-  if (type.type === "TSBooleanKeyword") {
+  const isBooleanKeyword = type.type === "TSBooleanKeyword";
+  if (isBooleanKeyword) {
     return true;
   }
 
   return type.type === "TSLiteralType" && typeof type.literal?.value === "boolean";
 }
 
-function isBooleanExpression(node, booleanFunctions) {
-  if (node == null) {
+function isBooleanExpression({ node, booleanFunctions }) {
+  const isMissingNode = node == null;
+  if (isMissingNode) {
     return false;
   }
 
@@ -58,19 +68,39 @@ function isBooleanExpression(node, booleanFunctions) {
     case "BinaryExpression":
       return COMPARISONS.has(node.operator);
     case "LogicalExpression":
-      return isBooleanExpression(node.left, booleanFunctions) && isBooleanExpression(node.right, booleanFunctions);
+      return (
+        isBooleanExpression({
+          node: node.left,
+          booleanFunctions
+        }) &&
+        isBooleanExpression({
+          node: node.right,
+          booleanFunctions
+        })
+      );
     case "ConditionalExpression":
       return (
-        isBooleanExpression(node.consequent, booleanFunctions) && isBooleanExpression(node.alternate, booleanFunctions)
+        isBooleanExpression({
+          node: node.consequent,
+          booleanFunctions
+        }) &&
+        isBooleanExpression({
+          node: node.alternate,
+          booleanFunctions
+        })
       );
     case "TSAsExpression":
       return isBooleanType(node.typeAnnotation);
     case "TSNonNullExpression":
     case "TSSatisfiesExpression":
-      return isBooleanExpression(node.expression, booleanFunctions);
+      return isBooleanExpression({
+        node: node.expression,
+        booleanFunctions
+      });
     case "CallExpression": {
       const callee = node.callee;
-      if (callee.type === "Identifier") {
+      const isIdentifierCall = callee.type === "Identifier";
+      if (isIdentifierCall) {
         return callee.name === "Boolean" || booleanFunctions.has(callee.name);
       }
 
@@ -83,21 +113,26 @@ function isBooleanExpression(node, booleanFunctions) {
 }
 
 function literalKind(node) {
-  if (node == null) {
+  const isMissingNode = node == null;
+  if (isMissingNode) {
     return null;
   }
 
-  if (node.type === "Literal") {
-    if (typeof node.value === "string") {
+  const isLiteral = node.type === "Literal";
+  if (isLiteral) {
+    const isStringValue = typeof node.value === "string";
+    if (isStringValue) {
       return "string";
     }
 
-    if (typeof node.value === "number") {
+    const isNumberValue = typeof node.value === "number";
+    if (isNumberValue) {
       return "number";
     }
   }
 
-  if (node.type === "TemplateLiteral") {
+  const isTemplate = node.type === "TemplateLiteral";
+  if (isTemplate) {
     return "string";
   }
 
@@ -118,7 +153,7 @@ function annotationKind(annotation) {
   return kinds[type?.type] ?? null;
 }
 
-function checkFormats(name, formats) {
+function checkFormats({ name, formats }) {
   return formats.some(format => FORMATS[format].test(name));
 }
 
@@ -134,17 +169,23 @@ function collectBooleanFunctions(program) {
       return true;
     }
 
-    if (func.body?.type !== "BlockStatement") {
-      return isBooleanExpression(func.body, names);
+    const isExpressionBody = func.body?.type !== "BlockStatement";
+    if (isExpressionBody) {
+      return isBooleanExpression({
+        node: func.body,
+        booleanFunctions: names
+      });
     }
 
     const returns = [];
     function walk(node) {
-      if (node == null || typeof node.type !== "string") {
+      const isNotNode = node == null || typeof node.type !== "string";
+      if (isNotNode) {
         return;
       }
 
-      if (node.type === "ReturnStatement") {
+      const isReturn = node.type === "ReturnStatement";
+      if (isReturn) {
         returns.push(node);
         return;
       }
@@ -156,7 +197,8 @@ function collectBooleanFunctions(program) {
       }
 
       for (const key of Object.keys(node)) {
-        if (key === "parent") {
+        const isParentLink = key === "parent";
+        if (isParentLink) {
           continue;
         }
 
@@ -171,11 +213,19 @@ function collectBooleanFunctions(program) {
       }
     }
     walk(func.body);
-    return returns.length > 0 && returns.every(statement => isBooleanExpression(statement.argument, names));
+    function isBooleanReturn(statement) {
+      return isBooleanExpression({
+        node: statement.argument,
+        booleanFunctions: names
+      });
+    }
+    return returns.length > 0 && returns.every(isBooleanReturn);
   }
   for (const statement of program.body) {
     const declaration = statement.declaration ?? statement;
-    if (declaration.type === "FunctionDeclaration" && declaration.id && returnsBoolean(declaration)) {
+    const isBooleanDeclaration =
+      declaration.type === "FunctionDeclaration" && declaration.id && returnsBoolean(declaration);
+    if (isBooleanDeclaration) {
       names.add(declaration.id.name);
     }
 
@@ -184,7 +234,8 @@ function collectBooleanFunctions(program) {
       const isFunction =
         declarator.init &&
         (declarator.init.type === "ArrowFunctionExpression" || declarator.init.type === "FunctionExpression");
-      if (isFunction && declarator.id.type === "Identifier" && returnsBoolean(declarator.init)) {
+      const isBooleanFunction = isFunction && declarator.id.type === "Identifier" && returnsBoolean(declarator.init);
+      if (isBooleanFunction) {
         names.add(declarator.id.name);
       }
     }
@@ -197,14 +248,16 @@ function keyName(node) {
     return null;
   }
 
-  if (node.key.type === "Identifier") {
+  const isIdentifierKey = node.key.type === "Identifier";
+  if (isIdentifierKey) {
     return {
       name: node.key.name,
       isQuoted: false
     };
   }
 
-  if (node.key.type === "Literal" && typeof node.key.value === "string") {
+  const isStringKey = node.key.type === "Literal" && typeof node.key.value === "string";
+  if (isStringKey) {
     return {
       name: node.key.value,
       isQuoted: !IDENTIFIER.test(node.key.value)
@@ -214,10 +267,35 @@ function keyName(node) {
   return null;
 }
 
-const MISSING_REASON = "naming/convention: every allowedNames and fileOverrides entry needs a non-empty reason";
+const MISSING_REASON =
+  "naming/convention: every allowedNames, allowedPatterns and fileOverrides entry needs a non-empty reason";
+
+const PRESET_PATTERNS = {
+  "webextension-manifest": /^[a-z][a-z0-9]*(_[a-z0-9]+)+$/,
+  "webextension-messages": /^[A-Z][A-Za-z0-9_]*$/,
+  "hook-names": /^[a-z][A-Za-z0-9]*(:[A-Za-z][A-Za-z0-9]*)+$/
+};
+
+function compileAllowedPatterns(options) {
+  const presets = (options.presets ?? []).map(name => {
+    const pattern = PRESET_PATTERNS[name];
+    const isUnknownPreset = pattern == null;
+    if (isUnknownPreset) {
+      throw new Error(`naming/convention: unknown preset '${name}'`);
+    }
+
+    return pattern;
+  });
+  const patterns = (options.allowedPatterns ?? []).map(entry => new RegExp(entry.pattern, "u"));
+  return [...presets, ...patterns];
+}
 
 function assertReasons(options) {
-  const entries = [...(options.allowedNames ?? []), ...(options.fileOverrides ?? [])];
+  const entries = [
+    ...(options.allowedNames ?? []),
+    ...(options.fileOverrides ?? []),
+    ...(options.allowedPatterns ?? [])
+  ];
   const isMissing = entries.some(entry => typeof entry.reason !== "string" || entry.reason.trim() === "");
   if (isMissing) {
     throw new Error(MISSING_REASON);
@@ -232,68 +310,91 @@ const rule = {
     const options = context.options[0] ?? {};
     assertReasons(options);
     const filename = (context.filename ?? context.getFilename()).replace(/\\/g, "/");
-    const isOverridden = (options.fileOverrides ?? []).some(override =>
-      override.files.some(suffix => filename.endsWith(suffix))
-    );
+    function matchesFile(suffix) {
+      return filename.endsWith(suffix);
+    }
+    const isOverridden = (options.fileOverrides ?? []).some(override => override.files.some(matchesFile));
     if (isOverridden) {
       return {};
     }
 
     const allowedNames = new Set((options.allowedNames ?? []).flatMap(entry => entry.names));
+    const allowedPatterns = compileAllowedPatterns(options);
     let booleanFunctions = new Set();
-    function report(node, message) {
+    function report({ node, message }) {
       context.report({
         node,
         message
       });
     }
 
-    function checkMember(node, selectorName) {
+    function checkMember({ node, selectorName }) {
       const key = keyName(node);
       const isMethodSelector =
         selectorName.endsWith("Method") || selectorName === "classMethod" || selectorName === "accessor";
-      if (key == null || (key.isQuoted && !isMethodSelector)) {
+      const isIgnoredKey = key == null || (key.isQuoted && !isMethodSelector);
+      if (isIgnoredKey) {
         return;
       }
 
       const { name } = key;
-      if (allowedNames.has(name)) {
+      const isAllowed = allowedNames.has(name) || allowedPatterns.some(pattern => pattern.test(name));
+      if (isAllowed) {
         return;
       }
 
       const isBoolean =
         selectorName === "classProperty" &&
-        (isBooleanType(node.typeAnnotation) || isBooleanExpression(node.value, booleanFunctions));
+        (isBooleanType(node.typeAnnotation) ||
+          isBooleanExpression({
+            node: node.value,
+            booleanFunctions
+          }));
       if (isBoolean) {
         if (!checkPrefixed(name)) {
-          report(node.key, `${selectorName} '${name}' must be prefixed is/has/can/should`);
+          report({
+            node: node.key,
+            message: `${selectorName} '${name}' must be prefixed is/has/can/should`
+          });
         }
 
         return;
       }
 
-      if (!checkFormats(name, ["camelCase", "UPPER_CASE"])) {
-        report(node.key, `${selectorName} '${name}' must be camelCase or UPPER_CASE`);
+      if (
+        !checkFormats({
+          name,
+          formats: ["camelCase", "UPPER_CASE"]
+        })
+      ) {
+        report({
+          node: node.key,
+          message: `${selectorName} '${name}' must be camelCase or UPPER_CASE`
+        });
       }
     }
 
-    function checkParameter(param, isProperty, declaredType = null) {
+    function checkParameter({ param, isProperty, declaredType = null }) {
       let target = param;
       let initializer = null;
-      if (target.type === "TSParameterProperty") {
+      const isParameterProperty = target.type === "TSParameterProperty";
+      if (isParameterProperty) {
         target = target.parameter;
       }
 
-      if (target.type === "AssignmentPattern") {
+      const isAssignmentPattern = target.type === "AssignmentPattern";
+      if (isAssignmentPattern) {
         initializer = target.right;
         target = target.left;
       }
 
-      if (target.type === "RestElement") {
+      const isRestElement = target.type === "RestElement";
+      if (isRestElement) {
         target = target.argument;
       }
 
-      if (target.type === "ObjectPattern") {
+      const isObjectPattern = target.type === "ObjectPattern";
+      if (isObjectPattern) {
         for (const property of target.properties) {
           const isNamed =
             property.type === "Property" &&
@@ -305,57 +406,83 @@ const rule = {
               literal?.type === "TSTypeLiteral"
                 ? literal.members.find(candidate => candidate.key?.name === property.key?.name)
                 : undefined;
-            checkParameter(property.value, false, member?.typeAnnotation ?? null);
+            checkParameter({
+              param: property.value,
+              isProperty: false,
+              declaredType: member?.typeAnnotation ?? null
+            });
           }
         }
         return;
       }
 
-      if (target.type !== "Identifier") {
+      const isNotIdentifier = target.type !== "Identifier";
+      if (isNotIdentifier) {
         return;
       }
 
       const name = target.name;
       const isBoolean =
-        isBooleanType(target.typeAnnotation ?? declaredType) || isBooleanExpression(initializer, booleanFunctions);
+        isBooleanType(target.typeAnnotation ?? declaredType) ||
+        isBooleanExpression({
+          node: initializer,
+          booleanFunctions
+        });
       if (allowedNames.has(name)) {
         return;
       }
 
       if (isBoolean) {
         if (!checkPrefixed(name)) {
-          report(
-            target,
-            `${isProperty ? "parameterProperty" : "parameter"} '${name}' must be prefixed is/has/can/should`
-          );
+          const kindLabel = isProperty ? "parameterProperty" : "parameter";
+          report({
+            node: target,
+            message: `${kindLabel} '${name}' must be prefixed is/has/can/should`
+          });
         }
 
         return;
       }
 
       if (isProperty) {
-        if (!checkFormats(name, ["camelCase", "UPPER_CASE"])) {
-          report(target, `parameterProperty '${name}' must be camelCase or UPPER_CASE`);
+        if (
+          !checkFormats({
+            name,
+            formats: ["camelCase", "UPPER_CASE"]
+          })
+        ) {
+          report({
+            node: target,
+            message: `parameterProperty '${name}' must be camelCase or UPPER_CASE`
+          });
         }
 
         return;
       }
 
       const stripped = name.replace(/^_+/, "");
-      if (stripped !== "" && !CAMEL.test(stripped)) {
-        report(target, `parameter '${name}' must be camelCase`);
+      const hasInvalidStripped = stripped !== "" && !CAMEL.test(stripped);
+      if (hasInvalidStripped) {
+        report({
+          node: target,
+          message: `parameter '${name}' must be camelCase`
+        });
       }
     }
 
     function checkFunctionParams(node) {
       for (const param of node.params) {
-        checkParameter(param, param.type === "TSParameterProperty");
+        checkParameter({
+          param,
+          isProperty: param.type === "TSParameterProperty"
+        });
       }
     }
 
     function isGlobalDeclaration(declaration) {
       let parent = declaration.parent;
-      if (parent?.type === "ExportNamedDeclaration") {
+      const isExported = parent?.type === "ExportNamedDeclaration";
+      if (isExported) {
         parent = parent.parent;
       }
 
@@ -364,7 +491,8 @@ const rule = {
 
     function checkVariable(declarator) {
       const declaration = declarator.parent;
-      if (declaration?.type !== "VariableDeclaration") {
+      const isNotVariableDeclaration = declaration?.type !== "VariableDeclaration";
+      if (isNotVariableDeclaration) {
         return;
       }
 
@@ -372,7 +500,8 @@ const rule = {
       const isDirect = declarator.id.type === "Identifier";
       const identifiers = [];
       function collect(pattern) {
-        if (pattern.type === "Identifier") {
+        const isIdentifierPattern = pattern.type === "Identifier";
+        if (isIdentifierPattern) {
           identifiers.push(pattern);
         } else if (pattern.type === "ObjectPattern") {
           for (const property of pattern.properties) {
@@ -404,33 +533,67 @@ const rule = {
         const isBoolean =
           isDirect &&
           (isBooleanType(pattern.typeAnnotation) ||
-            (pattern.typeAnnotation == null && isBooleanExpression(declarator.init, booleanFunctions)));
-        if (isBoolean && isGlobalConst) {
+            (pattern.typeAnnotation == null &&
+              isBooleanExpression({
+                node: declarator.init,
+                booleanFunctions
+              })));
+        const isGlobalBoolean = isBoolean && isGlobalConst;
+        if (isGlobalBoolean) {
           const isValid = UPPER.test(name) && /^(IS|HAS|CAN|SHOULD)_/.test(name);
           if (!isValid) {
-            report(pattern, `global const boolean '${name}' must be UPPER_CASE starting IS_/HAS_/CAN_/SHOULD_`);
+            report({
+              node: pattern,
+              message: `global const boolean '${name}' must be UPPER_CASE starting IS_/HAS_/CAN_/SHOULD_`
+            });
           }
         } else if (isBoolean) {
           if (!checkPrefixed(name)) {
-            report(pattern, `boolean variable '${name}' must be prefixed is/has/can/should`);
+            report({
+              node: pattern,
+              message: `boolean variable '${name}' must be prefixed is/has/can/should`
+            });
           }
         } else if (kind != null && isGlobalConst) {
           if (!UPPER.test(name)) {
-            report(pattern, `global const ${kind} '${name}' must be UPPER_CASE`);
+            report({
+              node: pattern,
+              message: `global const ${kind} '${name}' must be UPPER_CASE`
+            });
           }
         } else if (isGlobalConst) {
-          if (!checkFormats(name, ["camelCase", "UPPER_CASE", "PascalCase"])) {
-            report(pattern, `global const '${name}' must be camelCase, UPPER_CASE or PascalCase`);
+          if (
+            !checkFormats({
+              name,
+              formats: ["camelCase", "UPPER_CASE", "PascalCase"]
+            })
+          ) {
+            report({
+              node: pattern,
+              message: `global const '${name}' must be camelCase, UPPER_CASE or PascalCase`
+            });
           }
         } else if (!CAMEL.test(name)) {
-          report(pattern, `variable '${name}' must be camelCase`);
+          report({
+            node: pattern,
+            message: `variable '${name}' must be camelCase`
+          });
         }
       }
     }
 
-    function checkTypeName(id, formats, label) {
-      if (id && !checkFormats(id.name, formats)) {
-        report(id, `${label} '${id.name}' must be ${formats.join(" or ")}`);
+    function checkTypeName({ id, formats, label }) {
+      const hasInvalidTypeName =
+        id &&
+        !checkFormats({
+          name: id.name,
+          formats
+        });
+      if (hasInvalidTypeName) {
+        report({
+          node: id,
+          message: `${label} '${id.name}' must be ${formats.join(" or ")}`
+        });
       }
     }
 
@@ -440,8 +603,12 @@ const rule = {
       },
       VariableDeclarator: checkVariable,
       FunctionDeclaration(node) {
-        if (node.id && !CAMEL.test(node.id.name)) {
-          report(node.id, `function '${node.id.name}' must be camelCase`);
+        const hasInvalidFunctionName = node.id && !CAMEL.test(node.id.name);
+        if (hasInvalidFunctionName) {
+          report({
+            node: node.id,
+            message: `function '${node.id.name}' must be camelCase`
+          });
         }
 
         checkFunctionParams(node);
@@ -450,52 +617,96 @@ const rule = {
       ArrowFunctionExpression: checkFunctionParams,
       TSDeclareFunction: checkFunctionParams,
       PropertyDefinition(node) {
-        checkMember(node, "classProperty");
+        checkMember({
+          node,
+          selectorName: "classProperty"
+        });
       },
       MethodDefinition(node) {
-        if (node.kind !== "constructor") {
-          checkMember(node, node.kind === "get" || node.kind === "set" ? "accessor" : "classMethod");
+        const isNotConstructor = node.kind !== "constructor";
+        if (isNotConstructor) {
+          const isAccessor = node.kind === "get" || node.kind === "set";
+          checkMember({
+            node,
+            selectorName: isAccessor ? "accessor" : "classMethod"
+          });
         }
       },
       TSPropertySignature(node) {
-        checkMember(node, "typeProperty");
+        checkMember({
+          node,
+          selectorName: "typeProperty"
+        });
       },
       Property(node) {
-        if (node.parent?.type === "ObjectExpression") {
+        const isObjectLiteralMember = node.parent?.type === "ObjectExpression";
+        if (isObjectLiteralMember) {
           const isFunctionValue =
             node.method || node.value?.type === "ArrowFunctionExpression" || node.value?.type === "FunctionExpression";
-          checkMember(node, isFunctionValue ? "objectLiteralMethod" : "objectLiteralProperty");
+          checkMember({
+            node,
+            selectorName: isFunctionValue ? "objectLiteralMethod" : "objectLiteralProperty"
+          });
         }
       },
       TSEnumMember(node) {
         const name = node.id.type === "Identifier" ? node.id.name : node.id.value;
         if (!UPPER.test(name)) {
-          report(node.id, `enumMember '${name}' must be UPPER_CASE`);
+          report({
+            node: node.id,
+            message: `enumMember '${name}' must be UPPER_CASE`
+          });
         }
       },
       TSInterfaceDeclaration(node) {
-        checkTypeName(node.id, ["PascalCase"], "interface");
+        checkTypeName({
+          id: node.id,
+          formats: ["PascalCase"],
+          label: "interface"
+        });
 
         if (/^I[A-Z]/.test(node.id.name)) {
-          report(node.id, `interface '${node.id.name}' must not start with I`);
+          report({
+            node: node.id,
+            message: `interface '${node.id.name}' must not start with I`
+          });
         }
       },
       ClassDeclaration(node) {
-        checkTypeName(node.id, ["PascalCase"], "class");
+        checkTypeName({
+          id: node.id,
+          formats: ["PascalCase"],
+          label: "class"
+        });
       },
       ClassExpression(node) {
-        checkTypeName(node.id, ["PascalCase"], "class");
+        checkTypeName({
+          id: node.id,
+          formats: ["PascalCase"],
+          label: "class"
+        });
       },
       TSTypeAliasDeclaration(node) {
-        checkTypeName(node.id, ["PascalCase"], "typeAlias");
+        checkTypeName({
+          id: node.id,
+          formats: ["PascalCase"],
+          label: "typeAlias"
+        });
       },
       TSEnumDeclaration(node) {
-        checkTypeName(node.id, ["PascalCase"], "enum");
+        checkTypeName({
+          id: node.id,
+          formats: ["PascalCase"],
+          label: "enum"
+        });
       },
       TSTypeParameter(node) {
         const name = typeof node.name === "string" ? node.name : node.name.name;
         if (!PASCAL.test(name)) {
-          report(node, `typeParameter '${name}' must be PascalCase`);
+          report({
+            node,
+            message: `typeParameter '${name}' must be PascalCase`
+          });
         }
       }
     };

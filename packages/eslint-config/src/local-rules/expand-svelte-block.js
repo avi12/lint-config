@@ -1,3 +1,6 @@
+const OPEN_TAG_LOOKAHEAD = 80;
+const CLOSE_TAG_LENGTH = "{/if}".length;
+
 /** @type {import("eslint").Rule.RuleModule} */
 export default {
   meta: {
@@ -26,12 +29,14 @@ export default {
 
     return {
       SvelteIfBlock(node) {
-        if (!node.children.length) {
+        const isEmpty = !node.children.length;
+        if (isEmpty) {
           return;
         }
 
         const firstChild = node.children[0];
-        if (node.loc.start.line !== firstChild.loc.start.line) {
+        const isChildOnNewLine = node.loc.start.line !== firstChild.loc.start.line;
+        if (isChildOnNewLine) {
           return;
         }
 
@@ -39,7 +44,9 @@ export default {
         // means the visible content already starts on its own line - reporting
         // here would make the fixer prepend newlines forever
         const contentStart = findOpenTagEnd(node.expression);
-        if (/^[ \t]*\r?\n/.test(sourceCode.text.slice(contentStart, contentStart + OPEN_TAG_LOOKAHEAD))) {
+        const lookahead = sourceCode.text.slice(contentStart, contentStart + OPEN_TAG_LOOKAHEAD);
+        const isContentOnOwnLine = /^[ \t]*\r?\n/.test(lookahead);
+        if (isContentOnOwnLine) {
           return;
         }
 
@@ -51,9 +58,11 @@ export default {
             const childIndent = `${indent}  `;
             const openTagEnd = findOpenTagEnd(node.expression);
             const fixes = [fixer.replaceTextRange([openTagEnd, firstChild.range[0]], `\n${childIndent}`)];
-            if (!node.else && !node.elseif) {
+            const isLastBranch = !node.else && !node.elseif;
+            if (isLastBranch) {
               const lastChild = node.children[node.children.length - 1];
-              if (node.loc.end.line === lastChild.loc.end.line) {
+              const isCloseOnChildLine = node.loc.end.line === lastChild.loc.end.line;
+              if (isCloseOnChildLine) {
                 const closeTagStart = node.range[1] - CLOSE_TAG_LENGTH;
                 fixes.push(fixer.replaceTextRange([lastChild.range[1], closeTagStart], `\n${indent}`));
               }
