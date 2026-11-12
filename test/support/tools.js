@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -112,4 +113,26 @@ export function oxlintRules({ cwd }) {
     configPath: join(cwd, ".oxlintrc.json"),
     rules: new Map()
   });
+}
+
+/** naming/convention findings for one TypeScript source under the given rule options. */
+export function namingFindings({ options, source }) {
+  const directory = mkdtempSync(join(tmpdir(), "naming-"));
+  try {
+    const config = {
+      extends: [join(TS_ONLY, "node_modules", "oxlint-plugin-naming", "preset.json")],
+      rules: { "naming/convention": ["error", options] }
+    };
+    writeFileSync(join(directory, ".oxlintrc.json"), JSON.stringify(config));
+    writeFileSync(join(directory, "sample.ts"), source);
+    return oxlintFindings({
+      cwd: directory,
+      files: ["sample.ts"]
+    });
+  } finally {
+    rmSync(directory, {
+      recursive: true,
+      force: true
+    });
+  }
 }

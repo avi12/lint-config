@@ -70,6 +70,15 @@ oxlint, including the naming rule
 
 - `allowedNames` exempts exact identifiers, `fileOverrides` exempts whole files
 - Every entry needs a `reason`; an entry without one makes the rule fail loudly
+- `presets` exempts keys that an outside format dictates: `webextension-manifest` (snake_case manifest keys), `webextension-messages` (PascalCase message names), `hook-names` (colon-style names such as `build:publicAssets`)
+- `allowedPatterns` is the same with your own regex: `[{ "pattern": "^x_", "reason": "vendor keys" }]`
+
+Presets for oxlint: `oxlint-config-avi12/browser.json` adds the browser globals, `oxlint-config-avi12/webextension.json` adds the extension globals (`chrome`, `browser`) on top of it
+
+ESLint options of `base()`:
+
+- `sourceFiles: []` skips the package-source layer
+- `allowPositionalParameters: ["vendor/**"]` turns off "2+ parameters take one destructured object" for those globs, for code that mirrors a third-party signature
 
 ESLint
 
@@ -120,7 +129,8 @@ ESLint caches to `node_modules/.cache/eslint/` and runs at concurrency 1
 - clash: no rule is enforced by both ESLint and oxlint, no opposing pair is on,
   one layout rule owns each aspect of a Svelte file, and fixing is idempotent
   in both fixer orders
-- naming: `allowedNames` and `fileOverrides` work and demand a reason
+- naming: `allowedNames`, `allowedPatterns`, `presets` and `fileOverrides` work and demand a reason
+- presets: the browser and webextension globals, `sourceFiles: []` and `allowPositionalParameters`
 - runner: the plan, and the concurrency clamp
 
 CI runs the same on every push (`.github/workflows/ci.yml`)
