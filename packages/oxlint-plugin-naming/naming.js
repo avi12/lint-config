@@ -299,6 +299,9 @@ const rule = {
       collect(declarator.id);
       for (const pattern of identifiers) {
         const name = pattern.name;
+        if (allowedNames.has(name)) {
+          continue;
+        }
         const kind = isDirect ? (annotationKind(pattern.typeAnnotation) ?? (pattern.typeAnnotation == null ? literalKind(declarator.init) : null)) : null;
         const isBoolean = isDirect && (isBooleanType(pattern.typeAnnotation) || (pattern.typeAnnotation == null && isBooleanExpression(declarator.init, booleanFunctions)));
         if (isBoolean && isGlobalConst) {
