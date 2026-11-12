@@ -6,6 +6,7 @@ export const SVELTE_RULES = {
   "svelte/shorthand-directive": "error",
   "svelte/first-attribute-linebreak": "error",
   "svelte/shorthand-attribute": ["error", { prefer: "always" }],
+  "unused-imports/no-unused-imports": "error",
   "local/expand-svelte-block": "error",
   "local/no-em-dash": "error",
   "local/no-padded-tag": "error"

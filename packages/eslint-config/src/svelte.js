@@ -1,4 +1,5 @@
 import svelteEslint from "eslint-plugin-svelte";
+import unusedImports from "eslint-plugin-unused-imports";
 import { globalIgnores } from "eslint/config";
 import globals from "globals";
 import svelteParser from "svelte-eslint-parser";
@@ -43,7 +44,8 @@ export function svelte({ ignores = [], overrides = {} } = {}) {
         globals: globals.node
       },
       plugins: {
-        local: localPlugin
+        local: localPlugin,
+        "unused-imports": unusedImports
       },
       rules: {
         "no-restricted-syntax": ["error", ...SVELTE_TEMPLATE_SYNTAX],

@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, matchesGlob, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -97,15 +97,8 @@ export function eslintRules({ cwd, file }) {
   return rules;
 }
 
-function collectOxlintRules({ configPath, rules }) {
-  const config = JSON.parse(readFileSync(configPath, "utf8"));
-  for (const parent of config.extends ?? []) {
-    collectOxlintRules({
-      configPath: resolve(dirname(configPath), parent),
-      rules
-    });
-  }
-  for (const [name, value] of Object.entries(config.rules ?? {})) {
+function applyOxlintRules({ rules, entries }) {
+  for (const [name, value] of Object.entries(entries ?? {})) {
     const [severity, ...options] = Array.isArray(value) ? value : [value];
     const isOn = ["deny", "warn", "error"].includes(severity);
     if (isOn) {
@@ -114,14 +107,39 @@ function collectOxlintRules({ configPath, rules }) {
       rules.delete(name);
     }
   }
+}
+
+function collectOxlintRules({ configPath, rules, file }) {
+  const config = JSON.parse(readFileSync(configPath, "utf8"));
+  for (const parent of config.extends ?? []) {
+    collectOxlintRules({
+      configPath: resolve(dirname(configPath), parent),
+      rules,
+      file
+    });
+  }
+  applyOxlintRules({
+    rules,
+    entries: config.rules
+  });
+  for (const override of config.overrides ?? []) {
+    const isApplicable = file !== undefined && override.files.some(glob => matchesGlob(file, glob));
+    if (isApplicable) {
+      applyOxlintRules({
+        rules,
+        entries: override.rules
+      });
+    }
+  }
   return rules;
 }
 
-/** The rules oxlint has switched on after following a directory's `extends` chain, mapped to their JSON options. */
-export function oxlintRules({ cwd }) {
+/** The rules oxlint has switched on for `file` (every file when absent) after following a directory's `extends` chain and the overrides that match, mapped to their JSON options. */
+export function oxlintRules({ cwd, file }) {
   return collectOxlintRules({
     configPath: join(cwd, ".oxlintrc.json"),
-    rules: new Map()
+    rules: new Map(),
+    file
   });
 }
 

@@ -279,7 +279,10 @@
     {
       "files": ["**/*.svelte"],
       "rules": {
-        "house/no-em-dash": "off"
+        "house/no-em-dash": "off",
+        "unused-imports/no-unused-imports": "off",
+        "typescript/no-unused-vars": "off",
+        "no-unused-vars": "off"
       }
     }
   ],

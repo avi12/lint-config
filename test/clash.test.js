@@ -4,7 +4,16 @@ import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } f
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { eslintFix, eslintRules, oxfmtFix, oxlintFix, oxlintRules, TS_ONLY, TS_SVELTE } from "./support/tools.js";
+import {
+  eslintFix,
+  eslintRules,
+  oxfmtFix,
+  oxlintFindings,
+  oxlintFix,
+  oxlintRules,
+  TS_ONLY,
+  TS_SVELTE
+} from "./support/tools.js";
 
 const RULE_PREFIXES = /^(@typescript-eslint\/|typescript\/|@stylistic\/(js\/|ts\/)?|eslint\/)/;
 const LAYOUT =
@@ -36,7 +45,10 @@ function crossToolOverlaps({ cwd, file }) {
     cwd,
     file
   });
-  const oxlint = oxlintRules({ cwd });
+  const oxlint = oxlintRules({
+    cwd,
+    file
+  });
   const eslintBases = new Map(
     [...eslint].map(([name, options]) => [
       normalize(name),
@@ -178,6 +190,49 @@ test("fixing settles, stays settled and the fixer order does not matter", () => 
       order: [...forward].reverse()
     });
     assert.equal(digest(files), settled);
+  } finally {
+    rmSync(directory, {
+      recursive: true,
+      force: true
+    });
+  }
+});
+
+const COMPONENT_USER = `<script lang="ts">
+  import Child from "./Child.svelte";
+  import Unused from "./Unused.svelte";
+</script>
+
+<Child />
+`;
+
+test("fixing keeps an import that only the markup uses and drops one nothing uses", () => {
+  const directory = join(TS_SVELTE, FIX_DIRECTORY);
+  rmSync(directory, {
+    recursive: true,
+    force: true
+  });
+  mkdirSync(directory);
+  try {
+    writeFileSync(join(directory, "User.svelte"), COMPONENT_USER);
+    const options = {
+      cwd: TS_SVELTE,
+      files: [`${FIX_DIRECTORY}/User.svelte`]
+    };
+    for (const order of [
+      ["oxlint", "oxfmt", "eslint"],
+      ["eslint", "oxfmt", "oxlint"]
+    ]) {
+      writeFileSync(join(directory, "User.svelte"), COMPONENT_USER);
+      assert.deepEqual(oxlintFindings(options), [], "oxlint must not judge imports of a Svelte file");
+      fixAll({
+        options,
+        order
+      });
+      const fixed = readFileSync(join(directory, "User.svelte"), "utf8");
+      assert.match(fixed, /import Child from/, order.join());
+      assert.doesNotMatch(fixed, /Unused/, order.join());
+    }
   } finally {
     rmSync(directory, {
       recursive: true,
