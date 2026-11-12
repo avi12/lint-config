@@ -122,7 +122,7 @@ export function namingFindings({ options, source }) {
     const config = {
       extends: [join(TS_ONLY, "node_modules", "oxlint-plugin-naming", "preset.json")],
       rules: {
-         "naming/convention": ["error", options] 
+        "naming/convention": ["error", options]
       }
     };
     writeFileSync(join(directory, ".oxlintrc.json"), JSON.stringify(config));
