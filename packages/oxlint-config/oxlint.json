@@ -61,6 +61,10 @@
   },
   "overrides": [
     {
+      "files": ["*.config.{js,mjs,ts}", "**/vite.config.ts"],
+      "rules": { "no-restricted-exports": "off" }
+    },
+    {
       "files": ["**/*.test.ts", "test/**/*.ts"],
       "rules": {
         "no-magic-numbers": "off",
