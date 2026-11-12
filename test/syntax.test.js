@@ -90,9 +90,11 @@ test("house/no-magic-numbers exempts numeric literal types anywhere and flags ba
     "export type Bound = Record<string, 30>;",
     "export const LIMIT = 720;",
     "export const doubled = [LIMIT].map(value => value * 2);",
-    "export const bad = [LIMIT].map(value => value + 720);",
+    "export function bad(value: number) {",
+    "  return value + 720;",
+    "}",
     ""
   ].join("\n");
   const findings = lintSource({ source }).filter(finding => finding.includes("magic"));
-  assert.deepEqual(findings, ["house(no-magic-numbers)@5"]);
+  assert.deepEqual(findings, ["house(no-magic-numbers)@6"]);
 });
