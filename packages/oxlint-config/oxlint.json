@@ -69,7 +69,7 @@
     "typescript/no-unsafe-function-type": "error",
     "typescript/no-empty-object-type": "error",
     "typescript/prefer-for-of": "error",
-    "typescript/array-type": ["error", { "default": "array-simple" }],
+    "typescript/array-type": ["error", { "default": "array" }],
     "typescript/consistent-type-definitions": ["error", "interface"],
     "typescript/consistent-type-imports": ["error", { "prefer": "type-imports", "fixStyle": "separate-type-imports" }],
     "typescript/parameter-properties": [
