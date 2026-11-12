@@ -1,3 +1,5 @@
+const IS_LONE_LITERAL_COMPARISON =
+  ":matches([left.type='Literal'], [right.type='Literal'], [left.name='undefined'], [right.name='undefined'])";
 const IS_NOT_ELSE_IF = "IfStatement[parent.type!='IfStatement']";
 const NAMED_FUNCTION_MESSAGE =
   "Declare a named function instead of assigning an arrow function to a variable - fold the condition inside the function body.";
@@ -20,7 +22,7 @@ export const GOOGLE_SYNTAX = [
     message: "Extract the condition into a descriptively-named const (is/has/can/should) right before the if."
   },
   {
-    selector: `${IS_NOT_ELSE_IF} > BinaryExpression.test`,
+    selector: `${IS_NOT_ELSE_IF} > BinaryExpression.test:not(${IS_LONE_LITERAL_COMPARISON})`,
     message: "Extract the comparison into a descriptively-named const (is/has/can/should) right before the if."
   },
   {
