@@ -1,0 +1,9 @@
+{
+  "name": "lint-config",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.13.1",
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
