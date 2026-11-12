@@ -8,10 +8,10 @@ They are consumed straight from GitHub and never published to npm
 
 | Package | What it is |
 |---|---|
-| `packages/oxlint-config` | oxlint preset: correctness, Google style rules, `@/` imports with `../` banned, any lint-disable text is an error; `wxt.json` for WXT extensions |
+| `packages/oxlint-config` | oxlint preset: correctness, Google style rules, `@/` imports with `../` banned, any lint-disable text is an error, and the former ESLint rules as JS plugins (unused imports, sorting, stylistic layout, the house rules); `library.json` adds the JSDoc and tree-shaking rules for `src/`; `wxt.json` for WXT extensions |
 | `packages/oxlint-plugin-naming` | `naming/convention` for oxlint's JS plugin API, with `allowedNames` and `fileOverrides` that each carry a reason |
 | `packages/oxfmt-config` | oxfmt preset: formatting and import order |
-| `packages/eslint-config` | ESLint flat config: only what oxlint and oxfmt cannot do, plus an optional Svelte layer |
+| `packages/eslint-config` | ESLint flat config for Svelte files only: the template rules oxlint and oxfmt cannot see; a TypeScript-only repo needs no ESLint |
 | `packages/stylelint-config` | stylelint preset for CSS and Svelte or HTML style blocks |
 | `packages/fallow-config` | fallow preset for the dead-code audit |
 | `packages/biome-config` | optional and minimal: only `noFloatingPromises` |
@@ -22,13 +22,13 @@ They are consumed straight from GitHub and never published to npm
 Every package installs from a tag of this repository
 
 ```sh
-pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.3.0&path:/packages/oxlint-config"
-pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.3.0&path:/packages/oxlint-plugin-naming"
-pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.3.0&path:/packages/oxfmt-config"
-pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.3.0&path:/packages/eslint-config"
-pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.3.0&path:/packages/stylelint-config"
-pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.3.0&path:/packages/fallow-config"
-pnpm add -D "avi12-lint@github:avi12/lint-config#v0.3.0&path:/packages/avi12-lint"
+pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/oxlint-config"
+pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.0&path:/packages/oxlint-plugin-naming"
+pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/oxfmt-config"
+pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/eslint-config"
+pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/stylelint-config"
+pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/fallow-config"
+pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.0&path:/packages/avi12-lint"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -62,23 +62,21 @@ oxlint, including the naming rule
 
 Presets for oxlint: `oxlint-config-avi12/browser.json` adds the browser globals, `oxlint-config-avi12/webextension.json` adds the extension globals (`chrome`, `browser`) on top of it, `oxlint-config-avi12/wxt.json` adds WXT's default exports in `entrypoints/` and in `*.d.ts` on top of that (`wxt.config.ts` is already exempt)
 
-ESLint options of `base()`:
+oxlint for a library: extend `oxlint-config-avi12/library.json` instead, which adds JSDoc on the public API and the tree-shaking rules for `src/**/*.ts` and leaves tests out
 
-- `sourceFiles: []` skips the package-source layer
-- `allowPositionalParameters: ["vendor/**"]` turns off "2+ parameters take one destructured object" for those globs, for code that mirrors a third-party signature
+- `house/positional-parameters` is the "2+ parameters take one destructured object" rule alone, so one override turns it off for code that mirrors a third-party signature:
+  `"overrides": [{ "files": ["vendor/**"], "rules": { "house/positional-parameters": "off" } }]`
 
-ESLint
+ESLint, only when the repo has `.svelte` files
 
 ```js
-import { base } from "eslint-config-avi12/base";
 import { svelte } from "eslint-config-avi12/svelte";
 
-export default [...base(), ...svelte()];
+export default svelte();
 ```
 
-- `svelte()` is optional: install `eslint-plugin-svelte` and `svelte-eslint-parser`
-- `base({ formatter: "eslint" })` keeps the stylistic layout rules in ESLint for a repo without oxfmt
-- `sourceFiles` and `testFiles` choose where the JSDoc and tree-shaking rules apply
+- `svelte({ ignores, overrides })` is the whole config: install `eslint`, `eslint-plugin-svelte`, `svelte-eslint-parser` and `typescript`
+- A repo without Svelte files has no `eslint.config.js` and no ESLint dependency at all
 
 Other presets: `extends` the JSON of `stylelint-config-avi12` and
 `fallow-config-avi12`, and pass `oxfmt-config-avi12/oxfmt.json` to `oxfmt -c`
@@ -89,26 +87,44 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 - A lone comparison against a literal, `null` or `undefined` (`value === null`) stays inline in an `if`; any other comparison or a compound condition goes into a named boolean
 - Imports use `@/path` from the project root; a `../` import is an error
   Map the alias in `tsconfig.json` (`"paths": { "@/*": ["./src/*"] }`)
-- No disable comments: `eslint-disable`, `oxlint-disable`, `@ts-ignore` and `@ts-nocheck` are errors wherever they appear, and ESLint ignores inline directives
+- No disable comments: `eslint-disable`, `oxlint-disable`, `@ts-ignore` and `@ts-nocheck` are errors wherever they appear, and the Svelte ESLint layer ignores inline directives
   Fix the code, or add an `allowedNames` or `fileOverrides` entry with a reason
 - `any` and a bare `@ts-expect-error` are errors in `.ts` and in the script of `.svelte`; oxlint reads both
 
 ## Who owns what
 
-- oxlint: every rule it has, run on `.ts` and the script of `.svelte`
+- oxlint: every native rule, plus open-source ESLint plugins loaded through `jsPlugins` (`eslint-plugin-unused-imports`, `eslint-plugin-perfectionist`, `@stylistic/eslint-plugin`, `eslint-plugin-jsdoc`), plus the `house` plugin of this repository; all of it runs on `.ts` and on the script of `.svelte`
 - oxfmt: formatting and import order for `.ts`, `.js`, `.json` and the rest it supports
-- Svelte files: oxfmt does not format `.svelte` (it reports no target file), so ESLint's Svelte layout rules (`svelte/indent`, `svelte/html-quotes` and the custom ones) own them; oxfmt is the default formatter for everything else
-- ESLint: Svelte template rules, custom layout rules, selector bans, JSDoc,
-  unused-import removal, and the layout oxfmt cannot express
+- ESLint: only what needs the Svelte template AST (`svelte/*`, `local/expand-svelte-block`, `local/no-padded-tag`, the ban on a ternary in a template tag), and an em dash check over the whole `.svelte` file, markup included; oxfmt does not format `.svelte`, so `svelte/indent` and the other Svelte layout rules own the markup
 - Biome: optional, only `noFloatingPromises`; leave it out unless you need that one rule
-- No tool sees type information; `naming/convention` reads syntax only
+- No tool sees type information except oxlint's type-aware rules; `naming/convention` reads syntax only
+
+| Former ESLint rule | Now |
+|---|---|
+| `unused-imports/no-unused-imports`, `perfectionist/*`, `@stylistic/*` | the same plugins through oxlint `jsPlugins` |
+| `jsdoc/require-jsdoc`, `require-description`, `no-types` | `eslint-plugin-jsdoc` as `jsdoc-js/*`; oxlint's own `jsdoc` plugin keeps the name `jsdoc`; `check-tag-names` is the native one |
+| `local/expand-nested-object-expression`, `expand-nested-type-literal`, `multiline-arg-paren-newline`, `no-em-dash` | `house/*` in oxlint (the same rule code) |
+| `no-restricted-syntax` selectors | `house/google-syntax`, `house/house-syntax`, `house/positional-parameters`, `house/tree-shaking`; esquery selectors work in an oxlint JS plugin |
+| `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
+| the `Reflect` ban | `no-restricted-globals` |
+| `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.3.0
+
+- Drop from `devDependencies` when the repo has no `.svelte` files: `eslint`, `eslint-config-avi12`, `eslint-plugin-svelte`, `svelte-eslint-parser`, and delete `eslint.config.js`
+- With `.svelte` files keep `eslint`, `eslint-config-avi12`, `eslint-plugin-svelte`, `svelte-eslint-parser` and `typescript`, and write `export default svelte();`; `base()` and the `formatter` option are gone
+- `eslint-plugin-unused-imports`, `eslint-plugin-perfectionist`, `@stylistic/eslint-plugin`, `eslint-plugin-jsdoc`, `eslint-plugin-import-newlines` and `typescript-eslint` are never yours to install: `oxlint-config-avi12` carries the ones it needs
+- Keep `oxlint` at 1.90 or later; the plugins load from the files in `oxlint-config-avi12/plugins`
+- `allowPositionalParameters` becomes an oxlint override of `house/positional-parameters`; `sourceFiles: []` becomes extending `oxlint.json` instead of `library.json`
+- Run `avi12-lint --fix` once; it runs oxlint, oxfmt and oxlint again, since one oxlint pass leaves fixes that overlap
 
 ## Runner
 
 `avi12-lint` plans a tool only when its config file or binary exists
 Default run: oxlint (type-aware through `tsrs-lint` when installed), `tsrs --noEmit` when installed,
 stylelint, oxfmt and ESLint
-ESLint starts first because it is the one that peaks in memory, and the light tools run beside it
+ESLint is planned only when `eslint.config.js` exists and the repo holds a `.svelte` file, and it gets the Svelte files alone
+It starts first because it is the one that peaks in memory, and the light tools run beside it
 Output is printed per tool when it finishes, so lines never interleave
 
 | Flag | Effect |
@@ -138,6 +154,18 @@ Output is printed per tool when it finishes, so lines never interleave
 
 Concurrency 2 is the sweet spot: `auto` costs three times the memory for little gain
 
+### Measured on a small fixture
+
+150 TypeScript files and 10 Svelte files, run one after another, no cache
+
+| Setup | ESLint | oxlint | oxfmt | Peak memory |
+|---|---|---|---|---|
+| 0.3.0: ESLint on everything | 3.5-4.9 s | 0.35 s | 0.25 s | 250-270 MB |
+| 0.4.0: ESLint on Svelte only | 2.0-2.2 s | 2.0-2.1 s | 0.25 s | 205-215 MB |
+| 0.4.0, no Svelte files | not started | 2.0-2.1 s | 0.25 s | 205-215 MB |
+
+The work moved into oxlint, which pays about 0.3-0.7 s to load each JS plugin; the sequential total is about the same, the peak is lower, and a TypeScript-only repo loses the ESLint run altogether
+
 ### Why not the GPU
 
 It was tested and rejected
@@ -148,12 +176,12 @@ It was tested and rejected
 ## Tests
 
 `pnpm test` lints small fixtures at concurrency 1; the runner tests only build plans and run nothing
-- parity: a `.ts` file reports the same with and without the Svelte layer
+- parity: ESLint reports nothing on a `.ts` file, oxlint reports the same with and without Svelte files, and oxlint bans `any` in the script of a `.svelte` file
 - clash: no rule is enforced by both ESLint and oxlint, no opposing pair is on,
-  one layout rule owns each aspect of a Svelte file, and fixing is idempotent
-  in both fixer orders
+  one layout rule owns each aspect of a Svelte file, and oxlint, oxfmt and ESLint fixing settles
+  to one result in both fixer orders
 - naming: `allowedNames`, `allowedPatterns`, `presets` and `fileOverrides` work and demand a reason
-- presets: the browser and webextension globals, `sourceFiles: []` and `allowPositionalParameters`
+- presets: the browser and webextension globals, the library preset and the positional-parameters override, the former ESLint rules running in oxlint
 - runner: the plan (default, fix, changed, staged, type-aware, overrides), and the concurrency clamp
 
 CI runs the same on every push (`.github/workflows/ci.yml`)
