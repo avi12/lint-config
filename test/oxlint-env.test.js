@@ -14,7 +14,9 @@ function lintWith(preset) {
   try {
     const config = {
       extends: [join(PRESETS, preset)],
-      rules: { "no-undef": "error" }
+      rules: {
+         "no-undef": "error" 
+      }
     };
     writeFileSync(join(directory, ".oxlintrc.json"), JSON.stringify(config));
     writeFileSync(join(directory, "sample.ts"), SOURCE);
