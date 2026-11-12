@@ -20,8 +20,8 @@ test("an empty sourceFiles skips the package-source layer instead of crashing", 
   const config = base({ sourceFiles: [] });
   assert.ok(config.every(entry => entry.files === undefined || entry.files.length > 0));
   const findings = await lintText({
-     config,
-     filePath: "src/sample.js" 
+    config,
+    filePath: "src/sample.js"
   });
   assert.equal(findings.length, 1);
 });
@@ -33,14 +33,18 @@ test("allowPositionalParameters exempts only the matching files", async () => {
   });
   assert.deepEqual(
     await lintText({
-     config,
-     filePath: "vendor/mirror.js" 
-  }), []
+      config,
+      filePath: "vendor/mirror.js"
+    }),
+    []
   );
   assert.equal(
-    (await lintText({
-     config,
-     filePath: "src/mirror.js" 
-  })).length, 1
+    (
+      await lintText({
+        config,
+        filePath: "src/mirror.js"
+      })
+    ).length,
+    1
   );
 });

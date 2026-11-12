@@ -1,0 +1,4 @@
+{
+  "extends": ["./browser.json"],
+  "overrides": [{ "files": ["**/*"], "env": { "webextensions": true } }]
+}

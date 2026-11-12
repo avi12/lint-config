@@ -84,14 +84,14 @@ export function base({
       }
     },
     ...sourceLayer({
-       formatter,
-       sourceFiles,
-       testFiles,
-       overrides 
+      formatter,
+      sourceFiles,
+      testFiles,
+      overrides
     }),
     ...positionalLayer({
-       formatter,
-       allowPositionalParameters 
+      formatter,
+      allowPositionalParameters
     })
   ];
 }

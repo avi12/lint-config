@@ -1,0 +1,4 @@
+{
+  "extends": ["./oxlint.json"],
+  "overrides": [{ "files": ["**/*"], "env": { "browser": true } }]
+}

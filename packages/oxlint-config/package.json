@@ -4,12 +4,16 @@
   "description": "oxlint preset: Google style correctness, @/ imports, no lint-disable comments",
   "license": "Apache-2.0",
   "files": [
-    "oxlint.json"
+    "oxlint.json",
+    "browser.json",
+    "webextension.json"
   ],
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./oxlint.json",
+    "./browser": "./browser.json",
+    "./webextension": "./webextension.json",
     "./package.json": "./package.json"
   },
   "peerDependencies": {
