@@ -1,17 +1,52 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "oxc", "import"],
-  "categories": { "correctness": "error" },
-  "env": { "node": true, "builtin": true },
-  "options": { "reportUnusedDisableDirectives": "error" },
+  "jsPlugins": [
+    "./plugins/unused-imports.js",
+    "./plugins/perfectionist.js",
+    "./plugins/stylistic.js",
+    "./plugins/jsdoc-js.js",
+    "./plugins/house/index.js"
+  ],
+  "plugins": ["typescript", "unicorn", "oxc", "import", "jsdoc"],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "node": true,
+    "builtin": true
+  },
+  "options": {
+    "reportUnusedDisableDirectives": "error"
+  },
   "rules": {
     "curly": ["error", "all"],
-    "eqeqeq": ["error", "always", { "null": "ignore" }],
-    "prefer-const": ["error", { "destructuring": "all" }],
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
+    "prefer-const": [
+      "error",
+      {
+        "destructuring": "all"
+      }
+    ],
     "no-var": "error",
-    "no-void": ["error", { "allowAsStatement": true }],
+    "no-void": [
+      "error",
+      {
+        "allowAsStatement": true
+      }
+    ],
     "no-nested-ternary": "error",
-    "no-else-return": ["error", { "allowElseIf": false }],
+    "no-else-return": [
+      "error",
+      {
+        "allowElseIf": false
+      }
+    ],
     "no-lonely-if": "error",
     "no-throw-literal": "error",
     "no-restricted-exports": [
@@ -28,7 +63,13 @@
     ],
     "max-depth": ["error", 3],
     "max-nested-callbacks": ["error", 3],
-    "object-shorthand": ["error", "always", { "avoidExplicitReturnArrows": true }],
+    "object-shorthand": [
+      "error",
+      "always",
+      {
+        "avoidExplicitReturnArrows": true
+      }
+    ],
     "id-length": [
       "error",
       {
@@ -37,17 +78,29 @@
         "properties": "never"
       }
     ],
-    "func-style": ["error", "declaration", { "allowArrowFunctions": false }],
+    "func-style": [
+      "error",
+      "declaration",
+      {
+        "allowArrowFunctions": false
+      }
+    ],
     "arrow-body-style": ["error", "as-needed"],
     "no-warning-comments": [
       "error",
-      { "terms": ["eslint-disable", "oxlint-disable", "@ts-ignore", "@ts-nocheck"], "location": "anywhere" }
+      {
+        "terms": ["eslint-disable", "oxlint-disable", "@ts-ignore", "@ts-nocheck"],
+        "location": "anywhere"
+      }
     ],
     "no-restricted-imports": [
       "error",
       {
         "patterns": [
-          { "group": ["../*", "./../*"], "message": "Import from the project root with \"@/path\", never \"../\"" }
+          {
+            "group": ["../*", "./../*"],
+            "message": "Import from the project root with \"@/path\", never \"../\""
+          }
         ]
       }
     ],
@@ -69,14 +122,33 @@
     "typescript/no-unsafe-function-type": "error",
     "typescript/no-empty-object-type": "error",
     "typescript/prefer-for-of": "error",
-    "typescript/array-type": ["error", { "default": "array" }],
+    "typescript/array-type": [
+      "error",
+      {
+        "default": "array"
+      }
+    ],
     "typescript/consistent-type-definitions": ["error", "interface"],
-    "typescript/consistent-type-imports": ["error", { "prefer": "type-imports", "fixStyle": "separate-type-imports" }],
+    "typescript/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports",
+        "fixStyle": "separate-type-imports"
+      }
+    ],
     "typescript/parameter-properties": [
       "error",
-      { "prefer": "class-property", "allow": ["readonly", "private readonly", "protected readonly"] }
+      {
+        "prefer": "class-property",
+        "allow": ["readonly", "private readonly", "protected readonly"]
+      }
     ],
-    "typescript/explicit-member-accessibility": ["error", { "accessibility": "no-public" }],
+    "typescript/explicit-member-accessibility": [
+      "error",
+      {
+        "accessibility": "no-public"
+      }
+    ],
     "typescript/no-unused-vars": [
       "error",
       {
@@ -87,22 +159,134 @@
       }
     ],
     "import/first": "error",
-    "import/no-cycle": ["error", { "ignoreTypes": true }],
+    "import/no-cycle": [
+      "error",
+      {
+        "ignoreTypes": true
+      }
+    ],
     "no-magic-numbers": [
       "error",
-      { "ignore": [0, 1, -1, 2], "enforceConst": true, "ignoreTypeIndexes": true, "ignoreNumericLiteralTypes": true }
-    ]
+      {
+        "ignore": [0, 1, -1, 2],
+        "enforceConst": true,
+        "ignoreTypeIndexes": true,
+        "ignoreNumericLiteralTypes": true
+      }
+    ],
+    "no-restricted-globals": [
+      "error",
+      {
+        "name": "Reflect",
+        "message": "Do not use Reflect. Use direct property access instead."
+      }
+    ],
+    "unicorn/no-array-for-each": "error",
+    "unicorn/no-array-reduce": "error",
+    "unused-imports/no-unused-imports": "error",
+    "perfectionist/sort-named-imports": [
+      "error",
+      {
+        "type": "alphabetical",
+        "order": "asc",
+        "ignoreCase": true
+      }
+    ],
+    "perfectionist/sort-named-exports": [
+      "error",
+      {
+        "type": "alphabetical",
+        "order": "asc",
+        "ignoreCase": true
+      }
+    ],
+    "perfectionist/sort-objects": [
+      "error",
+      {
+        "type": "unsorted",
+        "newlinesBetween": 0
+      }
+    ],
+    "@stylistic/spaced-comment": ["error", "always"],
+    "@stylistic/object-curly-newline": [
+      "error",
+      {
+        "ObjectExpression": {
+          "consistent": true,
+          "multiline": true
+        },
+        "ObjectPattern": {
+          "consistent": true,
+          "multiline": true
+        },
+        "ExportDeclaration": {
+          "consistent": true,
+          "multiline": true
+        }
+      }
+    ],
+    "@stylistic/object-property-newline": [
+      "error",
+      {
+        "allowAllPropertiesOnSameLine": false
+      }
+    ],
+    "@stylistic/padding-line-between-statements": [
+      "error",
+      {
+        "blankLine": "always",
+        "prev": "import",
+        "next": ["const", "let", "function", "export", "type"]
+      },
+      {
+        "blankLine": "any",
+        "prev": "import",
+        "next": "import"
+      },
+      {
+        "blankLine": "always",
+        "prev": "*",
+        "next": "if"
+      },
+      {
+        "blankLine": "never",
+        "prev": ["const", "let"],
+        "next": "if"
+      },
+      {
+        "blankLine": "always",
+        "prev": "if",
+        "next": "*"
+      }
+    ],
+    "@stylistic/function-call-argument-newline": ["error", "consistent"],
+    "@stylistic/function-paren-newline": ["error", "consistent"],
+    "house/expand-nested-object-expression": "error",
+    "house/expand-nested-type-literal": "error",
+    "house/multiline-arg-paren-newline": "error",
+    "house/no-em-dash": "error",
+    "house/google-syntax": "error",
+    "house/house-syntax": "error",
+    "house/positional-parameters": "error"
   },
   "overrides": [
     {
       "files": ["*.config.{js,mjs,ts}", "**/vite.config.ts"],
-      "rules": { "no-restricted-exports": "off" }
+      "rules": {
+        "no-restricted-exports": "off"
+      }
     },
     {
       "files": ["**/*.test.ts", "test/**/*.ts"],
       "rules": {
         "no-magic-numbers": "off",
         "max-nested-callbacks": "off"
+      }
+    },
+    {
+      "files": ["**/*.svelte"],
+      "rules": {
+        "house/no-em-dash": "off"
       }
     }
   ],

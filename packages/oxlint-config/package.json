@@ -7,7 +7,9 @@
     "oxlint.json",
     "browser.json",
     "webextension.json",
-    "wxt.json"
+    "wxt.json",
+    "library.json",
+    "plugins"
   ],
   "type": "module",
   "sideEffects": false,
@@ -16,7 +18,14 @@
     "./browser": "./browser.json",
     "./webextension": "./webextension.json",
     "./wxt": "./wxt.json",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./library": "./library.json"
+  },
+  "dependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint-plugin-jsdoc": "^65.4.2",
+    "eslint-plugin-perfectionist": "^5.12.1",
+    "eslint-plugin-unused-imports": "^4.4.1"
   },
   "peerDependencies": {
     "oxlint": ">=1.90.0"

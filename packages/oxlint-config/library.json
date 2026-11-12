@@ -1,0 +1,49 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": ["./oxlint.json"],
+  "overrides": [
+    {
+      "files": ["src/**/*.ts"],
+      "rules": {
+        "house/tree-shaking": "error",
+        "jsdoc-js/require-jsdoc": [
+          "error",
+          {
+            "publicOnly": true,
+            "require": {
+              "FunctionDeclaration": true,
+              "ClassDeclaration": true,
+              "ArrowFunctionExpression": false,
+              "FunctionExpression": false,
+              "MethodDefinition": false
+            },
+            "contexts": ["TSInterfaceDeclaration", "TSTypeAliasDeclaration", "TSEnumDeclaration"]
+          }
+        ],
+        "jsdoc-js/require-description": [
+          "error",
+          {
+            "contexts": ["any"]
+          }
+        ],
+        "jsdoc-js/no-types": "error",
+        "jsdoc/check-tag-names": [
+          "error",
+          {
+            "typed": true
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/*.test.ts", "test/**"],
+      "rules": {
+        "house/tree-shaking": "off",
+        "jsdoc-js/require-jsdoc": "off",
+        "jsdoc-js/require-description": "off",
+        "jsdoc-js/no-types": "off",
+        "jsdoc/check-tag-names": "off"
+      }
+    }
+  ]
+}

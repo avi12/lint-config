@@ -30,19 +30,9 @@ export const GOOGLE_SYNTAX = [
     message: "Extract the ternary's condition into a descriptively-named const (is/has/can/should)."
   },
   {
-    selector: "CallExpression[callee.property.name='forEach']",
-    message: "Use for...of instead of .forEach."
-  },
-  {
-    selector:
-      ":matches(CallExpression[callee.property.name='reduce'], CallExpression[callee.property.name='reduceRight'])",
-    message: "Use a plain for loop instead of .reduce."
-  },
-  {
     selector: "ForInStatement",
     message: "Use for...of over Object.keys/entries instead of for...in (Google style)."
   },
-  ...POSITIONAL_PARAMETER_SYNTAX,
   {
     selector:
       ":matches(FunctionDeclaration, FunctionExpression, ArrowFunctionExpression)[returnType]:not([returnType.typeAnnotation.type='TSTypePredicate'])",
@@ -67,20 +57,12 @@ export const HOUSE_SYNTAX = [
 
 export const TREE_SHAKING_SYNTAX = [
   {
-    selector: "Program > ExpressionStatement[directive=undefined]",
+    selector: "Program > ExpressionStatement:not([directive])",
     message: IMPORT_WORK_MESSAGE
   },
   {
     selector:
       "Program > :matches(IfStatement, ForStatement, ForOfStatement, WhileStatement, TryStatement, SwitchStatement)",
     message: IMPORT_WORK_MESSAGE
-  }
-];
-
-export const SVELTE_TEMPLATE_SYNTAX = [
-  {
-    selector:
-      "SvelteMustacheTag:not([parent.type='SvelteAttribute']):not([parent.type='SvelteStyleDirective']) > ConditionalExpression",
-    message: "Do not use a ternary in a template tag - use an {#if}/{:else} block instead."
   }
 ];
