@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/build/**", "**/coverage/**", "**/.svelte-kit/**", "**/.worktrees/**", "**/.claude/worktrees/**", "**/.verify/**"],
+  "entry": ["src/index.ts", "**/*.test.ts", "eslint.config.js", "svelte.config.js", "vite.config.ts"],
+  "health": {
+    "maxCrap": 1000
+  }
+}
