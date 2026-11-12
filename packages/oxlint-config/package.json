@@ -6,7 +6,8 @@
   "files": [
     "oxlint.json",
     "browser.json",
-    "webextension.json"
+    "webextension.json",
+    "wxt.json"
   ],
   "type": "module",
   "sideEffects": false,
@@ -14,6 +15,7 @@
     ".": "./oxlint.json",
     "./browser": "./browser.json",
     "./webextension": "./webextension.json",
+    "./wxt": "./wxt.json",
     "./package.json": "./package.json"
   },
   "peerDependencies": {

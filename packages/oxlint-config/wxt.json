@@ -1,0 +1,11 @@
+{
+  "extends": ["./webextension.json"],
+  "overrides": [
+    {
+      "files": ["**/entrypoints/**", "**/*.d.ts"],
+      "rules": {
+        "no-restricted-exports": "off"
+      }
+    }
+  ]
+}
