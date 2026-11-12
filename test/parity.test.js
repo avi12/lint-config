@@ -24,9 +24,10 @@ test("oxlint reports the same on ts files in both setups", () => {
 
 test("the Svelte layer lints the template", () => {
   const findings = eslintFindings({ cwd: TS_SVELTE, files: ["src/Bad.svelte"] });
-  assert.ok(findings.includes("no-restricted-syntax@6"));
+  assert.ok(findings.includes("no-restricted-syntax@7"));
 });
 
-test("oxlint reads the script of a Svelte file", () => {
-  assert.deepEqual(oxlintFindings({ cwd: TS_SVELTE, files: ["src/Bad.svelte"] }), []);
+test("oxlint bans any in the script of a Svelte file, so ESLint need not", () => {
+  const findings = oxlintFindings({ cwd: TS_SVELTE, files: ["src/Bad.svelte"] });
+  assert.deepEqual(findings, ["typescript(no-explicit-any)@2"]);
 });
