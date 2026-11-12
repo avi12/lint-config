@@ -30,10 +30,7 @@ function checkElement(context, node) {
       node: startTag,
       messageId: "noBlankAfterOpeningTag",
       fix(fixer) {
-        return fixer.replaceTextRange(
-          [innerStart, innerStart + fullMatchLength],
-          replacement
-        );
+        return fixer.replaceTextRange([innerStart, innerStart + fullMatchLength], replacement);
       }
     });
   }
@@ -42,15 +39,13 @@ function checkElement(context, node) {
   const trailingMatch = trailingBlankPattern.exec(inner);
   if (trailingMatch) {
     const fullMatchLength = trailingMatch[0].length;
-    const replacement = `${trailingMatch[1]}${trailingMatch[3]}`;
+    const [, leading, , trailing] = trailingMatch;
+    const replacement = `${leading}${trailing}`;
     context.report({
       node: endTag,
       messageId: "noBlankBeforeClosingTag",
       fix(fixer) {
-        return fixer.replaceTextRange(
-          [innerEnd - fullMatchLength, innerEnd],
-          replacement
-        );
+        return fixer.replaceTextRange([innerEnd - fullMatchLength, innerEnd], replacement);
       }
     });
   }

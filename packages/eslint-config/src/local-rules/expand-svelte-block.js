@@ -39,7 +39,7 @@ export default {
         // means the visible content already starts on its own line - reporting
         // here would make the fixer prepend newlines forever
         const contentStart = findOpenTagEnd(node.expression);
-        if (/^[ \t]*\r?\n/.test(sourceCode.text.slice(contentStart, contentStart + 1000))) {
+        if (/^[ \t]*\r?\n/.test(sourceCode.text.slice(contentStart, contentStart + OPEN_TAG_LOOKAHEAD))) {
           return;
         }
 
@@ -50,12 +50,11 @@ export default {
             const indent = getIndent(node);
             const childIndent = `${indent}  `;
             const openTagEnd = findOpenTagEnd(node.expression);
-            const fixes = [
-              fixer.replaceTextRange([openTagEnd, firstChild.range[0]], `\n${childIndent}`)
-            ];            if (!node.else && !node.elseif) {
+            const fixes = [fixer.replaceTextRange([openTagEnd, firstChild.range[0]], `\n${childIndent}`)];
+            if (!node.else && !node.elseif) {
               const lastChild = node.children[node.children.length - 1];
               if (node.loc.end.line === lastChild.loc.end.line) {
-                const closeTagStart = node.range[1] - 5;
+                const closeTagStart = node.range[1] - CLOSE_TAG_LENGTH;
                 fixes.push(fixer.replaceTextRange([lastChild.range[1], closeTagStart], `\n${indent}`));
               }
             }

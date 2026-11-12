@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "description": "fallow preset: dead-code audit entry points and ignores shared across avi12's repos",
   "license": "Apache-2.0",
+  "files": [
+    "fallow.json"
+  ],
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./fallow.json",
     "./package.json": "./package.json"
   },
-  "files": [
-    "fallow.json"
-  ],
   "peerDependencies": {
     "fallow": ">=2.103.0"
   }

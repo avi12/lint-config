@@ -19,8 +19,17 @@ export default {
       Program() {
         for (const match of sourceCode.text.matchAll(EM_DASH)) {
           const start = sourceCode.getLocFromIndex(match.index);
-          const end = { line: start.line, column: start.column + 1 };
-          context.report({ loc: { start, end }, messageId: "emDash" });
+          const end = {
+            line: start.line,
+            column: start.column + 1
+          };
+          context.report({
+            loc: {
+              start,
+              end
+            },
+            messageId: "emDash"
+          });
         }
       }
     };

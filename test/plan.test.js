@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clampConcurrency } from "eslint-config-avi12/defaults";
+
 import { plan } from "avi12-lint/plan";
+import { clampConcurrency } from "eslint-config-avi12/defaults";
 
 const ALL_CONFIGS = new Set([".oxlintrc.json", "eslint.config.js", ".oxfmtrc.json", ".stylelintrc.json"]);
 
@@ -19,7 +20,11 @@ test("only the tools with a config are planned, in order", () => {
 });
 
 test("fix mode swaps the checkers for fixers and the cache flags are always on", () => {
-  const steps = plan({ hasFile: file => ALL_CONFIGS.has(file), isFix: true, concurrency: "8" });
+  const steps = plan({
+    hasFile: file => ALL_CONFIGS.has(file),
+    isFix: true,
+    concurrency: "8"
+  });
   const eslint = steps.find(({ name }) => name === "eslint").command;
   assert.ok(eslint.includes("--fix") && eslint.includes("--cache"));
   assert.equal(eslint[eslint.indexOf("--concurrency") + 1], "4");

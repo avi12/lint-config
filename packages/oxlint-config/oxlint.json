@@ -14,29 +14,54 @@
     "no-else-return": ["error", { "allowElseIf": false }],
     "no-lonely-if": "error",
     "no-throw-literal": "error",
-    "no-restricted-exports": ["error", { "restrictDefaultExports": { "direct": true, "named": true, "defaultFrom": true, "namedFrom": true, "namespaceFrom": true } }],
+    "no-restricted-exports": [
+      "error",
+      {
+        "restrictDefaultExports": {
+          "direct": true,
+          "named": true,
+          "defaultFrom": true,
+          "namedFrom": true,
+          "namespaceFrom": true
+        }
+      }
+    ],
     "max-depth": ["error", 3],
     "max-nested-callbacks": ["error", 3],
     "object-shorthand": ["error", "always", { "avoidExplicitReturnArrows": true }],
-    "id-length": ["error", {
-      "min": 3,
-      "exceptions": ["_", "i", "j", "x", "y", "id", "to", "on", "ok", "T"],
-      "properties": "never"
-    }],
+    "id-length": [
+      "error",
+      {
+        "min": 3,
+        "exceptions": ["_", "i", "j", "x", "y", "id", "to", "on", "ok", "T"],
+        "properties": "never"
+      }
+    ],
     "func-style": ["error", "declaration", { "allowArrowFunctions": false }],
     "arrow-body-style": ["error", "as-needed"],
-    "no-warning-comments": ["error", { "terms": ["eslint-disable", "oxlint-disable", "@ts-ignore", "@ts-nocheck"], "location": "anywhere" }],
-    "no-restricted-imports": ["error", {
-      "patterns": [{ "group": ["../*", "./../*"], "message": "Import from the project root with \"@/path\", never \"../\"" }]
-    }],
+    "no-warning-comments": [
+      "error",
+      { "terms": ["eslint-disable", "oxlint-disable", "@ts-ignore", "@ts-nocheck"], "location": "anywhere" }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          { "group": ["../*", "./../*"], "message": "Import from the project root with \"@/path\", never \"../\"" }
+        ]
+      }
+    ],
     "typescript/no-explicit-any": "error",
-    "typescript/ban-ts-comment": ["error", {
-      "ts-ignore": true,
-      "ts-nocheck": true,
-      "ts-check": false,
-      "ts-expect-error": "allow-with-description",
-      "minimumDescriptionLength": 10
-    }],
+    "typescript/ban-ts-comment": [
+      "error",
+      {
+        "ts-ignore": true,
+        "ts-nocheck": true,
+        "ts-check": false,
+        "ts-expect-error": "allow-with-description",
+        "minimumDescriptionLength": 10
+      }
+    ],
     "typescript/no-non-null-assertion": "error",
     "typescript/no-namespace": "error",
     "typescript/no-require-imports": "error",
@@ -47,17 +72,26 @@
     "typescript/array-type": ["error", { "default": "array-simple" }],
     "typescript/consistent-type-definitions": ["error", "interface"],
     "typescript/consistent-type-imports": ["error", { "prefer": "type-imports", "fixStyle": "separate-type-imports" }],
-    "typescript/parameter-properties": ["error", { "prefer": "class-property", "allow": ["readonly", "private readonly", "protected readonly"] }],
+    "typescript/parameter-properties": [
+      "error",
+      { "prefer": "class-property", "allow": ["readonly", "private readonly", "protected readonly"] }
+    ],
     "typescript/explicit-member-accessibility": ["error", { "accessibility": "no-public" }],
-    "typescript/no-unused-vars": ["error", {
-      "varsIgnorePattern": "^_",
-      "argsIgnorePattern": "^_",
-      "caughtErrorsIgnorePattern": "^_",
-      "ignoreRestSiblings": true
-    }],
+    "typescript/no-unused-vars": [
+      "error",
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ],
     "import/first": "error",
     "import/no-cycle": ["error", { "ignoreTypes": true }],
-    "no-magic-numbers": ["error", { "ignore": [0, 1, -1, 2], "enforceConst": true, "ignoreTypeIndexes": true, "ignoreNumericLiteralTypes": true }]
+    "no-magic-numbers": [
+      "error",
+      { "ignore": [0, 1, -1, 2], "enforceConst": true, "ignoreTypeIndexes": true, "ignoreNumericLiteralTypes": true }
+    ]
   },
   "overrides": [
     {
@@ -72,5 +106,14 @@
       }
     }
   ],
-  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/build/**", "**/coverage/**", "**/.svelte-kit/**", "**/.worktrees/**", "**/.claude/worktrees/**", "**/.verify/**"]
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/.svelte-kit/**",
+    "**/.worktrees/**",
+    "**/.claude/worktrees/**",
+    "**/.verify/**"
+  ]
 }

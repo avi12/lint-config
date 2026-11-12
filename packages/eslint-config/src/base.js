@@ -6,13 +6,17 @@ import unusedImports from "eslint-plugin-unused-imports";
 import { globalIgnores } from "eslint/config";
 import globals from "globals";
 import typescriptEslint from "typescript-eslint";
+
 import { IGNORES } from "./defaults.js";
 import { localPlugin } from "./plugin.js";
 import { JSDOC_RULES } from "./rules/jsdoc.js";
 import { FORMATTER_RULES, KEPT_RULES } from "./rules/layout.js";
 import { GOOGLE_SYNTAX, HOUSE_SYNTAX, TREE_SHAKING_SYNTAX } from "./rules/syntax.js";
 
-export const FORMATTERS = { OXFMT: "oxfmt", ESLINT: "eslint" };
+export const FORMATTERS = {
+  OXFMT: "oxfmt",
+  ESLINT: "eslint"
+};
 
 export const PLUGINS = {
   "@stylistic": stylistic,
@@ -42,22 +46,43 @@ export function createRules({ formatter = FORMATTERS.OXFMT, isPackageSource = fa
  * Plain TypeScript and JavaScript layer. Needs no Svelte package and no type information.
  * Options: `formatter`, `ignores`, `sourceFiles` and `testFiles` (where the package-source rules apply), `overrides`.
  */
-export function base({ formatter, ignores = [], sourceFiles = ["src/**/*.ts"], testFiles = ["**/*.test.ts", "test/**"], overrides = {} } = {}) {
+export function base({
+  formatter,
+  ignores = [],
+  sourceFiles = ["src/**/*.ts"],
+  testFiles = ["**/*.test.ts", "test/**"],
+  overrides = {}
+} = {}) {
   return [
     globalIgnores([...IGNORES, ...ignores]),
     {
-      linterOptions: { noInlineConfig: true, reportUnusedDisableDirectives: "off" }
+      linterOptions: {
+        noInlineConfig: true,
+        reportUnusedDisableDirectives: "off"
+      }
     },
     {
       files: ["**/*.{ts,mts,cts,js,mjs,cjs}"],
-      languageOptions: { parser: typescriptEslint.parser, globals: globals.node },
+      languageOptions: {
+        parser: typescriptEslint.parser,
+        globals: globals.node
+      },
       plugins: PLUGINS,
-      rules: { ...createRules({ formatter }), ...overrides }
+      rules: {
+        ...createRules({ formatter }),
+        ...overrides
+      }
     },
     {
       files: sourceFiles,
       ignores: testFiles,
-      rules: { ...createRules({ formatter, isPackageSource: true }), ...overrides }
+      rules: {
+        ...createRules({
+          formatter,
+          isPackageSource: true
+        }),
+        ...overrides
+      }
     }
   ];
 }

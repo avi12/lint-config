@@ -1,10 +1,27 @@
 const PREFIXES = ["is", "has", "can", "should"];
 const COMPARISONS = new Set(["===", "!==", "==", "!=", "<", ">", "<=", ">=", "in", "instanceof"]);
-const BOOLEAN_METHODS = new Set(["has", "includes", "some", "every", "startsWith", "endsWith", "test", "isArray", "isFinite", "isInteger", "isNaN", "hasOwn"]);
+const BOOLEAN_METHODS = new Set([
+  "has",
+  "includes",
+  "some",
+  "every",
+  "startsWith",
+  "endsWith",
+  "test",
+  "isArray",
+  "isFinite",
+  "isInteger",
+  "isNaN",
+  "hasOwn"
+]);
 const UPPER = /^[A-Z0-9]+(_[A-Z0-9]+)*$/;
 const CAMEL = /^[a-z][A-Za-z0-9]*$/;
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
-const FORMATS = { camelCase: CAMEL, UPPER_CASE: UPPER, PascalCase: PASCAL };
+const FORMATS = {
+  camelCase: CAMEL,
+  UPPER_CASE: UPPER,
+  PascalCase: PASCAL
+};
 const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
 
 function isBooleanType(annotation) {
@@ -12,14 +29,19 @@ function isBooleanType(annotation) {
   if (type == null) {
     return false;
   }
+
   if (type.type === "TSUnionType") {
-    const isNullish = (member) => member.type === "TSNullKeyword" || member.type === "TSUndefinedKeyword";
-    const rest = type.types.filter((member) => !isNullish(member));
+    function isNullish(member) {
+      return member.type === "TSNullKeyword" || member.type === "TSUndefinedKeyword";
+    }
+    const rest = type.types.filter(member => !isNullish(member));
     return rest.length === 1 && rest.length < type.types.length ? isBooleanType(rest[0]) : false;
   }
+
   if (type.type === "TSBooleanKeyword") {
     return true;
   }
+
   return type.type === "TSLiteralType" && typeof type.literal?.value === "boolean";
 }
 
@@ -27,6 +49,7 @@ function isBooleanExpression(node, booleanFunctions) {
   if (node == null) {
     return false;
   }
+
   switch (node.type) {
     case "Literal":
       return typeof node.value === "boolean";
@@ -37,7 +60,9 @@ function isBooleanExpression(node, booleanFunctions) {
     case "LogicalExpression":
       return isBooleanExpression(node.left, booleanFunctions) && isBooleanExpression(node.right, booleanFunctions);
     case "ConditionalExpression":
-      return isBooleanExpression(node.consequent, booleanFunctions) && isBooleanExpression(node.alternate, booleanFunctions);
+      return (
+        isBooleanExpression(node.consequent, booleanFunctions) && isBooleanExpression(node.alternate, booleanFunctions)
+      );
     case "TSAsExpression":
       return isBooleanType(node.typeAnnotation);
     case "TSNonNullExpression":
@@ -48,6 +73,7 @@ function isBooleanExpression(node, booleanFunctions) {
       if (callee.type === "Identifier") {
         return callee.name === "Boolean" || booleanFunctions.has(callee.name);
       }
+
       const isMember = callee.type === "MemberExpression" && !callee.computed && callee.property.type === "Identifier";
       return isMember && BOOLEAN_METHODS.has(callee.property.name);
     }
@@ -60,62 +86,80 @@ function literalKind(node) {
   if (node == null) {
     return null;
   }
+
   if (node.type === "Literal") {
     if (typeof node.value === "string") {
       return "string";
     }
+
     if (typeof node.value === "number") {
       return "number";
     }
   }
+
   if (node.type === "TemplateLiteral") {
     return "string";
   }
-  const isSignedNumber = node.type === "UnaryExpression" && (node.operator === "-" || node.operator === "+") && node.argument.type === "Literal" && typeof node.argument.value === "number";
+
+  const isSignedNumber =
+    node.type === "UnaryExpression" &&
+    (node.operator === "-" || node.operator === "+") &&
+    node.argument.type === "Literal" &&
+    typeof node.argument.value === "number";
   return isSignedNumber ? "number" : null;
 }
 
 function annotationKind(annotation) {
   const type = annotation?.typeAnnotation ?? annotation;
-  const kinds = { TSStringKeyword: "string", TSNumberKeyword: "number" };
+  const kinds = {
+    TSStringKeyword: "string",
+    TSNumberKeyword: "number"
+  };
   return kinds[type?.type] ?? null;
 }
 
 function checkFormats(name, formats) {
-  return formats.some((format) => FORMATS[format].test(name));
+  return formats.some(format => FORMATS[format].test(name));
 }
 
 function checkPrefixed(name) {
-  const prefix = PREFIXES.find((candidate) => name.startsWith(candidate));
+  const prefix = PREFIXES.find(candidate => name.startsWith(candidate));
   return prefix != null && PASCAL.test(name.slice(prefix.length));
 }
 
 function collectBooleanFunctions(program) {
   const names = new Set();
-  const returnsBoolean = (fn) => {
-    if (isBooleanType(fn.returnType)) {
+  function returnsBoolean(func) {
+    if (isBooleanType(func.returnType)) {
       return true;
     }
-    if (fn.body?.type !== "BlockStatement") {
-      return isBooleanExpression(fn.body, names);
+
+    if (func.body?.type !== "BlockStatement") {
+      return isBooleanExpression(func.body, names);
     }
+
     const returns = [];
-    const walk = (node) => {
+    function walk(node) {
       if (node == null || typeof node.type !== "string") {
         return;
       }
+
       if (node.type === "ReturnStatement") {
         returns.push(node);
         return;
       }
-      const isNested = node.type.includes("Function") || node.type === "ClassDeclaration" || node.type === "ClassExpression";
+
+      const isNested =
+        node.type.includes("Function") || node.type === "ClassDeclaration" || node.type === "ClassExpression";
       if (isNested) {
         return;
       }
+
       for (const key of Object.keys(node)) {
         if (key === "parent") {
           continue;
         }
+
         const child = node[key];
         if (Array.isArray(child)) {
           for (const item of child) {
@@ -125,21 +169,23 @@ function collectBooleanFunctions(program) {
           walk(child);
         }
       }
-    };
-    walk(fn.body);
-    return returns.length > 0 && returns.every((statement) => isBooleanExpression(statement.argument, names));
-  };
+    }
+    walk(func.body);
+    return returns.length > 0 && returns.every(statement => isBooleanExpression(statement.argument, names));
+  }
   for (const statement of program.body) {
     const declaration = statement.declaration ?? statement;
     if (declaration.type === "FunctionDeclaration" && declaration.id && returnsBoolean(declaration)) {
       names.add(declaration.id.name);
     }
-    if (declaration.type === "VariableDeclaration") {
-      for (const declarator of declaration.declarations) {
-        const isFunction = declarator.init && (declarator.init.type === "ArrowFunctionExpression" || declarator.init.type === "FunctionExpression");
-        if (isFunction && declarator.id.type === "Identifier" && returnsBoolean(declarator.init)) {
-          names.add(declarator.id.name);
-        }
+
+    const declarators = declaration.type === "VariableDeclaration" ? declaration.declarations : [];
+    for (const declarator of declarators) {
+      const isFunction =
+        declarator.init &&
+        (declarator.init.type === "ArrowFunctionExpression" || declarator.init.type === "FunctionExpression");
+      if (isFunction && declarator.id.type === "Identifier" && returnsBoolean(declarator.init)) {
+        names.add(declarator.id.name);
       }
     }
   }
@@ -150,12 +196,21 @@ function keyName(node) {
   if (node.computed) {
     return null;
   }
+
   if (node.key.type === "Identifier") {
-    return { name: node.key.name, isQuoted: false };
+    return {
+      name: node.key.name,
+      isQuoted: false
+    };
   }
+
   if (node.key.type === "Literal" && typeof node.key.value === "string") {
-    return { name: node.key.value, isQuoted: !IDENTIFIER.test(node.key.value) };
+    return {
+      name: node.key.value,
+      isQuoted: !IDENTIFIER.test(node.key.value)
+    };
   }
+
   return null;
 }
 
@@ -170,36 +225,53 @@ function assertReasons(options) {
 }
 
 const rule = {
-  meta: { schema: [{ type: "object" }] },
+  meta: {
+    schema: [{ type: "object" }]
+  },
   create(context) {
     const options = context.options[0] ?? {};
     assertReasons(options);
     const filename = (context.filename ?? context.getFilename()).replace(/\\/g, "/");
-    const isOverridden = (options.fileOverrides ?? []).some((override) => override.files.some((suffix) => filename.endsWith(suffix)));
+    const isOverridden = (options.fileOverrides ?? []).some(override =>
+      override.files.some(suffix => filename.endsWith(suffix))
+    );
     if (isOverridden) {
       return {};
     }
-    const allowedNames = new Set((options.allowedNames ?? []).flatMap((entry) => entry.names));
+
+    const allowedNames = new Set((options.allowedNames ?? []).flatMap(entry => entry.names));
     let booleanFunctions = new Set();
-    const report = (node, message) => context.report({ node, message });
+    function report(node, message) {
+      context.report({
+        node,
+        message
+      });
+    }
 
     function checkMember(node, selectorName) {
       const key = keyName(node);
-      const isMethodSelector = selectorName.endsWith("Method") || selectorName === "classMethod" || selectorName === "accessor";
+      const isMethodSelector =
+        selectorName.endsWith("Method") || selectorName === "classMethod" || selectorName === "accessor";
       if (key == null || (key.isQuoted && !isMethodSelector)) {
         return;
       }
+
       const { name } = key;
       if (allowedNames.has(name)) {
         return;
       }
-      const isBoolean = selectorName === "classProperty" && (isBooleanType(node.typeAnnotation) || isBooleanExpression(node.value, booleanFunctions));
+
+      const isBoolean =
+        selectorName === "classProperty" &&
+        (isBooleanType(node.typeAnnotation) || isBooleanExpression(node.value, booleanFunctions));
       if (isBoolean) {
         if (!checkPrefixed(name)) {
           report(node.key, `${selectorName} '${name}' must be prefixed is/has/can/should`);
         }
+
         return;
       }
+
       if (!checkFormats(name, ["camelCase", "UPPER_CASE"])) {
         report(node.key, `${selectorName} '${name}' must be camelCase or UPPER_CASE`);
       }
@@ -211,44 +283,64 @@ const rule = {
       if (target.type === "TSParameterProperty") {
         target = target.parameter;
       }
+
       if (target.type === "AssignmentPattern") {
         initializer = target.right;
         target = target.left;
       }
+
       if (target.type === "RestElement") {
         target = target.argument;
       }
+
       if (target.type === "ObjectPattern") {
         for (const property of target.properties) {
-          const isNamed = property.type === "Property" && (property.value.type === "Identifier" || (property.value.type === "AssignmentPattern" && property.value.left.type === "Identifier"));
+          const isNamed =
+            property.type === "Property" &&
+            (property.value.type === "Identifier" ||
+              (property.value.type === "AssignmentPattern" && property.value.left.type === "Identifier"));
           if (isNamed) {
             const literal = target.typeAnnotation?.typeAnnotation;
-            const member = literal?.type === "TSTypeLiteral" ? literal.members.find((candidate) => candidate.key?.name === property.key?.name) : undefined;
+            const member =
+              literal?.type === "TSTypeLiteral"
+                ? literal.members.find(candidate => candidate.key?.name === property.key?.name)
+                : undefined;
             checkParameter(property.value, false, member?.typeAnnotation ?? null);
           }
         }
         return;
       }
+
       if (target.type !== "Identifier") {
         return;
       }
+
       const name = target.name;
-      const isBoolean = isBooleanType(target.typeAnnotation ?? declaredType) || isBooleanExpression(initializer, booleanFunctions);
+      const isBoolean =
+        isBooleanType(target.typeAnnotation ?? declaredType) || isBooleanExpression(initializer, booleanFunctions);
       if (allowedNames.has(name)) {
         return;
       }
+
       if (isBoolean) {
         if (!checkPrefixed(name)) {
-          report(target, `${isProperty ? "parameterProperty" : "parameter"} '${name}' must be prefixed is/has/can/should`);
+          report(
+            target,
+            `${isProperty ? "parameterProperty" : "parameter"} '${name}' must be prefixed is/has/can/should`
+          );
         }
+
         return;
       }
+
       if (isProperty) {
         if (!checkFormats(name, ["camelCase", "UPPER_CASE"])) {
           report(target, `parameterProperty '${name}' must be camelCase or UPPER_CASE`);
         }
+
         return;
       }
+
       const stripped = name.replace(/^_+/, "");
       if (stripped !== "" && !CAMEL.test(stripped)) {
         report(target, `parameter '${name}' must be camelCase`);
@@ -266,6 +358,7 @@ const rule = {
       if (parent?.type === "ExportNamedDeclaration") {
         parent = parent.parent;
       }
+
       return parent?.type === "Program";
     }
 
@@ -274,10 +367,11 @@ const rule = {
       if (declaration?.type !== "VariableDeclaration") {
         return;
       }
+
       const isGlobalConst = declaration.kind === "const" && isGlobalDeclaration(declaration);
       const isDirect = declarator.id.type === "Identifier";
       const identifiers = [];
-      const collect = (pattern) => {
+      function collect(pattern) {
         if (pattern.type === "Identifier") {
           identifiers.push(pattern);
         } else if (pattern.type === "ObjectPattern") {
@@ -295,15 +389,22 @@ const rule = {
         } else if (pattern.type === "RestElement") {
           collect(pattern.argument);
         }
-      };
+      }
       collect(declarator.id);
       for (const pattern of identifiers) {
         const name = pattern.name;
         if (allowedNames.has(name)) {
           continue;
         }
-        const kind = isDirect ? (annotationKind(pattern.typeAnnotation) ?? (pattern.typeAnnotation == null ? literalKind(declarator.init) : null)) : null;
-        const isBoolean = isDirect && (isBooleanType(pattern.typeAnnotation) || (pattern.typeAnnotation == null && isBooleanExpression(declarator.init, booleanFunctions)));
+
+        const kind = isDirect
+          ? (annotationKind(pattern.typeAnnotation) ??
+            (pattern.typeAnnotation == null ? literalKind(declarator.init) : null))
+          : null;
+        const isBoolean =
+          isDirect &&
+          (isBooleanType(pattern.typeAnnotation) ||
+            (pattern.typeAnnotation == null && isBooleanExpression(declarator.init, booleanFunctions)));
         if (isBoolean && isGlobalConst) {
           const isValid = UPPER.test(name) && /^(IS|HAS|CAN|SHOULD)_/.test(name);
           if (!isValid) {
@@ -342,6 +443,7 @@ const rule = {
         if (node.id && !CAMEL.test(node.id.name)) {
           report(node.id, `function '${node.id.name}' must be camelCase`);
         }
+
         checkFunctionParams(node);
       },
       FunctionExpression: checkFunctionParams,
@@ -360,7 +462,8 @@ const rule = {
       },
       Property(node) {
         if (node.parent?.type === "ObjectExpression") {
-          const isFunctionValue = node.method || node.value?.type === "ArrowFunctionExpression" || node.value?.type === "FunctionExpression";
+          const isFunctionValue =
+            node.method || node.value?.type === "ArrowFunctionExpression" || node.value?.type === "FunctionExpression";
           checkMember(node, isFunctionValue ? "objectLiteralMethod" : "objectLiteralProperty");
         }
       },
@@ -372,6 +475,7 @@ const rule = {
       },
       TSInterfaceDeclaration(node) {
         checkTypeName(node.id, ["PascalCase"], "interface");
+
         if (/^I[A-Z]/.test(node.id.name)) {
           report(node.id, `interface '${node.id.name}' must not start with I`);
         }
@@ -398,4 +502,11 @@ const rule = {
   }
 };
 
-export default { meta: { name: "naming" }, rules: { convention: rule } };
+export default {
+  meta: {
+    name: "naming"
+  },
+  rules: {
+    convention: rule
+  }
+};

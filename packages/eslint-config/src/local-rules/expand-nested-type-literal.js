@@ -23,14 +23,13 @@ function memberHasDirectTypeLiteral(member) {
 }
 
 function memberHasLongKey(member) {
-  return member.type === "TSPropertySignature"
-    && (member.key?.name?.length ?? 0) > LONG_KEY_NAME_LENGTH;
+  return member.type === "TSPropertySignature" && (member.key?.name?.length ?? 0) > LONG_KEY_NAME_LENGTH;
 }
 
 function requiresMultiline(node) {
-  return node.members.length >= 2
-    || node.members.some(memberHasDirectTypeLiteral)
-    || node.members.some(memberHasLongKey);
+  return (
+    node.members.length >= 2 || node.members.some(memberHasDirectTypeLiteral) || node.members.some(memberHasLongKey)
+  );
 }
 
 /** @type {import("eslint").Rule.RuleModule} */

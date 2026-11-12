@@ -36,10 +36,12 @@ function isInsideLogicalExpression(node) {
       return true;
     }
 
-    if (current.type === "FunctionDeclaration"
-      || current.type === "FunctionExpression"
-      || current.type === "ArrowFunctionExpression"
-      || current.type === "Program") {
+    if (
+      current.type === "FunctionDeclaration" ||
+      current.type === "FunctionExpression" ||
+      current.type === "ArrowFunctionExpression" ||
+      current.type === "Program"
+    ) {
       return false;
     }
 
@@ -59,10 +61,12 @@ function isPropertyValueInMultilineObject(node) {
 }
 
 function requiresMultiline(node) {
-  return node.properties.length >= 2
-    || node.properties.some(propertyHasDirectObjectExpression)
-    || isInsideLogicalExpression(node)
-    || isPropertyValueInMultilineObject(node);
+  return (
+    node.properties.length >= 2 ||
+    node.properties.some(propertyHasDirectObjectExpression) ||
+    isInsideLogicalExpression(node) ||
+    isPropertyValueInMultilineObject(node)
+  );
 }
 
 /** @type {import("eslint").Rule.RuleModule} */

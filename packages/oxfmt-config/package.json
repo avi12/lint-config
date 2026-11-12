@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "description": "oxfmt preset: 2 spaces, double quotes, no trailing commas, 120 columns, sorted imports",
   "license": "Apache-2.0",
+  "files": [
+    "oxfmt.json"
+  ],
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./oxfmt.json",
     "./package.json": "./package.json"
   },
-  "files": [
-    "oxfmt.json"
-  ],
   "peerDependencies": {
     "oxfmt": ">=0.78.0"
   }

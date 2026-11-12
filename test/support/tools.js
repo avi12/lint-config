@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const MAX_BUFFER = 1 << 26;
+const MAX_BUFFER = 64 * 1024 * 1024;
 const BINARIES = {
   eslint: join(ROOT, "node_modules", "eslint", "bin", "eslint.js"),
   oxlint: join(ROOT, "node_modules", "oxlint", "bin", "oxlint")
@@ -19,36 +19,62 @@ function run({ tool, args, cwd }) {
     cwd,
     encoding: "utf8",
     maxBuffer: MAX_BUFFER,
-    env: { ...process.env, NO_COLOR: "", FORCE_COLOR: "0" }
+    env: {
+      ...process.env,
+      NO_COLOR: "",
+      FORCE_COLOR: "0"
+    }
   });
   return stdout;
 }
 
 /** ESLint findings as `ruleId@line`, always at concurrency 1. */
 export function eslintFindings({ cwd, files }) {
-  const out = run({ tool: "eslint", args: ["--concurrency", "1", "-f", "json", ...files], cwd });
+  const out = run({
+    tool: "eslint",
+    args: ["--concurrency", "1", "-f", "json", ...files],
+    cwd
+  });
   const results = JSON.parse(out.slice(out.indexOf("[")));
   return results.flatMap(({ messages }) => messages.map(({ ruleId, line }) => `${ruleId}@${line}`));
 }
 
 /** oxlint findings as `rule@line`, parsed from the JSON formatter. */
 export function oxlintFindings({ cwd, files }) {
-  const out = run({ tool: "oxlint", args: ["-f", "json", ...files], cwd });
+  const out = run({
+    tool: "oxlint",
+    args: ["-f", "json", ...files],
+    cwd
+  });
   const { diagnostics } = JSON.parse(out.slice(out.indexOf("{")));
   return diagnostics.map(({ code, labels }) => `${code}@${labels[0]?.span.line ?? 0}`);
 }
 
 export function eslintFix({ cwd, files }) {
-  run({ tool: "eslint", args: ["--concurrency", "1", "--fix", ...files], cwd });
+  run({
+    tool: "eslint",
+    args: ["--concurrency", "1", "--fix", ...files],
+    cwd
+  });
 }
 
 export function oxlintFix({ cwd, files }) {
-  run({ tool: "oxlint", args: ["--fix", ...files], cwd });
+  run({
+    tool: "oxlint",
+    args: ["--fix", ...files],
+    cwd
+  });
 }
 
 /** The rules ESLint has switched on for a file, mapped to their JSON options. */
 export function eslintRules({ cwd, file }) {
-  const config = JSON.parse(run({ tool: "eslint", args: ["--print-config", file], cwd }));
+  const config = JSON.parse(
+    run({
+      tool: "eslint",
+      args: ["--print-config", file],
+      cwd
+    })
+  );
   const rules = new Map();
   for (const [name, value] of Object.entries(config.rules)) {
     const [severity, ...options] = Array.isArray(value) ? value : [value];

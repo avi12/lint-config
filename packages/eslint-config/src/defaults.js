@@ -19,6 +19,7 @@ export function clampConcurrency(requested) {
   if (Number.isNaN(count)) {
     return MIN_CONCURRENCY;
   }
+
   return Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, count));
 }
 

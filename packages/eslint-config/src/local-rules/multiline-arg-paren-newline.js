@@ -54,8 +54,8 @@ export default {
         }
 
         const hasMultilineNonLiteralArgument = node.arguments.some(
-          argument => !inlineArgumentTypes.has(getEffectiveType(argument))
-            && argument.loc.start.line !== argument.loc.end.line
+          argument =>
+            !inlineArgumentTypes.has(getEffectiveType(argument)) && argument.loc.start.line !== argument.loc.end.line
         );
 
         const firstArgument = node.arguments[0];
@@ -63,29 +63,27 @@ export default {
         const lastArgument = node.arguments[node.arguments.length - 1];
         const closingParenthesis = sourceCode.getLastToken(node);
         if (!hasMultilineNonLiteralArgument) {
-          const allInlineTypes = node.arguments.every(
-            argument => inlineArgumentTypes.has(getEffectiveType(argument))
-          );
+          const allInlineTypes = node.arguments.every(argument => inlineArgumentTypes.has(getEffectiveType(argument)));
           const hasAnyMultilineArgument = node.arguments.some(
             argument => argument.loc.start.line !== argument.loc.end.line
           );
           const isFirstArgumentOnNewLine = openingParenthesis.loc.end.line !== firstArgument.loc.start.line;
           const isSingleArgument = node.arguments.length === 1;
-          const isInlineArgumentEligible = allInlineTypes
-            && !hasAnyMultilineArgument
-            && isFirstArgumentOnNewLine
-            && isSingleArgument;
+          const isInlineArgumentEligible =
+            allInlineTypes && !hasAnyMultilineArgument && isFirstArgumentOnNewLine && isSingleArgument;
           if (!isInlineArgumentEligible) {
             return;
           }
 
           const MAX_LINE_LENGTH = 120;
           const prefixLength = openingParenthesis.loc.end.column;
-          const argumentsEndLength = lastArgument.loc.end.column
-            + (closingParenthesis.loc.start.line === lastArgument.loc.end.line ? 1 : 0);
-          const resultingLineLength = prefixLength + (firstArgument.loc.start.line === lastArgument.loc.end.line
-            ? lastArgument.loc.end.column - firstArgument.loc.start.column + 1
-            : argumentsEndLength);
+          const argumentsEndLength =
+            lastArgument.loc.end.column + (closingParenthesis.loc.start.line === lastArgument.loc.end.line ? 1 : 0);
+          const resultingLineLength =
+            prefixLength +
+            (firstArgument.loc.start.line === lastArgument.loc.end.line
+              ? lastArgument.loc.end.column - firstArgument.loc.start.column + 1
+              : argumentsEndLength);
           if (resultingLineLength > MAX_LINE_LENGTH) {
             return;
           }
@@ -94,10 +92,7 @@ export default {
             node,
             messageId: "inlineArgumentOnNewLine",
             fix(fixer) {
-              return fixer.replaceTextRange(
-                [openingParenthesis.range[1], firstArgument.range[0]],
-                ""
-              );
+              return fixer.replaceTextRange([openingParenthesis.range[1], firstArgument.range[0]], "");
             }
           });
           return;

@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "stylelint preset for CSS and the style blocks of Svelte and HTML files, on stylelint-config-ccb",
   "license": "Apache-2.0",
+  "files": [
+    "stylelint.json"
+  ],
   "type": "module",
   "sideEffects": false,
   "main": "./stylelint.json",
@@ -10,14 +13,11 @@
     ".": "./stylelint.json",
     "./package.json": "./package.json"
   },
-  "files": [
-    "stylelint.json"
-  ],
+  "dependencies": {
+    "stylelint-config-ccb": "^3.32.0"
+  },
   "peerDependencies": {
     "postcss-html": "^1.8.1",
     "stylelint": ">=16"
-  },
-  "dependencies": {
-    "stylelint-config-ccb": "^3.32.0"
   }
 }

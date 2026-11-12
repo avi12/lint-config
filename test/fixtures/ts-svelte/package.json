@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "biome-config-avi12": "workspace:*",
     "eslint-config-avi12": "workspace:*",
+    "fallow-config-avi12": "workspace:*",
     "oxlint-config-avi12": "workspace:*",
     "oxlint-plugin-naming": "workspace:*",
-    "stylelint-config-avi12": "workspace:*",
-    "fallow-config-avi12": "workspace:*",
-    "biome-config-avi12": "workspace:*"
+    "stylelint-config-avi12": "workspace:*"
   }
 }

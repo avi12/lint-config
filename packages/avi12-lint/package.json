@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "description": "One command that runs oxlint, ESLint, oxfmt and stylelint, one after another, for whichever configs a repo has",
   "license": "Apache-2.0",
-  "type": "module",
-  "sideEffects": false,
   "bin": {
     "avi12-lint": "bin/avi12-lint.js"
   },
@@ -12,14 +10,16 @@
     "bin",
     "src"
   ],
+  "type": "module",
+  "sideEffects": false,
   "exports": {
     "./plan": "./src/plan.js",
     "./package.json": "./package.json"
   },
-  "peerDependencies": {
-    "eslint-config-avi12": "*"
-  },
   "devDependencies": {
     "eslint-config-avi12": "workspace:*"
+  },
+  "peerDependencies": {
+    "eslint-config-avi12": "*"
   }
 }
