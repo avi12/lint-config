@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
@@ -18,8 +18,22 @@ if (isStaged) {
   files = changedFiles();
 }
 
+const SVELTE_GLOB = "*.svelte";
+
+function repoHasSvelte() {
+  const { stdout, status } = spawnSync(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard", "--", SVELTE_GLOB],
+    {
+      encoding: "utf8"
+    }
+  );
+  return status === 0 ? stdout.trim() !== "" : true;
+}
+
 const steps = plan({
   hasFile: existsSync,
+  hasSvelte: repoHasSvelte(),
   isFix: args.includes("--fix"),
   concurrency: requested,
   changedFiles: files,
