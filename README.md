@@ -20,7 +20,6 @@ They are consumed straight from GitHub and never published to npm
 ## Install
 
 Every package installs from a tag of this repository
-`avi12/lint-config` is private, so a consumer's CI needs a read-only token (see below)
 
 ```sh
 pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.3.0&path:/packages/oxlint-config"
@@ -35,19 +34,6 @@ pnpm add -D "avi12-lint@github:avi12/lint-config#v0.3.0&path:/packages/avi12-lin
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
 Install `oxlint`, `oxfmt`, `eslint` and `stylelint` yourself; they are peers
 
-### CI in a private consumer repository
-
-pnpm clones this repository over HTTPS, and a private repository needs a credential for that
-Create a fine-grained personal access token with read-only `Contents` access to `avi12/lint-config` alone
-and store it in each consumer repository as the Actions secret `LINT_CONFIG_TOKEN`
-Then route GitHub URLs through it before the install step
-
-```yaml
-- run: git config --global url."https://x-access-token:${{ secrets.LINT_CONFIG_TOKEN }}@github.com/".insteadOf "https://github.com/"
-- run: pnpm install --frozen-lockfile
-```
-
-The default `GITHUB_TOKEN` cannot read another private repository, which is why a separate secret is needed
 
 ## Use
 
