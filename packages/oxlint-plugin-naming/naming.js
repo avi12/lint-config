@@ -243,6 +243,23 @@ function collectBooleanFunctions(program) {
   return names;
 }
 
+function isLiteralValue(node) {
+  return literalKind(node) !== null || (node.type === "Literal" && typeof node.value === "boolean");
+}
+
+function isEnumLike(objectExpression) {
+  const cast = objectExpression.parent;
+  const isConstAssertion =
+    cast?.type === "TSAsExpression" &&
+    cast.typeAnnotation?.type === "TSTypeReference" &&
+    cast.typeAnnotation.typeName?.name === "const";
+  const isDeclared = cast?.parent?.type === "VariableDeclarator";
+  const hasOnlyLiterals =
+    objectExpression.properties.length > 0 &&
+    objectExpression.properties.every(member => member.type === "Property" && isLiteralValue(member.value));
+  return isConstAssertion && isDeclared && hasOnlyLiterals;
+}
+
 function keyName(node) {
   if (node.computed) {
     return null;
@@ -270,22 +287,33 @@ function keyName(node) {
 const MISSING_REASON =
   "naming/convention: every allowedNames, allowedPatterns and fileOverrides entry needs a non-empty reason";
 
+const SVELTEKIT_ROUTE_FILE = /\/\+(?:page|layout)(?:\.server)?\.[cm]?[jt]s$/;
+const SVELTEKIT_OPTIONS = ["ssr", "csr", "prerender", "trailingSlash"];
+
 const PRESET_PATTERNS = {
   "webextension-manifest": /^[a-z][a-z0-9]*(_[a-z0-9]+)+$/,
   "webextension-messages": /^[A-Z][A-Za-z0-9_]*$/,
   "hook-names": /^[a-z][A-Za-z0-9]*(:[A-Za-z][A-Za-z0-9]*)+$/
 };
 
-function compileAllowedPatterns(options) {
-  const presets = (options.presets ?? []).map(name => {
-    const pattern = PRESET_PATTERNS[name];
-    const isUnknownPreset = pattern == null;
-    if (isUnknownPreset) {
-      throw new Error(`naming/convention: unknown preset '${name}'`);
-    }
+function presetNames({ options, filename }) {
+  const isSveltekit = (options.presets ?? []).includes("sveltekit");
+  const isRouteFile = SVELTEKIT_ROUTE_FILE.test(`/${filename}`);
+  return isSveltekit && isRouteFile ? SVELTEKIT_OPTIONS : [];
+}
 
-    return pattern;
-  });
+function compileAllowedPatterns(options) {
+  const presets = (options.presets ?? [])
+    .filter(name => name !== "sveltekit")
+    .map(name => {
+      const pattern = PRESET_PATTERNS[name];
+      const isUnknownPreset = pattern == null;
+      if (isUnknownPreset) {
+        throw new Error(`naming/convention: unknown preset '${name}'`);
+      }
+
+      return pattern;
+    });
   const patterns = (options.allowedPatterns ?? []).map(entry => new RegExp(entry.pattern, "u"));
   return [...presets, ...patterns];
 }
@@ -318,7 +346,13 @@ const rule = {
       return {};
     }
 
-    const allowedNames = new Set((options.allowedNames ?? []).flatMap(entry => entry.names));
+    const allowedNames = new Set([
+      ...(options.allowedNames ?? []).flatMap(entry => entry.names),
+      ...presetNames({
+        options,
+        filename
+      })
+    ]);
     const allowedPatterns = compileAllowedPatterns(options);
     let booleanFunctions = new Set();
     function report({ node, message }) {
@@ -328,7 +362,7 @@ const rule = {
       });
     }
 
-    function checkMember({ node, selectorName }) {
+    function checkMember({ node, selectorName, formats = ["camelCase", "UPPER_CASE"] }) {
       const key = keyName(node);
       const isMethodSelector =
         selectorName.endsWith("Method") || selectorName === "classMethod" || selectorName === "accessor";
@@ -364,12 +398,12 @@ const rule = {
       if (
         !checkFormats({
           name,
-          formats: ["camelCase", "UPPER_CASE"]
+          formats
         })
       ) {
         report({
           node: node.key,
-          message: `${selectorName} '${name}' must be camelCase or UPPER_CASE`
+          message: `${selectorName} '${name}' must be ${formats.join(" or ")}`
         });
       }
     }
@@ -643,9 +677,12 @@ const rule = {
         if (isObjectLiteralMember) {
           const isFunctionValue =
             node.method || node.value?.type === "ArrowFunctionExpression" || node.value?.type === "FunctionExpression";
+          const isEnumMember = !isFunctionValue && isEnumLike(node.parent);
+          const formats = isEnumMember ? ["UPPER_CASE"] : ["camelCase", "UPPER_CASE", "PascalCase"];
           checkMember({
             node,
-            selectorName: isFunctionValue ? "objectLiteralMethod" : "objectLiteralProperty"
+            selectorName: isFunctionValue ? "objectLiteralMethod" : "objectLiteralProperty",
+            formats: isFunctionValue ? ["camelCase", "UPPER_CASE"] : formats
           });
         }
       },

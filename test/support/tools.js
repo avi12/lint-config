@@ -116,7 +116,7 @@ export function oxlintRules({ cwd }) {
 }
 
 /** naming/convention findings for one TypeScript source under the given rule options. */
-export function namingFindings({ options, source }) {
+export function namingFindings({ options, source, filename = "sample.ts" }) {
   const directory = mkdtempSync(join(tmpdir(), "naming-"));
   try {
     const config = {
@@ -126,10 +126,10 @@ export function namingFindings({ options, source }) {
       }
     };
     writeFileSync(join(directory, ".oxlintrc.json"), JSON.stringify(config));
-    writeFileSync(join(directory, "sample.ts"), source);
+    writeFileSync(join(directory, filename), source);
     return oxlintFindings({
       cwd: directory,
-      files: ["sample.ts"]
+      files: [filename]
     });
   } finally {
     rmSync(directory, {

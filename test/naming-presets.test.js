@@ -112,3 +112,48 @@ test("an unknown preset fails loudly", () => {
     }).length > 0
   );
 });
+
+const ENUM_LIKE = "export const Mode = { Fast: 'f', SLOW: 's' } as const;\n";
+const LOOKUP = "export const labels = { Fast: 'x', SomeKey: 1 };\n";
+const SVELTEKIT = "export const ssr = false;\nexport const prerender = true;\nexport const trailingSlash = 'always';\n";
+
+test("only the members of an enum-like as const object must be UPPER_CASE", () => {
+  const found = findings({
+    options: {},
+    source: ENUM_LIKE
+  });
+  assert.equal(found.length, 1);
+  assert.deepEqual(
+    findings({
+      options: {},
+      source: LOOKUP
+    }),
+    []
+  );
+});
+
+test("the sveltekit preset exempts the route options in route files only", () => {
+  const options = { presets: ["sveltekit"] };
+  assert.ok(
+    namingFindings({
+      options: {},
+      source: SVELTEKIT,
+      filename: "+layout.ts"
+    }).length > 0
+  );
+  assert.deepEqual(
+    namingFindings({
+      options,
+      source: SVELTEKIT,
+      filename: "+layout.ts"
+    }),
+    []
+  );
+  assert.ok(
+    namingFindings({
+      options,
+      source: SVELTEKIT,
+      filename: "other.ts"
+    }).length > 0
+  );
+});
