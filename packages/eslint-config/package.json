@@ -1,7 +1,7 @@
 {
   "name": "eslint-config-avi12",
   "version": "0.3.0",
-  "description": "ESLint flat config: what oxlint and oxfmt cannot do, Svelte template rules and custom layout rules, no type-aware parsing",
+  "description": "ESLint flat config for Svelte files only: the template rules oxlint and oxfmt cannot see",
   "license": "Apache-2.0",
   "files": [
     "src"
@@ -10,17 +10,11 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.js",
-    "./base": "./src/base.js",
     "./svelte": "./src/svelte.js",
     "./defaults": "./src/defaults.js",
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@stylistic/eslint-plugin": "^5.10.0",
-    "eslint-plugin-import-newlines": "^2.0.0",
-    "eslint-plugin-jsdoc": "^65.4.2",
-    "eslint-plugin-perfectionist": "^5.12.1",
-    "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^17.13.0",
     "typescript-eslint": "^8.72.1"
   },
@@ -29,13 +23,5 @@
     "eslint-plugin-svelte": "^3.0.0",
     "svelte-eslint-parser": "^1.0.0",
     "typescript": ">=5.5"
-  },
-  "peerDependenciesMeta": {
-    "eslint-plugin-svelte": {
-      "optional": true
-    },
-    "svelte-eslint-parser": {
-      "optional": true
-    }
   }
 }

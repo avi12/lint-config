@@ -7,5 +7,6 @@ export const SVELTE_RULES = {
   "svelte/first-attribute-linebreak": "error",
   "svelte/shorthand-attribute": ["error", { prefer: "always" }],
   "local/expand-svelte-block": "error",
+  "local/no-em-dash": "error",
   "local/no-padded-tag": "error"
 };

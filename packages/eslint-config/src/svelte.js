@@ -1,20 +1,28 @@
 import svelteEslint from "eslint-plugin-svelte";
+import { globalIgnores } from "eslint/config";
 import globals from "globals";
 import svelteParser from "svelte-eslint-parser";
 import typescriptEslint from "typescript-eslint";
 
-import { createRules, PLUGINS } from "./base.js";
+import { IGNORES } from "./defaults.js";
+import { localPlugin } from "./plugin.js";
 import { SVELTE_RULES } from "./rules/svelte.js";
-import { SVELTE_TEMPLATE_SYNTAX } from "./rules/syntax.js";
+import { SVELTE_TEMPLATE_SYNTAX } from "./rules/template-syntax.js";
 
 /**
- * Svelte layer: add after `base()`. Requires the optional peers eslint-plugin-svelte and svelte-eslint-parser.
- * Options: `formatter`, `overrides`.
+ * The Svelte layer, the only thing ESLint still does: what needs the template AST. Everything else (the script of
+ * a `.svelte` file included) is oxlint's and oxfmt's. Options: `ignores` (more globs to skip) and `overrides`
+ * (rules merged over the Svelte rules).
  */
-export function svelte({ formatter, overrides = {} } = {}) {
-  const shared = createRules({ formatter });
-  const [severity, ...syntax] = shared["no-restricted-syntax"];
+export function svelte({ ignores = [], overrides = {} } = {}) {
   return [
+    globalIgnores([...IGNORES, ...ignores]),
+    {
+      linterOptions: {
+        noInlineConfig: true,
+        reportUnusedDisableDirectives: "off"
+      }
+    },
     ...svelteEslint.configs["flat/recommended"],
     {
       // Svelte's recommended config parses *.svelte.ts with the plain JS parser, which cannot read the types
@@ -34,10 +42,11 @@ export function svelte({ formatter, overrides = {} } = {}) {
         },
         globals: globals.node
       },
-      plugins: PLUGINS,
+      plugins: {
+        local: localPlugin
+      },
       rules: {
-        ...shared,
-        "no-restricted-syntax": [severity, ...syntax, ...SVELTE_TEMPLATE_SYNTAX],
+        "no-restricted-syntax": ["error", ...SVELTE_TEMPLATE_SYNTAX],
         ...SVELTE_RULES,
         ...overrides
       }
