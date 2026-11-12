@@ -4,7 +4,7 @@ import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } f
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { eslintFix, eslintRules, oxlintFix, oxlintRules, TS_ONLY, TS_SVELTE } from "./support/tools.js";
+import { eslintFix, eslintRules, oxfmtFix, oxlintFix, oxlintRules, TS_ONLY, TS_SVELTE } from "./support/tools.js";
 
 const RULE_PREFIXES = /^(@typescript-eslint\/|typescript\/|@stylistic\/(js\/|ts\/)?|eslint\/)/;
 const LAYOUT =
@@ -14,13 +14,16 @@ const OPPOSITES = [
   ["curly", "brace-style"],
   ["sort-imports", "perfectionist/sort-imports"]
 ];
+const MAX_FIX_CYCLES = 4;
 const FIX_DIRECTORY = "clash-fix-run";
 const FIXABLE_SOURCE = `import { second, first, unused } from "./elsewhere";
 export const list = [first, second];
 export function pick({ flag }: { flag: boolean }) {
   let fixed = 1;
-  if (flag) return fixed;
-  return list;
+  const text = 'quoted';
+  const shape = { alpha: 1, beta: 2 };
+  if (flag) return fixed + shape.alpha;
+  return [list, text];
 }
 `;
 
@@ -93,15 +96,8 @@ function digest(files) {
 test("no rule is enforced by both ESLint and oxlint", () => {
   assert.deepEqual(
     crossToolOverlaps({
-      cwd: TS_ONLY,
-      file: "src/good.ts"
-    }),
-    []
-  );
-  assert.deepEqual(
-    crossToolOverlaps({
       cwd: TS_SVELTE,
-      file: "src/good.ts"
+      file: "src/Bad.svelte"
     }),
     []
   );
@@ -110,15 +106,8 @@ test("no rule is enforced by both ESLint and oxlint", () => {
 test("no pair of opposing rules is enabled together", () => {
   assert.deepEqual(
     oppositesEnabled({
-      cwd: TS_ONLY,
-      file: "src/good.ts"
-    }),
-    []
-  );
-  assert.deepEqual(
-    oppositesEnabled({
       cwd: TS_SVELTE,
-      file: "src/good.ts"
+      file: "src/Bad.svelte"
     }),
     []
   );
@@ -128,7 +117,36 @@ test("one layout rule owns each aspect of a Svelte file", () => {
   assert.deepEqual(layoutOwners("src/Bad.svelte"), []);
 });
 
-test("fixing is idempotent and the fixer order does not matter", () => {
+function fixAll({ options, order }) {
+  const fixers = {
+    oxlint: oxlintFix,
+    oxfmt: oxfmtFix,
+    eslint: eslintFix
+  };
+  for (const name of order) {
+    fixers[name](options);
+  }
+}
+
+function fixUntilStable({ options, order, files }) {
+  let previous = digest(files);
+  for (let cycle = 0; cycle < MAX_FIX_CYCLES; cycle++) {
+    fixAll({
+      options,
+      order
+    });
+    const current = digest(files);
+    const isStable = current === previous;
+    if (isStable) {
+      return current;
+    }
+
+    previous = current;
+  }
+  assert.fail(`the fixers did not settle in ${MAX_FIX_CYCLES} cycles`);
+}
+
+test("fixing settles, stays settled and the fixer order does not matter", () => {
   const directory = join(TS_SVELTE, FIX_DIRECTORY);
   rmSync(directory, {
     recursive: true,
@@ -144,15 +162,22 @@ test("fixing is idempotent and the fixer order does not matter", () => {
       cwd: TS_SVELTE,
       files: relative
     };
-    eslintFix(options);
-    oxlintFix(options);
-    const afterOne = digest(files);
-    eslintFix(options);
-    oxlintFix(options);
-    assert.equal(digest(files), afterOne);
-    oxlintFix(options);
-    eslintFix(options);
-    assert.equal(digest(files), afterOne);
+    const forward = ["oxlint", "oxfmt", "eslint"];
+    const settled = fixUntilStable({
+      options,
+      order: forward,
+      files
+    });
+    fixAll({
+      options,
+      order: forward
+    });
+    assert.equal(digest(files), settled);
+    fixAll({
+      options,
+      order: [...forward].reverse()
+    });
+    assert.equal(digest(files), settled);
   } finally {
     rmSync(directory, {
       recursive: true,

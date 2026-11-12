@@ -14,14 +14,20 @@ test("concurrency is clamped to 1-4 and defaults to 2", () => {
 });
 
 test("only the tools with a config are planned, with ESLint first", () => {
-  const names = plan({ hasFile: file => ALL_CONFIGS.has(file) }).map(({ name }) => name);
+  const names = plan({
+    hasFile: file => ALL_CONFIGS.has(file),
+    hasSvelte: true
+  }).map(({ name }) => name);
   assert.deepEqual(names, ["eslint", "oxlint", "stylelint", "oxfmt"]);
+  const withoutSvelte = plan({ hasFile: file => ALL_CONFIGS.has(file) }).map(({ name }) => name);
+  assert.deepEqual(withoutSvelte, ["oxlint", "stylelint", "oxfmt"]);
   assert.deepEqual(plan({ hasFile: () => false }), []);
 });
 
 test("fix mode swaps the checkers for fixers and the cache flags are always on", () => {
   const steps = plan({
     hasFile: file => ALL_CONFIGS.has(file),
+    hasSvelte: true,
     isFix: true,
     concurrency: "8"
   });
@@ -45,6 +51,7 @@ function find({ steps, name }) {
 test("a full run is parallel, type-aware, and ESLint is at 2 with a content cache", () => {
   const steps = plan({
     hasFile: file => FULL.has(file),
+    hasSvelte: true,
     platform: "win32"
   });
   assert.deepEqual(
@@ -98,6 +105,14 @@ test("without tsrs the oxlint step is not type-aware and tsrs is absent", () => 
   );
 });
 
+test("fixing runs oxlint again after oxfmt, because one pass leaves overlapping fixes", () => {
+  const names = plan({
+    hasFile: file => ALL_CONFIGS.has(file),
+    isFix: true
+  }).map(({ name }) => name);
+  assert.deepEqual(names, ["oxlint", "stylelint", "oxfmt", "oxlint"]);
+});
+
 test("fixing is serial", () => {
   const steps = plan({
     hasFile: file => FULL.has(file),
@@ -109,6 +124,7 @@ test("fixing is serial", () => {
 test("changed mode narrows to the files, ESLint to 1, tsrs stays whole-project, fallow audits", () => {
   const steps = plan({
     hasFile: file => FULL.has(file),
+    hasSvelte: true,
     changedFiles: ["src/a.ts", "src/b.svelte", "README.md"]
   });
   const eslint = find({
@@ -116,7 +132,7 @@ test("changed mode narrows to the files, ESLint to 1, tsrs stays whole-project, 
     name: "eslint"
   }).command;
   assert.equal(eslint[eslint.indexOf("--concurrency") + 1], "1");
-  assert.deepEqual(eslint.slice(-2), ["src/a.ts", "src/b.svelte"]);
+  assert.deepEqual(eslint.slice(-1), ["src/b.svelte"]);
   assert.deepEqual(
     find({
       steps: steps,
@@ -143,6 +159,7 @@ test("changed mode narrows to the files, ESLint to 1, tsrs stays whole-project, 
 test("changed mode skips a tool with no matching file and honours an override", () => {
   const steps = plan({
     hasFile: file => FULL.has(file),
+    hasSvelte: true,
     changedFiles: ["README.md"],
     concurrency: "3"
   });
@@ -169,7 +186,8 @@ test("changed mode skips a tool with no matching file and honours an override", 
   );
   const withScript = plan({
     hasFile: file => FULL.has(file),
-    changedFiles: ["a.js"],
+    hasSvelte: true,
+    changedFiles: ["a.svelte"],
     concurrency: "3"
   });
   const { command } = find({

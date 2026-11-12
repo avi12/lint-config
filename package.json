@@ -4,10 +4,9 @@
   "type": "module",
   "packageManager": "pnpm@11.13.1",
   "scripts": {
-    "lint": "pnpm lint:oxlint && pnpm lint:eslint && pnpm lint:format",
-    "lint:oxlint": "oxlint packages test/*.test.js test/support eslint.config.js",
-    "lint:eslint": "eslint --concurrency 2 --cache --cache-strategy content --cache-location .verify/eslint-cache/ .",
-    "lint:format": "oxfmt -c packages/oxfmt-config/oxfmt.json --check packages test eslint.config.js",
+    "lint": "pnpm lint:oxlint && pnpm lint:format",
+    "lint:oxlint": "oxlint packages test/*.test.js test/support",
+    "lint:format": "oxfmt -c packages/oxfmt-config/oxfmt.json --check packages test",
     "test": "node --test --test-concurrency=1 \"test/*.test.js\""
   },
   "devDependencies": {

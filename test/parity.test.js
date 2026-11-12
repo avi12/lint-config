@@ -3,48 +3,24 @@ import { test } from "node:test";
 
 import { eslintFindings, oxlintFindings, TS_ONLY, TS_SVELTE } from "./support/tools.js";
 
-test("ts files report identically with and without the Svelte layer", () => {
-  const only = eslintFindings({
-    cwd: TS_ONLY,
-    files: ["src/bad.ts"]
-  });
-  const withSvelte = eslintFindings({
+test("ESLint is Svelte-only: a ts file reports nothing to it", () => {
+  const findings = eslintFindings({
     cwd: TS_SVELTE,
     files: ["src/bad.ts"]
   });
-  assert.ok(only.length > 0);
-  assert.deepEqual(withSvelte, only);
+  assert.ok(findings.every(finding => finding.startsWith("null@")));
 });
 
-test("a clean ts file reports nothing in either setup", () => {
-  assert.deepEqual(
-    eslintFindings({
-      cwd: TS_ONLY,
-      files: ["src/good.ts"]
-    }),
-    []
-  );
-  assert.deepEqual(
-    eslintFindings({
-      cwd: TS_SVELTE,
-      files: ["src/good.ts"]
-    }),
-    []
-  );
-  assert.deepEqual(
-    oxlintFindings({
-      cwd: TS_ONLY,
-      files: ["src/good.ts"]
-    }),
-    []
-  );
-  assert.deepEqual(
-    oxlintFindings({
-      cwd: TS_SVELTE,
-      files: ["src/good.ts"]
-    }),
-    []
-  );
+test("a clean ts file reports nothing to oxlint in either setup", () => {
+  for (const cwd of [TS_ONLY, TS_SVELTE]) {
+    assert.deepEqual(
+      oxlintFindings({
+        cwd,
+        files: ["src/good.ts"]
+      }),
+      []
+    );
+  }
 });
 
 test("oxlint reports the same on ts files in both setups", () => {

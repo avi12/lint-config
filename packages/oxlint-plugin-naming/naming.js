@@ -299,7 +299,8 @@ const PRESET_PATTERNS = {
 function presetNames({ options, filename }) {
   const isSveltekit = (options.presets ?? []).includes("sveltekit");
   const isRouteFile = SVELTEKIT_ROUTE_FILE.test(`/${filename}`);
-  return isSveltekit && isRouteFile ? SVELTEKIT_OPTIONS : [];
+  const isActive = isSveltekit && isRouteFile;
+  return isActive ? SVELTEKIT_OPTIONS : [];
 }
 
 function compileAllowedPatterns(options) {

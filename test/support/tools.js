@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,8 +8,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MAX_BUFFER = 64 * 1024 * 1024;
 const BINARIES = {
   eslint: join(ROOT, "node_modules", "eslint", "bin", "eslint.js"),
-  oxlint: join(ROOT, "node_modules", "oxlint", "bin", "oxlint")
+  oxlint: join(ROOT, "node_modules", "oxlint", "bin", "oxlint"),
+  oxfmt: join(ROOT, "node_modules", "oxfmt", "bin", "oxfmt")
 };
+const OXFMT_CONFIG = join(ROOT, "packages", "oxfmt-config", "oxfmt.json");
 
 export const FIXTURES = join(ROOT, "test", "fixtures");
 export const TS_ONLY = join(FIXTURES, "ts-only");
@@ -63,6 +65,14 @@ export function oxlintFix({ cwd, files }) {
   run({
     tool: "oxlint",
     args: ["--fix", ...files],
+    cwd
+  });
+}
+
+export function oxfmtFix({ cwd, files }) {
+  run({
+    tool: "oxfmt",
+    args: ["-c", OXFMT_CONFIG, ...files],
     cwd
   });
 }
@@ -126,6 +136,30 @@ export function namingFindings({ options, source, filename = "sample.ts" }) {
       }
     };
     writeFileSync(join(directory, ".oxlintrc.json"), JSON.stringify(config));
+    writeFileSync(join(directory, filename), source);
+    return oxlintFindings({
+      cwd: directory,
+      files: [filename]
+    });
+  } finally {
+    rmSync(directory, {
+      recursive: true,
+      force: true
+    });
+  }
+}
+
+/** Findings for one source under a config that extends the shipped presets by path; `files` may hold subfolders. */
+export function lintSource({ source, filename = "sample.ts", extend = ["oxlint.json"], overrides = [] }) {
+  const directory = mkdtempSync(join(tmpdir(), "source-"));
+  try {
+    const presets = join(TS_ONLY, "node_modules", "oxlint-config-avi12");
+    const config = {
+      extends: extend.map(preset => join(presets, preset)),
+      overrides
+    };
+    writeFileSync(join(directory, ".oxlintrc.json"), JSON.stringify(config));
+    mkdirSync(dirname(join(directory, filename)), { recursive: true });
     writeFileSync(join(directory, filename), source);
     return oxlintFindings({
       cwd: directory,
