@@ -1,0 +1,4 @@
+{
+  "jsPlugins": ["./naming.js"],
+  "rules": { "naming/convention": "error" }
+}

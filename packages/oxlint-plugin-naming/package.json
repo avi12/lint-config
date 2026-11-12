@@ -1,0 +1,18 @@
+{
+  "name": "oxlint-plugin-naming",
+  "version": "0.1.0",
+  "description": "Naming conventions for oxlint's JS plugin API: Google style names plus is/has/can/should booleans, no type information needed",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./naming.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "naming.js"
+  ],
+  "peerDependencies": {
+    "oxlint": ">=1.90.0"
+  }
+}
