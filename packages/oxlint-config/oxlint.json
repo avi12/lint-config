@@ -93,17 +93,6 @@
         "location": "anywhere"
       }
     ],
-    "no-restricted-imports": [
-      "error",
-      {
-        "patterns": [
-          {
-            "group": ["..", "../**", "./../**"],
-            "message": "Import from the project root with \"@/path\", never \"../\""
-          }
-        ]
-      }
-    ],
     "typescript/no-explicit-any": "error",
     "typescript/ban-ts-comment": [
       "error",
@@ -251,6 +240,7 @@
     "house/multiline-arg-paren-newline": "error",
     "house/no-em-dash": "error",
     "house/no-magic-numbers": "error",
+    "house/no-parent-imports": "error",
     "house/google-syntax": "error",
     "house/house-syntax": "error",
     "house/positional-parameters": "error"

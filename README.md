@@ -135,6 +135,13 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.4.10
+
+- The `../` import ban is now `house/no-parent-imports`, a rule of its own: a `no-restricted-imports` block in your config no longer replaces it, so imports that slipped through before are errors now; replace them with `@/path`
+- Enum-like objects need string-literal values (or exported numbers with a matching `typeof X[keyof typeof X]` alias): a numeric config object such as `{ min: 0, max: 10 } as const` may use camelCase members again
+- `fallow-config-avi12` ignores the lint packages as unused dependencies, so drop any `ignoreDependencies` entries you added for them
+- `house/google-syntax` no longer flags a condition whose later operand uses the narrowing of an earlier one (`typeof x === "string" && x.length > 0`, `isFoo(x) && x.bar`); independent compounds are still flagged
+
 ### Migrating from 0.4.9
 
 - The `../` import ban now matches every depth: `../a/b.ts`, `../../x`, a bare `..` and dynamic `import("../x")` are errors, where only `../x` was before; replace them with `@/path` imports
