@@ -91,6 +91,32 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
   Fix the code, or add an `allowedNames` or `fileOverrides` entry with a reason
 - `any` and a bare `@ts-expect-error` are errors in `.ts` and in the script of `.svelte`; oxlint reads both
 
+### The `@/` alias in a repository with several packages
+
+Packages that share one TypeScript program or one Vite build clash on a bare `@/`, since it can point at only one root
+Give each package its own `paths` entry and its own Vite alias, with `@` at that package's root; the lint rule is unchanged
+
+```json
+{
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"] }
+  }
+}
+```
+
+```ts
+import { fileURLToPath } from "node:url";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  resolve: {
+    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) }
+  }
+});
+```
+
+Where one program or one build must see several packages, keep `@/` for the package itself and add package-scoped names such as `@shared/` and `@vscode/`, each mapped the same way in `paths` and in `resolve.alias`
+
 ## Who owns what
 
 - oxlint: every native rule, plus open-source ESLint plugins loaded through `jsPlugins` (`eslint-plugin-unused-imports`, `eslint-plugin-perfectionist`, `@stylistic/eslint-plugin`, `eslint-plugin-jsdoc`), plus the `house` plugin of this repository; all of it runs on `.ts` and on the script of `.svelte`
@@ -108,6 +134,11 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.4.9
+
+- The `../` import ban now matches every depth: `../a/b.ts`, `../../x`, a bare `..` and dynamic `import("../x")` are errors, where only `../x` was before; replace them with `@/path` imports
+- The stylelint preset keeps the value of a `-winui-*` property as written (`-winui-based-on: CaptionTextBlockStyle`); `value-keyword-case` still applies to every other property
 
 ### Migrating from 0.4.8
 
