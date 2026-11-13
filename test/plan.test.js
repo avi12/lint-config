@@ -118,8 +118,8 @@ test("fixing runs oxfmt when only its binary is installed, and checking does not
   const hasFile = file => file === ".oxlintrc.json" || file === "node_modules/.bin/oxfmt";
   assert.deepEqual(
     plan({
-       hasFile,
-       isFix: true 
+      hasFile,
+      isFix: true
     }).map(({ name }) => name),
     ["oxlint", "oxfmt", "oxlint", "oxfmt"]
   );
@@ -239,8 +239,8 @@ test("the oxfmt preset ignores agent folders, locale data, lock files and genera
 test("avi12-lint declares no sibling package as a dependency or peer, so a repo without Svelte installs it alone", () => {
   const manifest = JSON.parse(readFileSync(new URL("../packages/avi12-lint/package.json", import.meta.url), "utf8"));
   const declared = Object.keys({
-     ...manifest.dependencies,
-     ...manifest.peerDependencies 
+    ...manifest.dependencies,
+    ...manifest.peerDependencies
   });
   assert.deepEqual(
     declared.filter(name => name.endsWith("-avi12")),
