@@ -22,13 +22,13 @@ They are consumed straight from GitHub and never published to npm
 Every package installs from a tag of this repository
 
 ```sh
-pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/oxlint-config"
-pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.8&path:/packages/oxlint-plugin-naming"
-pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/oxfmt-config"
-pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/eslint-config"
-pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/stylelint-config"
-pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/fallow-config"
-pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.8&path:/packages/avi12-lint"
+pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.9&path:/packages/oxlint-config"
+pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.9&path:/packages/oxlint-plugin-naming"
+pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.9&path:/packages/oxfmt-config"
+pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.9&path:/packages/eslint-config"
+pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.9&path:/packages/stylelint-config"
+pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.9&path:/packages/fallow-config"
+pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.9&path:/packages/avi12-lint"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -108,6 +108,12 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.4.8
+
+- Run `avi12-lint --fix` once: `object-shorthand` (oxlint, native, with `avoidExplicitReturnArrows`) turns a property whose value is a block-bodied arrow into a method, including quoted and computed keys, `async` and typed parameters; an arrow that uses `this` and an expression-bodied arrow stay as they are
+- `reportUnusedDisableDirectives` is `off`: disable comments are banned by `no-warning-comments`, and oxlint reported "unused directive" inside ignored folders that carry their own `.oxlintrc.json` (a git submodule such as `companion/winui`); `ignorePatterns` of the root config does not reach a nested config, so for a submodule with its own config run `oxlint --disable-nested-config` or delete the nested config
+- A unicode escape of the em dash survives every fixer (a test covers oxlint, oxfmt and ESLint); a literal em dash in the file you wrote came from the editor, not from a fixer
 
 ### Migrating from 0.4.7
 
