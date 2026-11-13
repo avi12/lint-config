@@ -22,13 +22,13 @@ They are consumed straight from GitHub and never published to npm
 Every package installs from a tag of this repository
 
 ```sh
-pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/oxlint-config"
-pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.4&path:/packages/oxlint-plugin-naming"
-pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/oxfmt-config"
-pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/eslint-config"
-pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/stylelint-config"
-pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/fallow-config"
-pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.4&path:/packages/avi12-lint"
+pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.5&path:/packages/oxlint-config"
+pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.5&path:/packages/oxlint-plugin-naming"
+pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.5&path:/packages/oxfmt-config"
+pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.5&path:/packages/eslint-config"
+pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.5&path:/packages/stylelint-config"
+pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.5&path:/packages/fallow-config"
+pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.5&path:/packages/avi12-lint"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -108,6 +108,12 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.4.4
+
+- The Node heap cap does not reach the native `fallow` binary, which ran to 38 GB in a repo that ships js-dos files; `avi12-lint` now watches the spawned fallow process tree every second and terminates exactly that tree (`taskkill /T /F /PID` on Windows, `kill -9` of the tree elsewhere, never by name) past 4096 MB or 300 s, and fails the step with a message
+- `AVI12_LINT_FALLOW_MEMORY_MB` and `AVI12_LINT_FALLOW_TIME_LIMIT_MS` change the limits
+- `fallow-config-avi12` ignores `**/*.wasm`, `**/*.jsdos`, `**/*.min.js`, `**/vendor/**`, `**/.output/**`, `**/.wxt/**`; a repo that analyses vendored code on purpose overrides `ignorePatterns`
 
 ### Migrating from 0.4.3
 
