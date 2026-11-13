@@ -116,6 +116,7 @@ export function plan({
   if (formattable) {
     oxfmtTargets = [...formattable, ...oxfmtExcludes];
   }
+
   const oxfmtStep = {
     name: "oxfmt",
     command: [

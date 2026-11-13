@@ -63,7 +63,8 @@ const steps = plan({
   platform: process.platform
 });
 
-if (isStaged && existsSync("node_modules/.bin/fallow")) {
+const isFallowSkipped = isStaged && existsSync("node_modules/.bin/fallow");
+if (isFallowSkipped) {
   console.log(
     "avi12-lint: fallow skipped with --staged (it audits commits against a base, not the index); use --changed or pnpm lint"
   );
