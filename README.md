@@ -22,13 +22,13 @@ They are consumed straight from GitHub and never published to npm
 Every package installs from a tag of this repository
 
 ```sh
-pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.12&path:/packages/oxlint-config"
-pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.12&path:/packages/oxlint-plugin-naming"
-pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.12&path:/packages/oxfmt-config"
-pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.12&path:/packages/eslint-config"
-pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.12&path:/packages/stylelint-config"
-pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.12&path:/packages/fallow-config"
-pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.12&path:/packages/avi12-lint"
+pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages/oxlint-config"
+pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.13&path:/packages/oxlint-plugin-naming"
+pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages/oxfmt-config"
+pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages/eslint-config"
+pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages/stylelint-config"
+pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages/fallow-config"
+pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.13&path:/packages/avi12-lint"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -135,6 +135,13 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.4.12
+
+- `avi12-lint` runs oxlint with `--disable-nested-config`, so a git submodule or a nested folder with its own `.oxlintrc.json` no longer fails with "Plugin name 'naming' is already registered"; `ignorePatterns` never stopped that discovery; set `AVI12_LINT_NESTED_CONFIG=1` or pass `--nested-config` for a repo that relies on nested configs; a native `oxlint` run (outside `avi12-lint`) needs `oxlint --disable-nested-config` itself
+- `oxfmt-config-avi12` sets `endOfLine` to `lf`; on Windows add `* text=auto eol=lf` to `.gitattributes` (or set `core.autocrlf` to `false`) so a CRLF checkout does not list files as modified after `--fix`; one `--fix` run turns CRLF into LF and a second changes nothing
+- fallow `extends` replaces arrays instead of merging them, so one local `ignoreDependencies` entry dropped the preset list; keep local additions in `fallow.local.json` and run `avi12-lint fallow-config` to write `.fallowrc.json` with the preset and your entries united (arrays united, objects merged, scalars from the local file); `fallow-config-avi12` now exports `./fallow.json`
+- `avi12-lint --full` (or `AVI12_LINT_FALLOW_FULL=1`) runs `fallow` over the whole tree under the same memory and time guard; without it fallow still runs only with `--changed`, since a full audit is the costly one
+
 ### Migrating from 0.4.11
 
 - `naming/convention` applies `allowedNames` and `allowedPatterns` to every selector it checks (functions, variables, parameters, members, enum members, classes, type names and type parameters), so a `fileOverrides` entry kept only for a framework-mandated function or component name can go
@@ -230,6 +237,8 @@ Output is printed per tool when it finishes, so lines never interleave
 | `--fix` | fixes instead of checking; tools then run one after another, so fixers never race |
 | `--changed` | only the files that differ from the merge base with `main`, plus untracked ones; fallow audits against that base |
 | `--staged` | only the staged files, for lint-staged; fallow is skipped |
+| `--full` | also runs fallow over the whole tree, under the memory guard |
+| `--nested-config` | lets oxlint load nested `.oxlintrc.json` files |
 | `--concurrency N` | ESLint workers, clamped to 1-4 |
 
 - `AVI12_LINT_CONCURRENCY` is the same as `--concurrency`, and the flag wins

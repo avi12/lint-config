@@ -276,7 +276,13 @@ test("a run with changed files and no fallow base leaves fallow out, as --staged
     hasFile: file => FULL.has(file),
     changedFiles: ["src/a.ts"]
   });
-  assert.equal(find({ steps, name: "fallow" }), undefined);
+  assert.equal(
+    find({
+      steps,
+      name: "fallow"
+    }),
+    undefined
+  );
 });
 
 test("oxfmt gets only the changed files it can format, with the preset exclusions, and is skipped without any", () => {
@@ -285,15 +291,13 @@ test("oxfmt gets only the changed files it can format, with the preset exclusion
     changedFiles: ["a.ts", "logo.png", "b.json"],
     oxfmtIgnores: ["**/_locales/**"]
   });
-  assert.deepEqual(find({ steps, name: "oxfmt" }).command, [
-    "oxfmt",
-    "--check",
-    "--ignore-path",
-    ".gitignore",
-    "a.ts",
-    "b.json",
-    '"!**/_locales/**"'
-  ]);
+  assert.deepEqual(
+    find({
+      steps,
+      name: "oxfmt"
+    }).command,
+    ["oxfmt", "--check", "--ignore-path", ".gitignore", "a.ts", "b.json", '"!**/_locales/**"']
+  );
   const none = plan({
     hasFile: file => file === ".oxfmtrc.json",
     changedFiles: ["logo.png"]
@@ -327,16 +331,29 @@ test("oxlint ignores nested configs unless the consumer opts in", () => {
   const flagged = plan({ hasFile }).find(({ name }) => name === "oxlint");
   assert.ok(flagged.command.includes("--disable-nested-config"));
   assert.ok(flagged.command.includes("--disable-nested-config"));
-  const optedIn = plan({ hasFile, isNestedConfigAllowed: true }).find(({ name }) => name === "oxlint");
+  const optedIn = plan({
+    hasFile,
+    isNestedConfigAllowed: true
+  }).find(({ name }) => name === "oxlint");
   assert.ok(!optedIn.command.includes("--disable-nested-config"));
 });
 
 test("fallow runs over the full tree only with isFallowFull, and never beside a changed-files run", () => {
   const hasFile = file => ALL_CONFIGS.has(file) || file === "node_modules/.bin/fallow";
-  assert.equal(plan({ hasFile }).find(({ name }) => name === "fallow"), undefined);
-  const full = plan({ hasFile, isFallowFull: true }).find(({ name }) => name === "fallow");
+  assert.equal(
+    plan({ hasFile }).find(({ name }) => name === "fallow"),
+    undefined
+  );
+  const full = plan({
+    hasFile,
+    isFallowFull: true
+  }).find(({ name }) => name === "fallow");
   assert.deepEqual(full.command, ["fallow"]);
   assert.ok(full.env.NODE_OPTIONS.includes("max-old-space-size"));
-  const changed = plan({ hasFile, isFallowFull: true, changedFiles: ["a.ts"] }).find(({ name }) => name === "fallow");
+  const changed = plan({
+    hasFile,
+    isFallowFull: true,
+    changedFiles: ["a.ts"]
+  }).find(({ name }) => name === "fallow");
   assert.equal(changed, undefined);
 });

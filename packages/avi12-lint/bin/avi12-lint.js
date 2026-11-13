@@ -6,6 +6,7 @@ import path from "node:path";
 
 import { argumentBudget, batchCommands, runSequentially } from "#src/batch.js";
 import { changedFiles, mergeBase, stagedFiles } from "#src/changed-files.js";
+import { mergeFallowConfig } from "#src/fallow-config.js";
 import {
   guardLimits,
   killCommands,
@@ -15,7 +16,6 @@ import {
   treeUsage,
   watchdog
 } from "#src/guard.js";
-import { mergeFallowConfig } from "#src/fallow-config.js";
 import { plan } from "#src/plan.js";
 
 const args = process.argv.slice(2);
@@ -28,9 +28,22 @@ function writeFallowConfig() {
   const presetPath = createRequire(path.join(process.cwd(), "package.json")).resolve(FALLOW_PRESET);
   const base = JSON.parse(readFileSync(presetPath, "utf8"));
   const local = existsSync(FALLOW_LOCAL) ? JSON.parse(readFileSync(FALLOW_LOCAL, "utf8")) : {};
-  const { $schema: schema, ...merged } = mergeFallowConfig({ base, local });
-  writeFileSync(FALLOW_OUTPUT, `${JSON.stringify({ $schema: schema, ...merged }, null, 2)}
-`);
+  const { $schema: schema, ...merged } = mergeFallowConfig({
+    base,
+    local
+  });
+  writeFileSync(
+    FALLOW_OUTPUT,
+    `${JSON.stringify(
+      {
+        $schema: schema,
+        ...merged
+      },
+      null,
+      2
+    )}
+`
+  );
   console.log(`avi12-lint: wrote ${FALLOW_OUTPUT} from ${FALLOW_PRESET} and ${FALLOW_LOCAL}`);
 }
 
@@ -38,6 +51,7 @@ if (args[0] === "fallow-config") {
   writeFallowConfig();
   process.exit(0);
 }
+
 const concurrencyIndex = args.indexOf("--concurrency");
 const requested = concurrencyIndex === -1 ? process.env["AVI12_LINT_CONCURRENCY"] : args[concurrencyIndex + 1];
 const isStaged = args.includes("--staged");

@@ -11,12 +11,21 @@ test("oxfmt turns CRLF into LF in one run and a second run changes nothing", () 
   try {
     const file = join(root, "crlf.ts");
     writeFileSync(file, "export const value = 1;\r\nexport const other = 2;\r\n");
-    oxfmtFix({ cwd: root, files: [file] });
+    oxfmtFix({
+      cwd: root,
+      files: [file]
+    });
     const first = readFileSync(file, "utf8");
     assert.ok(!first.includes("\r"));
-    oxfmtFix({ cwd: root, files: [file] });
+    oxfmtFix({
+      cwd: root,
+      files: [file]
+    });
     assert.equal(readFileSync(file, "utf8"), first);
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmSync(root, {
+      recursive: true,
+      force: true
+    });
   }
 });

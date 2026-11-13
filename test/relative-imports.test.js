@@ -32,14 +32,26 @@ function parentImportLines(rules) {
   const directory = mkdtempSync(join(tmpdir(), "relative-"));
   try {
     mkdirSync(join(directory, "src"));
-    writeFileSync(join(directory, ".oxlintrc.json"), JSON.stringify({ extends: [PRESET], rules }));
+    writeFileSync(
+      join(directory, ".oxlintrc.json"),
+      JSON.stringify({
+        extends: [PRESET],
+        rules
+      })
+    );
     writeFileSync(join(directory, "src", "sample.ts"), SOURCE);
-    return oxlintFindings({ cwd: directory, files: ["src/sample.ts"] })
+    return oxlintFindings({
+      cwd: directory,
+      files: ["src/sample.ts"]
+    })
       .filter(finding => finding.startsWith(RULE))
       .map(finding => Number(finding.split("@")[1]))
       .sort((first, second) => first - second);
   } finally {
-    rmSync(directory, { recursive: true, force: true });
+    rmSync(directory, {
+      recursive: true,
+      force: true
+    });
   }
 }
 
@@ -49,7 +61,17 @@ test("every ../ import is banned and ./ imports stay allowed", () => {
 
 test("a consumer's no-restricted-imports override does not replace the ../ ban", () => {
   const rules = {
-    "no-restricted-imports": ["error", { patterns: [{ group: ["lodash"], message: "no lodash" }] }]
+    "no-restricted-imports": [
+      "error",
+      {
+        patterns: [
+          {
+            group: ["lodash"],
+            message: "no lodash"
+          }
+        ]
+      }
+    ]
   };
   assert.deepEqual(parentImportLines(rules), EXPECTED_LINES);
 });

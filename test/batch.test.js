@@ -9,8 +9,24 @@ const MANY_FILES = Array.from({ length: 400 }, (_, i) => `packages/some/deep/fol
 test("the budget is small on win32, larger elsewhere, and overridable", () => {
   assert.equal(argumentBudget({ platform: "win32" }), 6000);
   assert.ok(argumentBudget({ platform: "linux" }) > 6000);
-  assert.equal(argumentBudget({ platform: "win32", env: { AVI12_LINT_ARG_BUDGET: "50" } }), 50);
-  assert.equal(argumentBudget({ platform: "win32", env: { AVI12_LINT_ARG_BUDGET: "x" } }), 6000);
+  assert.equal(
+    argumentBudget({
+      platform: "win32",
+      env: {
+        AVI12_LINT_ARG_BUDGET: "50"
+      }
+    }),
+    50
+  );
+  assert.equal(
+    argumentBudget({
+      platform: "win32",
+      env: {
+        AVI12_LINT_ARG_BUDGET: "x"
+      }
+    }),
+    6000
+  );
 });
 
 test("a long file list is split, every file kept once, head and tail on each batch", () => {
@@ -34,8 +50,24 @@ test("a long file list is split, every file kept once, head and tail on each bat
 });
 
 test("a short list stays one command and an empty one still yields one", () => {
-  assert.equal(batchCommands({ head: ["a"], files: ["f"], tail: [], budget: 6000 }).length, 1);
-  assert.deepEqual(batchCommands({ head: ["a"], files: [], tail: [], budget: 6000 }), [["a"]]);
+  assert.equal(
+    batchCommands({
+      head: ["a"],
+      files: ["f"],
+      tail: [],
+      budget: 6000
+    }).length,
+    1
+  );
+  assert.deepEqual(
+    batchCommands({
+      head: ["a"],
+      files: [],
+      tail: [],
+      budget: 6000
+    }),
+    [["a"]]
+  );
 });
 
 test("the planned oxlint and oxfmt steps expose a split that batches", () => {
@@ -45,7 +77,12 @@ test("the planned oxlint and oxfmt steps expose a split that batches", () => {
   });
   for (const name of ["oxlint", "oxfmt"]) {
     const { split } = steps.find(step => step.name === name);
-    assert.ok(batchCommands({ ...split, budget: 6000 }).length > 1);
+    assert.ok(
+      batchCommands({
+        ...split,
+        budget: 6000
+      }).length > 1
+    );
   }
 });
 
@@ -54,7 +91,7 @@ test("batches run in order with a fake spawner and the exit codes merge", async 
   const codes = [0, 1, 0];
   const merged = await runSequentially({
     commands: [["a"], ["b"], ["c"]],
-    runOne: async ({ command, isFirst }) => {
+    async runOne({ command, isFirst }) {
       seen.push([command[0], isFirst]);
       return codes.shift();
     }

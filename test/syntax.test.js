@@ -70,7 +70,11 @@ test("id-length allows the project idioms and a consumer exception list adds a n
         rules: {
           "id-length": [
             "error",
-            { min: 3, exceptions: ["_", "i", "j", "x", "y", "id", "to", "on", "ok", "T", "FS"], properties: "never" }
+            {
+              min: 3,
+              exceptions: ["_", "i", "j", "x", "y", "id", "to", "on", "ok", "T", "FS"],
+              properties: "never"
+            }
           ]
         }
       }

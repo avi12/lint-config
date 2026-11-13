@@ -11,10 +11,15 @@ export function mergeFallowConfig({ base, local }) {
   const merged = { ...base };
   for (const [key, value] of Object.entries(local)) {
     const current = merged[key];
-    if (Array.isArray(current) && Array.isArray(value)) {
+    const areArrays = Array.isArray(current) && Array.isArray(value);
+    const areRecords = isRecord(current) && isRecord(value);
+    if (areArrays) {
       merged[key] = [...new Set([...current, ...value])];
-    } else if (isRecord(current) && isRecord(value)) {
-      merged[key] = mergeFallowConfig({ base: current, local: value });
+    } else if (areRecords) {
+      merged[key] = mergeFallowConfig({
+        base: current,
+        local: value
+      });
     } else {
       merged[key] = value;
     }

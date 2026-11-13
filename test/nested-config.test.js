@@ -16,11 +16,17 @@ test("an ignored folder with its own oxlint config reports no unused directive",
     mkdirSync(join(root, "companion", "winui"), { recursive: true });
     writeFileSync(
       join(root, ".oxlintrc.json"),
-      JSON.stringify({ extends: [PRESET], ignorePatterns: ["companion/**"] })
+      JSON.stringify({
+        extends: [PRESET],
+        ignorePatterns: ["companion/**"]
+      })
     );
     writeFileSync(join(root, "companion", "winui", ".oxlintrc.json"), "{}");
     writeFileSync(join(root, "companion", "winui", "inner.ts"), DIRECTIVE_SOURCE);
-    const findings = oxlintFindings({ cwd: root, files: ["."] });
+    const findings = oxlintFindings({
+      cwd: root,
+      files: ["."]
+    });
     assert.deepEqual(
       findings.filter(finding => finding.includes("companion")),
       []
@@ -28,7 +34,10 @@ test("an ignored folder with its own oxlint config reports no unused directive",
     const unused = findings.filter(finding => finding.startsWith("undefined@") || finding.startsWith("@"));
     assert.deepEqual(unused, []);
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmSync(root, {
+      recursive: true,
+      force: true
+    });
   }
 });
 
@@ -43,7 +52,11 @@ function runOxlint({ cwd, extraArgs }) {
   const { stdout, stderr } = spawnSync(process.execPath, [OXLINT_BINARY, ...extraArgs, "."], {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, NO_COLOR: "", FORCE_COLOR: "0" }
+    env: {
+      ...process.env,
+      NO_COLOR: "",
+      FORCE_COLOR: "0"
+    }
   });
   return `${stdout}${stderr}`;
 }
@@ -57,15 +70,29 @@ test("a nested config that registers the same plugin fails oxlint unless nested 
     copyFileSync(NAMING_PLUGIN, join(root, "submodule", "naming.js"));
     writeFileSync(
       join(root, "submodule", ".oxlintrc.json"),
-      JSON.stringify({ jsPlugins: ["./naming.js"], rules: { "naming/convention": "error" } })
+      JSON.stringify({
+        jsPlugins: ["./naming.js"],
+        rules: {
+          "naming/convention": "error"
+        }
+      })
     );
     writeFileSync(join(root, "index.ts"), "export const value = 1;\n");
     writeFileSync(join(root, "submodule", "inner.ts"), "export const inner = 1;\n");
-    const failing = runOxlint({ cwd: root, extraArgs: [] });
+    const failing = runOxlint({
+      cwd: root,
+      extraArgs: []
+    });
     assert.match(failing, /already registered/);
-    const passing = runOxlint({ cwd: root, extraArgs: ["--disable-nested-config"] });
+    const passing = runOxlint({
+      cwd: root,
+      extraArgs: ["--disable-nested-config"]
+    });
     assert.doesNotMatch(passing, /already registered/);
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmSync(root, {
+      recursive: true,
+      force: true
+    });
   }
 });
