@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { clampConcurrency } from "avi12-lint/eslint-flags";
 import { plan } from "avi12-lint/plan";
-import { clampConcurrency } from "eslint-config-avi12/defaults";
 
 const ALL_CONFIGS = new Set([".oxlintrc.json", "eslint.config.js", ".oxfmtrc.json", ".stylelintrc.json"]);
 
@@ -219,4 +219,13 @@ test("the oxfmt preset ignores agent folders, locale data, lock files and genera
   for (const glob of ["**/.claude/**", "**/_locales/**", "**/pnpm-lock.yaml", "**/.wxt/**", "**/.output/**"]) {
     assert.ok(ignorePatterns.includes(glob), glob);
   }
+});
+
+test("avi12-lint declares no sibling package as a dependency or peer, so a repo without Svelte installs it alone", () => {
+  const manifest = JSON.parse(readFileSync(new URL("../packages/avi12-lint/package.json", import.meta.url), "utf8"));
+  const declared = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies });
+  assert.deepEqual(
+    declared.filter(name => name.endsWith("-avi12")),
+    []
+  );
 });

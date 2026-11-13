@@ -1,4 +1,4 @@
-import { clampConcurrency, eslintFlags, MIN_CONCURRENCY } from "eslint-config-avi12/defaults";
+import { clampConcurrency, eslintFlags, MIN_CONCURRENCY } from "./eslint-flags.js";
 
 const OXLINT_CONFIG = ".oxlintrc.json";
 const OXFMT_CONFIG = ".oxfmtrc.json";

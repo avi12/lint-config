@@ -13,13 +13,8 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./eslint-flags": "./src/eslint-flags.js",
     "./plan": "./src/plan.js",
     "./package.json": "./package.json"
-  },
-  "devDependencies": {
-    "eslint-config-avi12": "workspace:*"
-  },
-  "peerDependencies": {
-    "eslint-config-avi12": "*"
   }
 }

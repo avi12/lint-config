@@ -51,11 +51,7 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  packages/avi12-lint:
-    devDependencies:
-      eslint-config-avi12:
-        specifier: workspace:*
-        version: link:../eslint-config
+  packages/avi12-lint: {}
 
   packages/biome-config:
     dependencies:
@@ -1680,6 +1676,7 @@ packages:
   postcss-selector-parser@7.2.0:
     resolution: {integrity: sha512-Khh/tERVBn0I1499dvBSHY0pWJloMJWUxDsOBM0CCDPAcVZ10Jl2L1qy1f19uEX22spa8Mv7DCdEQJc0cGwBhQ==}
     engines: {node: '>=4'}
+    deprecated: Double-escapes CSS Modules class names (#362). Use 7.2.1.
 
   postcss-sorting@10.0.0:
     resolution: {integrity: sha512-TXbU+h6vVRW+86c/+ewhWq9k7pr7ijASTnepVhCQiC87zAOTkvB1v2dHyWP+ggstSTX/PNvjzS+IOqzejndz9w==}

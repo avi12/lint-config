@@ -11,7 +11,6 @@
   "exports": {
     ".": "./src/index.js",
     "./svelte": "./src/svelte.js",
-    "./defaults": "./src/defaults.js",
     "./package.json": "./package.json"
   },
   "dependencies": {
