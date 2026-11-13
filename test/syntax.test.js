@@ -98,3 +98,19 @@ test("house/no-magic-numbers exempts numeric literal types anywhere and flags ba
   const findings = lintSource({ source }).filter(finding => finding.includes("magic"));
   assert.deepEqual(findings, ["house(no-magic-numbers)@6"]);
 });
+
+test("a compound condition made only of narrowing checks is not extracted, any other still is", () => {
+  const wrap = condition =>
+    `export function run(shape: { kind: "a" | "b" | "c" }, other: boolean, key: string, target: object) {\n  if (${condition}) {\n    return 1;\n  }\n\n  return 2;\n}\n`;
+  for (const condition of [
+    "shape.kind === 'a' || shape.kind === 'b'",
+    "shape.kind !== 'a' && shape.kind !== 'b' && shape.kind !== 'c'",
+    "typeof key === 'string' || key in target",
+    "target instanceof Date || key in target"
+  ]) {
+    assert.ok(!codes({ source: wrap(condition) }).includes(GOOGLE), condition);
+  }
+  for (const condition of ["shape.kind === 'a' || other", "shape.kind === 'a' && (other || shape.kind === 'b')"]) {
+    assert.ok(codes({ source: wrap(condition) }).includes(GOOGLE), condition);
+  }
+});
