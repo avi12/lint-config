@@ -56,6 +56,29 @@ test("a compound with a call or several non-narrowing comparisons still extracts
   }
 });
 
+test("id-length allows the project idioms and a consumer exception list adds a name", () => {
+  const source =
+    "export interface FS {\n  readonly name: string;\n}\n\nexport function run(x: number, to: number) {\n  return [x, to];\n}\n";
+  const found = lintSource({ source });
+  assert.ok(found.some(finding => finding.startsWith("eslint(id-length)")));
+  assert.equal(found.filter(finding => finding.startsWith("eslint(id-length)")).length, 1);
+  const allowed = lintSource({
+    source,
+    overrides: [
+      {
+        files: ["**"],
+        rules: {
+          "id-length": [
+            "error",
+            { min: 3, exceptions: ["_", "i", "j", "x", "y", "id", "to", "on", "ok", "T", "FS"], properties: "never" }
+          ]
+        }
+      }
+    ]
+  });
+  assert.ok(!allowed.some(finding => finding.startsWith("eslint(id-length)")));
+});
+
 test("positional parameters are reported until an override turns the group off for the files", () => {
   assert.ok(codes({ source: TWO_PARAMETERS }).includes("house(positional-parameters)"));
   const found = codes({

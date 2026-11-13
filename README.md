@@ -109,6 +109,12 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.4.5
+
+- `house/google-syntax` leaves a lone comparison inline (`status === PlayerStatus.PLAYING`, `value instanceof Date`, `left === right`), like a lone `x === null`
+- `house/google-syntax` no longer reports a compound whose operands are only truthiness tests of identifiers or member chains (`!a || !b`, `a && b.c`) or narrowing checks; a call, or several comparisons that do not narrow, is still reported
+- `id-length` already allows `_`, `i`, `j`, `x`, `y`, `id`, `to`, `on`, `ok` and `T` in the preset; to allow one more name, such as an interface `FS` merged with a third-party type, restate the rule in an oxlint override with the full list, because options replace and do not merge: `"id-length": ["error", { "min": 3, "exceptions": ["_", "i", "j", "x", "y", "id", "to", "on", "ok", "T", "FS"], "properties": "never" }]`; keep the reason in the override's neighbouring config notes, not in a comment
+
 ### Migrating from 0.4.4
 
 - The Node heap cap does not reach the native `fallow` binary, which ran to 38 GB in a repo that ships js-dos files; `avi12-lint` now watches the spawned fallow process tree every second and terminates exactly that tree (`taskkill /T /F /PID` on Windows, `kill -9` of the tree elsewhere, never by name) past 4096 MB or 300 s, and fails the step with a message
