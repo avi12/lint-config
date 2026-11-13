@@ -1,14 +1,3 @@
-const IS_NARROWING_CHECK =
-  ":matches(BinaryExpression[operator='in'], BinaryExpression[operator='instanceof'], BinaryExpression[operator=/^(===|!==)$/]:matches([left.type='UnaryExpression'][left.operator='typeof'], [right.type='Literal'], [right.name='undefined'], [left.type='Literal']))";
-const IS_TRUTHINESS_GUARD =
-  ":matches(Identifier, MemberExpression, ChainExpression, UnaryExpression[operator='!']):not(:has(:matches(CallExpression, NewExpression, BinaryExpression, LogicalExpression)))";
-const MAX_LOGICAL_DEPTH = 4;
-const NON_NARROWING_OPERANDS = Array.from(
-  { length: MAX_LOGICAL_DEPTH },
-  (_, depth) =>
-    `${"LogicalExpression > ".repeat(depth)}:not(LogicalExpression):not(${IS_NARROWING_CHECK}):not(${IS_TRUTHINESS_GUARD})`
-);
-const IS_NOT_ELSE_IF = "IfStatement[parent.type!='IfStatement']";
 const NAMED_FUNCTION_MESSAGE =
   "Declare a named function instead of assigning an arrow function to a variable - fold the condition inside the function body.";
 const IMPORT_WORK_MESSAGE = "Importing a module must do no work: move this inside a function the caller runs.";
@@ -24,19 +13,12 @@ export const POSITIONAL_PARAMETER_SYNTAX = [
   }
 ];
 
+export const EXTRACT_IF_MESSAGE =
+  "Extract the condition into a descriptively-named const (is/has/can/should) right before the if.";
+export const EXTRACT_TERNARY_MESSAGE =
+  "Extract the ternary's condition into a descriptively-named const (is/has/can/should).";
+
 export const GOOGLE_SYNTAX = [
-  {
-    selector: NON_NARROWING_OPERANDS.map(operand => `${IS_NOT_ELSE_IF} > LogicalExpression.test > ${operand}`).join(
-      ", "
-    ),
-    message: "Extract the condition into a descriptively-named const (is/has/can/should) right before the if."
-  },
-  {
-    selector: NON_NARROWING_OPERANDS.map(operand => `ConditionalExpression > LogicalExpression.test > ${operand}`).join(
-      ", "
-    ),
-    message: "Extract the ternary's condition into a descriptively-named const (is/has/can/should)."
-  },
   {
     selector: "ForInStatement",
     message: "Use for...of over Object.keys/entries instead of for...in (Google style)."

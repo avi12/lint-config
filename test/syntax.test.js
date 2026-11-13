@@ -201,3 +201,50 @@ test("a written return type of never or an assertion signature is allowed, any o
   }
   assert.ok(codes({ source: "export function size(): number {\n  return 1;\n}\n" }).includes(GOOGLE));
 });
+
+function wrapGuard(condition) {
+  return `interface Shape { bar: number; y: number; kind: string; size: number }
+declare function isShape(value: unknown): value is Shape;
+export function run(x: string | Shape | undefined, other: number, flag: boolean) {
+  if (${condition}) {
+    return 1;
+  }
+
+  return other + Number(flag);
+}
+`;
+}
+
+test("a guard and the access that relies on it stay in one condition", () => {
+  for (const condition of [
+    "typeof x === 'string' && x.length > 0",
+    "x !== undefined && typeof x !== 'string' && x.y === 1",
+    "isShape(x) && x.bar",
+    "isShape(x) && x.bar > other",
+    "typeof x === 'object' && x !== null && 'bar' in x && x.bar > 1",
+    "x !== undefined && typeof x === 'object' && x.kind === 'a' && x.size > 2",
+    "x && typeof x === 'string' && x.trim()",
+    "x === undefined || typeof x === 'string' || x.bar > 1"
+  ]) {
+    assert.ok(!codes({ source: wrapGuard(condition) }).includes(GOOGLE), condition);
+  }
+});
+
+test("a ternary with a guarded access stays inline too", () => {
+  const source = wrapGuard("flag").replace(
+    "if (flag) {\n    return 1;\n  }\n\n  return other + Number(flag);",
+    "return isShape(x) && x.bar > 1 ? 1 : 2;"
+  );
+  assert.ok(!codes({ source }).includes(GOOGLE));
+});
+
+test("independent compounds still extract", () => {
+  for (const condition of [
+    "isShape(x) && other > 1",
+    "flag && other > 1",
+    "typeof x === 'string' && other > 1",
+    "isShape(x) && isShape(other)"
+  ]) {
+    assert.ok(codes({ source: wrapGuard(condition) }).includes(GOOGLE), condition);
+  }
+});
