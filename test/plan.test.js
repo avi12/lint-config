@@ -300,3 +300,24 @@ test("oxfmt gets only the changed files it can format, with the preset exclusion
   });
   assert.deepEqual(none, []);
 });
+
+test("no package installs a Git hook: no lifecycle scripts and no hook manager as a dependency", () => {
+  const lifecycle = ["preinstall", "install", "postinstall", "prepare", "prepublish", "prepack"];
+  for (const name of ["avi12-lint", "eslint-config", "oxlint-config", "oxfmt-config", "stylelint-config"]) {
+    const manifest = JSON.parse(readFileSync(new URL(`../packages/${name}/package.json`, import.meta.url), "utf8"));
+    assert.deepEqual(
+      lifecycle.filter(script => script in (manifest.scripts ?? {})),
+      [],
+      name
+    );
+    const declared = Object.keys({
+      ...manifest.dependencies,
+      ...manifest.peerDependencies
+    });
+    assert.deepEqual(
+      declared.filter(dependency => /husky|simple-git-hooks|lefthook/.test(dependency)),
+      [],
+      name
+    );
+  }
+});

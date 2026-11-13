@@ -109,6 +109,15 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.4.6
+
+- `@stylistic/function-paren-newline` is dropped from the oxlint preset: oxfmt owns the parentheses of multi-line calls and arrows, and the two rules looped; delete any override that restates it
+- `house/expand-nested-type-literal` leaves the type literal of a parameter to oxfmt in method signatures, function and constructor types, call and construct signatures and arrow parameters, as it already did for functions
+- `house/google-syntax` allows a written return type of `never` and an assertion signature (`asserts value is string`), beside type predicates
+- `avi12-lint --staged` and `--changed` pass only the selected files to oxlint, ESLint, stylelint and oxfmt (check mode); oxfmt formats only the extensions it supports and is skipped when none changed
+- `fallow audit` runs only with `--changed`, as `fallow audit --base <merge base with main>`; `--staged` skips it and prints a message, since the index has no base
+- `avi12-lint` never installs or rewrites a Git hook, and declares no install scripts; a `.git/hooks/pre-commit` that changes on `pnpm install` comes from the consumer's own `prepare` script (`simple-git-hooks` or `husky`), so remove that script or its config to stop it
+
 ### Migrating from 0.4.5
 
 - `house/google-syntax` leaves a lone comparison inline (`status === PlayerStatus.PLAYING`, `value instanceof Date`, `left === right`), like a lone `x === null`
@@ -164,14 +173,14 @@ Output is printed per tool when it finishes, so lines never interleave
 | Flag | Effect |
 |---|---|
 | `--fix` | fixes instead of checking; tools then run one after another, so fixers never race |
-| `--changed` | only the files that differ from the merge base with `main`, plus untracked ones |
-| `--staged` | only the staged files, for lint-staged |
+| `--changed` | only the files that differ from the merge base with `main`, plus untracked ones; fallow audits against that base |
+| `--staged` | only the staged files, for lint-staged; fallow is skipped |
 | `--concurrency N` | ESLint workers, clamped to 1-4 |
 
 - `AVI12_LINT_CONCURRENCY` is the same as `--concurrency`, and the flag wins
 - ESLint runs at concurrency 2 (1 with `--changed` or `--staged`) with `--cache --cache-strategy content`,
   stored in `.verify/eslint-cache/`; add `.verify/` to `.gitignore`
-- With `--changed` or `--staged`, oxlint, ESLint, stylelint and `fallow audit` get the file list;
+- With `--changed` or `--staged`, oxlint, ESLint, stylelint and oxfmt get the file list, and `fallow audit --base` gets the merge base (`--changed` only);
   tsrs checks the whole project, as a type error can sit in an untouched file
 - A tool with no matching changed file is skipped
 - `fallow audit` runs with its Node heap capped at 4 GB (`--max-old-space-size=4096`), a guard against a runaway audit on a dirty tree
