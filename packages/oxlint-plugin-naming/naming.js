@@ -392,6 +392,10 @@ const rule = {
       })
     ]);
     const allowedPatterns = compileAllowedPatterns(options);
+    function isAllowed(name) {
+      return allowedNames.has(name) || allowedPatterns.some(pattern => pattern.test(name));
+    }
+
     let program = null;
     let booleanFunctions = new Set();
     function report({ node, message }) {
@@ -411,8 +415,7 @@ const rule = {
       }
 
       const { name } = key;
-      const isAllowed = allowedNames.has(name) || allowedPatterns.some(pattern => pattern.test(name));
-      if (isAllowed) {
+      if (isAllowed(name)) {
         return;
       }
 
@@ -501,7 +504,7 @@ const rule = {
           node: initializer,
           booleanFunctions
         });
-      if (allowedNames.has(name)) {
+      if (isAllowed(name)) {
         return;
       }
 
@@ -595,7 +598,7 @@ const rule = {
       collect(declarator.id);
       for (const pattern of identifiers) {
         const name = pattern.name;
-        if (allowedNames.has(name)) {
+        if (isAllowed(name)) {
           continue;
         }
 
@@ -658,6 +661,7 @@ const rule = {
     function checkTypeName({ id, formats, label }) {
       const hasInvalidTypeName =
         id &&
+        !isAllowed(id.name) &&
         !checkFormats({
           name: id.name,
           formats
@@ -677,7 +681,7 @@ const rule = {
       },
       VariableDeclarator: checkVariable,
       FunctionDeclaration(node) {
-        const hasInvalidFunctionName = node.id && !CAMEL.test(node.id.name);
+        const hasInvalidFunctionName = node.id && !isAllowed(node.id.name) && !CAMEL.test(node.id.name);
         if (hasInvalidFunctionName) {
           report({
             node: node.id,
@@ -733,7 +737,7 @@ const rule = {
       },
       TSEnumMember(node) {
         const name = node.id.type === "Identifier" ? node.id.name : node.id.value;
-        if (!UPPER.test(name)) {
+        if (!isAllowed(name) && !UPPER.test(name)) {
           report({
             node: node.id,
             message: `enumMember '${name}' must be UPPER_CASE`
@@ -747,7 +751,7 @@ const rule = {
           label: "interface"
         });
 
-        if (/^I[A-Z]/.test(node.id.name)) {
+        if (!isAllowed(node.id.name) && /^I[A-Z]/.test(node.id.name)) {
           report({
             node: node.id,
             message: `interface '${node.id.name}' must not start with I`
@@ -784,7 +788,7 @@ const rule = {
       },
       TSTypeParameter(node) {
         const name = typeof node.name === "string" ? node.name : node.name.name;
-        if (!PASCAL.test(name)) {
+        if (!isAllowed(name) && !PASCAL.test(name)) {
           report({
             node,
             message: `typeParameter '${name}' must be PascalCase`
