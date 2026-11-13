@@ -89,6 +89,7 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
   Map the alias in `tsconfig.json` (`"paths": { "@/*": ["./src/*"] }`)
 - No disable comments: `eslint-disable`, `oxlint-disable`, `@ts-ignore` and `@ts-nocheck` are errors wherever they appear, and the Svelte ESLint layer ignores inline directives
   Fix the code, or add an `allowedNames` or `fileOverrides` entry with a reason
+- Type assertions (`as Type`, `<Type>x`, `x as unknown as T`, `{} as T`) are errors in `.ts`, `.tsx` and the script of `.svelte`, tests included; `as const` and `satisfies` stay allowed; an assertion tells the compiler what it cannot check, so a wrong one fails at runtime instead of in the build; prefer a type guard, a schema (zod) parse, a typed annotation or a narrowing helper; a genuine case goes in an oxlint `overrides` entry that lists the file and turns `typescript/consistent-type-assertions` off, with the reason in the consumer's CLAUDE.md, never an inline disable
 - `any` and a bare `@ts-expect-error` are errors in `.ts` and in the script of `.svelte`; oxlint reads both
 
 ### The `@/` alias in a repository with several packages
@@ -134,6 +135,12 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.4.13
+
+- `typescript/consistent-type-assertions` (`assertionStyle: never`) is now in the base oxlint preset, so a consumer that never had its own copy starts seeing errors on every `as Type`, `<Type>x` and `{} as T`; `as const` and `satisfies` are fine
+- Fix by narrowing: a type guard, a `zod` parse for loose data, `satisfies`, a typed annotation or a narrowing helper
+- For the few genuine cases add an oxlint `overrides` entry with `files` listing the file and `"typescript/consistent-type-assertions": "off"`, and write the reason in the repository's CLAUDE.md; tests are not exempt unless listed
 
 ### Migrating from 0.4.12
 
