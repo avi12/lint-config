@@ -737,7 +737,8 @@ const rule = {
       },
       TSEnumMember(node) {
         const name = node.id.type === "Identifier" ? node.id.name : node.id.value;
-        if (!isAllowed(name) && !UPPER.test(name)) {
+        const isInvalidMember = !isAllowed(name) && !UPPER.test(name);
+        if (isInvalidMember) {
           report({
             node: node.id,
             message: `enumMember '${name}' must be UPPER_CASE`
@@ -751,7 +752,8 @@ const rule = {
           label: "interface"
         });
 
-        if (!isAllowed(node.id.name) && /^I[A-Z]/.test(node.id.name)) {
+        const isPrefixed = !isAllowed(node.id.name) && /^I[A-Z]/.test(node.id.name);
+        if (isPrefixed) {
           report({
             node: node.id,
             message: `interface '${node.id.name}' must not start with I`
@@ -788,7 +790,8 @@ const rule = {
       },
       TSTypeParameter(node) {
         const name = typeof node.name === "string" ? node.name : node.name.name;
-        if (!isAllowed(name) && !PASCAL.test(name)) {
+        const isInvalidParameter = !isAllowed(name) && !PASCAL.test(name);
+        if (isInvalidParameter) {
           report({
             node,
             message: `typeParameter '${name}' must be PascalCase`

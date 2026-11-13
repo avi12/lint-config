@@ -1,10 +1,9 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import stylelint from "stylelint";
 
-const require = createRequire(import.meta.url);
 const avi12 = JSON.parse(readFileSync(new URL("./stylelint.json", import.meta.url), "utf8"));
 
 function requireFrom({ parent, name }) {
@@ -34,11 +33,21 @@ function flatten({ parent, name }) {
   });
   const loaded = config.default ?? config;
   const parents = [loaded.extends ?? []].flat();
-  const inherited = parents.map(next => flatten({ parent: file, name: next }));
+  const inherited = parents.map(next =>
+    flatten({
+      parent: file,
+      name: next
+    })
+  );
   return {
     plugins: [
       ...inherited.flatMap(entry => entry.plugins),
-      ...[loaded.plugins ?? []].flat().map(plugin => resolvePlugin({ file, plugin }))
+      ...[loaded.plugins ?? []].flat().map(plugin =>
+        resolvePlugin({
+          file,
+          plugin
+        })
+      )
     ],
     overrides: [...inherited.flatMap(entry => entry.overrides), ...(loaded.overrides ?? [])],
     rules: Object.assign({}, ...inherited.map(entry => entry.rules), loaded.rules)
@@ -54,7 +63,10 @@ const base = flatten({
   parent: import.meta.filename,
   name: "stylelint-config-ccb"
 });
-const rules = { ...base.rules, ...avi12.rules };
+const rules = {
+  ...base.rules,
+  ...avi12.rules
+};
 
 export default {
   ...avi12,

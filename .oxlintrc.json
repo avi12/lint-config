@@ -1,26 +1,20 @@
 {
-  "extends": [
-    "./packages/oxlint-config/oxlint.json"
-  ],
-  "ignorePatterns": [
-    "**/node_modules/**",
-    "test/fixtures/**"
-  ],
+  "extends": ["./packages/oxlint-config/oxlint.json"],
+  "ignorePatterns": ["**/node_modules/**", "test/fixtures/**"],
   "overrides": [
     {
       "files": [
         "packages/eslint-config/src/local-rules/*.js",
         "packages/oxlint-config/plugins/**/*.js",
-        "packages/oxlint-plugin-naming/naming.js"
+        "packages/oxlint-plugin-naming/naming.js",
+        "packages/stylelint-config/stylelint.mjs"
       ],
       "rules": {
         "no-restricted-exports": "off"
       }
     },
     {
-      "files": [
-        "test/**"
-      ],
+      "files": ["test/**"],
       "rules": {
         "no-magic-numbers": "off"
       }

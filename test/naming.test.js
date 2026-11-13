@@ -102,11 +102,25 @@ const SELECTOR_NAMES = [
 
 test("allowedNames applies to every selector the rule checks", () => {
   assert.ok(lintWithOptions({}, SELECTOR_SOURCE).length >= SELECTOR_NAMES.length);
-  const options = { allowedNames: [{ reason: "framework", names: SELECTOR_NAMES }] };
+  const options = {
+    allowedNames: [
+      {
+        reason: "framework",
+        names: SELECTOR_NAMES
+      }
+    ]
+  };
   assert.deepEqual(lintWithOptions(options, SELECTOR_SOURCE), []);
 });
 
 test("allowedPatterns applies to every selector the rule checks", () => {
-  const options = { allowedPatterns: [{ reason: "framework", pattern: "_[a-n]$" }] };
+  const options = {
+    allowedPatterns: [
+      {
+        reason: "framework",
+        pattern: "_[a-n]$"
+      }
+    ]
+  };
   assert.deepEqual(lintWithOptions(options, SELECTOR_SOURCE), []);
 });

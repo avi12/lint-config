@@ -29,7 +29,10 @@ ${css}</style>
     );
     return JSON.parse((stdout || stderr).slice((stdout || stderr).indexOf("[{")))[0].warnings.map(({ rule }) => rule);
   } finally {
-    rmSync(directory, { recursive: true, force: true });
+    rmSync(directory, {
+      recursive: true,
+      force: true
+    });
   }
 }
 
