@@ -11,7 +11,6 @@ import {
   oxlintFindings,
   oxlintFix,
   oxlintRules,
-  TS_ONLY,
   TS_SVELTE
 } from "./support/tools.js";
 

@@ -37,7 +37,12 @@ test("positional parameters are reported until an override turns the group off f
   const found = codes({
     source: TWO_PARAMETERS,
     filename: "vendor/mirror.ts",
-    overrides: [{ files: ["vendor/**"], rules: { "house/positional-parameters": "off" } }]
+    overrides: [{
+       files: ["vendor/**"],
+       rules: {
+       "house/positional-parameters": "off" 
+    } 
+    }]
   });
   assert.ok(!found.includes("house(positional-parameters)"));
 });

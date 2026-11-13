@@ -5,6 +5,15 @@ import { createRequire } from "node:module";
 import path from "node:path";
 
 import { changedFiles, stagedFiles } from "../src/changed-files.js";
+import {
+  guardLimits,
+  killCommands,
+  parseProcessTable,
+  POLL_INTERVAL_MS,
+  processTableCommand,
+  treeUsage,
+  watchdog
+} from "../src/guard.js";
 import { plan } from "../src/plan.js";
 
 const args = process.argv.slice(2);
@@ -64,6 +73,36 @@ function resolveEnv({ key, value }) {
   return path.resolve(value);
 }
 
+function readUsage(pid) {
+  const { command, args: tableArgs, unit } = processTableCommand(process.platform);
+  const { stdout, status } = spawnSync(command, tableArgs, { encoding: "utf8" });
+  if (status !== 0) {
+    return undefined;
+  }
+
+  const usage = treeUsage({
+    rows: parseProcessTable({
+      text: stdout,
+      unit
+    }),
+    pid
+  });
+  return usage.megabytes > 0 ? usage : undefined;
+}
+
+function terminate({ pid, usage }) {
+  const commands = killCommands({
+    platform: process.platform,
+    pids: usage?.pids ?? [pid],
+    pid
+  });
+  for (const [command, commandArgs] of commands) {
+    spawnSync(command, commandArgs);
+  }
+}
+
+const GUARDED_STEP = "fallow";
+
 function run({ name, command, env }) {
   return new Promise(resolve => {
     const child = spawn("pnpm", ["exec", ...command], {
@@ -82,12 +121,40 @@ function run({ name, command, env }) {
       }
     });
     const chunks = [];
+    let isDone = false;
+    let failure;
+    const isGuarded = name === GUARDED_STEP;
+    if (isGuarded) {
+      watchdog({
+        ...guardLimits(process.env),
+        readUsage: () => readUsage(child.pid),
+        terminate: usage =>
+          terminate({
+            pid: child.pid,
+            usage
+          }),
+        isDone: () => isDone,
+        intervalMs: POLL_INTERVAL_MS,
+        now: Date.now,
+        wait: milliseconds => new Promise(done => setTimeout(done, milliseconds))
+      }).then(message => {
+        failure = message;
+      });
+    }
+
     child.stdout.on("data", chunk => chunks.push(chunk));
     child.stderr.on("data", chunk => chunks.push(chunk));
     child.on("close", status => {
+      isDone = true;
       console.log(`avi12-lint: ${name}`);
       process.stdout.write(Buffer.concat(chunks));
-      resolve(status === 0 ? 0 : 1);
+
+      if (failure) {
+        console.log(failure);
+      }
+
+      const isSuccess = status === 0 && !failure;
+      resolve(isSuccess ? 0 : 1);
     });
   });
 }

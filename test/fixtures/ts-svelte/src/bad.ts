@@ -3,5 +3,6 @@ export function add(first: number, second: number) {
   if (first > second && second > 0) {
     return [1, 2].forEach(value => value);
   }
+
   return label;
 }

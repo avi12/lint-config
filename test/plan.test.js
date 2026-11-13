@@ -61,7 +61,7 @@ test("a full run is parallel, type-aware, and ESLint is at 2 with a content cach
   );
   assert.ok(steps.every(({ isParallel }) => isParallel));
   const { command } = find({
-    steps: steps,
+    steps,
     name: "eslint"
   });
   assert.equal(command[command.indexOf("--concurrency") + 1], "2");
@@ -69,20 +69,20 @@ test("a full run is parallel, type-aware, and ESLint is at 2 with a content cach
   assert.ok(command.includes(".verify/eslint-cache/"));
   assert.ok(
     find({
-      steps: steps,
+      steps,
       name: "oxlint"
     }).command.includes("--type-aware")
   );
   assert.equal(
     find({
-      steps: steps,
+      steps,
       name: "oxlint"
     }).env.OXLINT_TSGOLINT_PATH,
     "node_modules/.bin/tsrs-lint.CMD"
   );
   assert.deepEqual(
     find({
-      steps: steps,
+      steps,
       name: "tsrs"
     }).command,
     ["tsrs", "--noEmit"]
@@ -93,13 +93,13 @@ test("without tsrs the oxlint step is not type-aware and tsrs is absent", () => 
   const steps = plan({ hasFile: file => ALL_CONFIGS.has(file) });
   assert.ok(
     !find({
-      steps: steps,
+      steps,
       name: "oxlint"
     }).command.includes("--type-aware")
   );
   assert.equal(
     find({
-      steps: steps,
+      steps,
       name: "tsrs"
     }),
     undefined
@@ -117,7 +117,10 @@ test("fixing runs oxlint again after oxfmt, because one pass leaves overlapping 
 test("fixing runs oxfmt when only its binary is installed, and checking does not", () => {
   const hasFile = file => file === ".oxlintrc.json" || file === "node_modules/.bin/oxfmt";
   assert.deepEqual(
-    plan({ hasFile, isFix: true }).map(({ name }) => name),
+    plan({
+       hasFile,
+       isFix: true 
+    }).map(({ name }) => name),
     ["oxlint", "oxfmt", "oxlint", "oxfmt"]
   );
   assert.deepEqual(
@@ -141,28 +144,28 @@ test("changed mode narrows to the files, ESLint to 1, tsrs stays whole-project, 
     changedFiles: ["src/a.ts", "src/b.svelte", "README.md"]
   });
   const eslint = find({
-    steps: steps,
+    steps,
     name: "eslint"
   }).command;
   assert.equal(eslint[eslint.indexOf("--concurrency") + 1], "1");
   assert.deepEqual(eslint.slice(-1), ["src/b.svelte"]);
   assert.deepEqual(
     find({
-      steps: steps,
+      steps,
       name: "stylelint"
     }).command,
     ["stylelint", "src/b.svelte"]
   );
   assert.deepEqual(
     find({
-      steps: steps,
+      steps,
       name: "tsrs"
     }).command,
     ["tsrs", "--noEmit"]
   );
   assert.deepEqual(
     find({
-      steps: steps,
+      steps,
       name: "fallow"
     }).command,
     ["fallow", "audit"]
@@ -178,21 +181,21 @@ test("changed mode skips a tool with no matching file and honours an override", 
   });
   assert.equal(
     find({
-      steps: steps,
+      steps,
       name: "eslint"
     }),
     undefined
   );
   assert.equal(
     find({
-      steps: steps,
+      steps,
       name: "oxlint"
     }),
     undefined
   );
   assert.equal(
     find({
-      steps: steps,
+      steps,
       name: "stylelint"
     }),
     undefined
@@ -235,7 +238,10 @@ test("the oxfmt preset ignores agent folders, locale data, lock files and genera
 
 test("avi12-lint declares no sibling package as a dependency or peer, so a repo without Svelte installs it alone", () => {
   const manifest = JSON.parse(readFileSync(new URL("../packages/avi12-lint/package.json", import.meta.url), "utf8"));
-  const declared = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies });
+  const declared = Object.keys({
+     ...manifest.dependencies,
+     ...manifest.peerDependencies 
+  });
   assert.deepEqual(
     declared.filter(name => name.endsWith("-avi12")),
     []
@@ -249,7 +255,7 @@ test("fallow runs with a 4 GB Node heap cap", () => {
   });
   assert.equal(
     find({
-      steps: steps,
+      steps,
       name: "fallow"
     }).env.NODE_OPTIONS,
     "--max-old-space-size=4096"
