@@ -16,6 +16,7 @@ const OXFMT_CONFIG = join(ROOT, "packages", "oxfmt-config", "oxfmt.json");
 export const FIXTURES = join(ROOT, "test", "fixtures");
 export const TS_ONLY = join(FIXTURES, "ts-only");
 export const TS_SVELTE = join(FIXTURES, "ts-svelte");
+export const TS_VUE = join(FIXTURES, "ts-vue");
 
 function run({ tool, args, cwd }) {
   const { stdout } = spawnSync(process.execPath, [BINARIES[tool], ...args], {

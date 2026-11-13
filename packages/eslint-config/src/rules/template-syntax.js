@@ -5,3 +5,10 @@ export const SVELTE_TEMPLATE_SYNTAX = [
     message: "Do not use a ternary in a template tag - use an {#if}/{:else} block instead."
   }
 ];
+
+export const VUE_TEMPLATE_SYNTAX = [
+  {
+    selector: "VElement > VExpressionContainer ConditionalExpression",
+    message: "Do not use a ternary in a template tag - use v-if/v-else instead."
+  }
+];

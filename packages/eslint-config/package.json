@@ -1,7 +1,7 @@
 {
   "name": "eslint-config-avi12",
-  "version": "0.4.15",
-  "description": "ESLint flat config for Svelte files only: the template rules oxlint and oxfmt cannot see",
+  "version": "0.5.0",
+  "description": "ESLint flat configs for Svelte and Vue files only: the template rules oxlint and oxfmt cannot see",
   "license": "Apache-2.0",
   "files": [
     "src"
@@ -11,7 +11,8 @@
   "exports": {
     ".": "./src/index.js",
     "./svelte": "./src/svelte.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./vue": "./src/vue.js"
   },
   "dependencies": {
     "eslint-plugin-unused-imports": "^4.4.1",
@@ -21,7 +22,23 @@
   "peerDependencies": {
     "eslint": "^9.20.0 || ^10.0.0",
     "eslint-plugin-svelte": "^3.0.0",
+    "eslint-plugin-vue": "^10.0.0",
     "svelte-eslint-parser": "^1.0.0",
-    "typescript": ">=5.5"
+    "typescript": ">=5.5",
+    "vue-eslint-parser": "^10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "eslint-plugin-svelte": {
+      "optional": true
+    },
+    "svelte-eslint-parser": {
+      "optional": true
+    },
+    "eslint-plugin-vue": {
+      "optional": true
+    },
+    "vue-eslint-parser": {
+      "optional": true
+    }
   }
 }

@@ -266,7 +266,7 @@
       }
     },
     {
-      "files": ["**/*.svelte"],
+      "files": ["**/*.svelte", "**/*.vue"],
       "rules": {
         "house/no-em-dash": "off",
         "unused-imports/no-unused-imports": "off",

@@ -11,7 +11,8 @@ import {
   oxlintFindings,
   oxlintFix,
   oxlintRules,
-  TS_SVELTE
+  TS_SVELTE,
+  TS_VUE
 } from "./support/tools.js";
 
 const RULE_PREFIXES = /^(@typescript-eslint\/|typescript\/|@stylistic\/(js\/|ts\/)?|eslint\/)/;
@@ -314,6 +315,66 @@ test("one planned fix run settles codemod-style one-line object arguments", () =
       order: plannedRun
     });
     assert.equal(readFileSync(file, "utf8"), afterFirstRun);
+  } finally {
+    rmSync(directory, {
+      recursive: true,
+      force: true
+    });
+  }
+});
+
+const VUE_USER = `<script setup lang="ts">
+import Child from "./Child.vue";
+import Unused from "./Unused.vue";
+</script>
+
+<template>
+  <Child />
+</template>
+`;
+
+test("Vue: no rule is enforced by both ESLint and oxlint, none opposes another", () => {
+  const options = {
+    cwd: TS_VUE,
+    file: "src/Bad.vue"
+  };
+  assert.deepEqual(crossToolOverlaps(options), []);
+  assert.deepEqual(oppositesEnabled(options), []);
+});
+
+test("Vue: fixing keeps an import only the template uses, drops an unused one, in either order", () => {
+  const directory = join(TS_VUE, FIX_DIRECTORY);
+  rmSync(directory, {
+    recursive: true,
+    force: true
+  });
+  mkdirSync(directory);
+  try {
+    const file = join(directory, "User.vue");
+    const options = {
+      cwd: TS_VUE,
+      files: [`${FIX_DIRECTORY}/User.vue`]
+    };
+    for (const order of [
+      ["oxlint", "oxfmt", "eslint"],
+      ["eslint", "oxfmt", "oxlint"]
+    ]) {
+      writeFileSync(file, VUE_USER);
+      assert.deepEqual(oxlintFindings(options), [], "oxlint must not judge imports of a Vue file");
+      fixAll({
+        options,
+        order
+      });
+      const fixed = readFileSync(file, "utf8");
+      assert.match(fixed, /import Child from/, order.join());
+      assert.doesNotMatch(fixed, /Unused/, order.join());
+      const settled = digest([file]);
+      fixAll({
+        options,
+        order
+      });
+      assert.equal(digest([file]), settled, order.join());
+    }
   } finally {
     rmSync(directory, {
       recursive: true,

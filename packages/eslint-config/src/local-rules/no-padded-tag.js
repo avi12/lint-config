@@ -73,6 +73,12 @@ export default {
       });
     }
 
+    const { defineDocumentVisitor } = context.sourceCode.parserServices;
+    const isVue = typeof defineDocumentVisitor === "function";
+    if (isVue) {
+      return defineDocumentVisitor({ VElement: handle });
+    }
+
     return {
       SvelteScriptElement: handle,
       SvelteStyleElement: handle,

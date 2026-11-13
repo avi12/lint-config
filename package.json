@@ -15,6 +15,7 @@
     "eslint": "^10.14.0",
     "eslint-config-avi12": "workspace:*",
     "eslint-plugin-svelte": "^3.24.1",
+    "eslint-plugin-vue": "^10.12.1",
     "fallow": "2.103.0",
     "oxfmt": "0.78.0",
     "oxlint": "1.90.0",
@@ -23,6 +24,8 @@
     "stylelint-config-ccb": "^3.32.0",
     "svelte": "^5.56.7",
     "svelte-eslint-parser": "^1.10.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vue": "^3.5.45",
+    "vue-eslint-parser": "^10.4.2"
   }
 }
