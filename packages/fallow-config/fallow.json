@@ -17,6 +17,21 @@
     "**/*.jsdos",
     "**/*.zip"
   ],
+  "ignoreDependencies": [
+    "avi12-lint",
+    "biome-config-avi12",
+    "eslint",
+    "eslint-config-avi12",
+    "fallow",
+    "fallow-config-avi12",
+    "oxfmt",
+    "oxfmt-config-avi12",
+    "oxlint",
+    "oxlint-config-avi12",
+    "oxlint-plugin-naming",
+    "stylelint",
+    "stylelint-config-avi12"
+  ],
   "entry": ["src/index.ts", "**/*.test.ts", "eslint.config.js", "svelte.config.js", "vite.config.ts"],
   "health": {
     "maxCrap": 1000

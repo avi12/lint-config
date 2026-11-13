@@ -9,3 +9,20 @@ test("the fallow preset ignores binaries, minified and vendored code and tool ou
     assert.ok(preset.ignorePatterns.includes(pattern), pattern);
   }
 });
+
+test("the fallow preset ignores every lint package that only a config file references", () => {
+  for (const name of [
+    "oxfmt-config-avi12",
+    "oxlint-config-avi12",
+    "oxlint-plugin-naming",
+    "stylelint-config-avi12",
+    "eslint-config-avi12",
+    "fallow-config-avi12",
+    "oxlint",
+    "oxfmt",
+    "stylelint",
+    "eslint"
+  ]) {
+    assert.ok(preset.ignoreDependencies.includes(name), name);
+  }
+});
