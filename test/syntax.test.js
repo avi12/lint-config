@@ -188,3 +188,16 @@ test("a type literal typing a parameter is left to oxfmt in every function-like 
   const property = "export interface Shape {\n  readonly pair: { first: number; second: number };\n}\n";
   assert.ok(codes({ source: property }).includes("house(expand-nested-type-literal)"));
 });
+
+test("a written return type of never or an assertion signature is allowed, any other is not", () => {
+  const allowed = [
+    "export function fail(): never {\n  throw new Error('x');\n}\n",
+    "export const fail = (): never => {\n  throw new Error('x');\n};\n",
+    "export function check(value: unknown): asserts value is string {\n  if (typeof value !== 'string') {\n    throw new Error('x');\n  }\n}\n",
+    "export function isText(value: unknown): value is string {\n  return typeof value === 'string';\n}\n"
+  ];
+  for (const source of allowed) {
+    assert.ok(!codes({ source }).includes(GOOGLE), source);
+  }
+  assert.ok(codes({ source: "export function size(): number {\n  return 1;\n}\n" }).includes(GOOGLE));
+});

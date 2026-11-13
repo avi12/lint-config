@@ -43,7 +43,7 @@ export const GOOGLE_SYNTAX = [
   },
   {
     selector:
-      ":matches(FunctionDeclaration, FunctionExpression, ArrowFunctionExpression)[returnType]:not([returnType.typeAnnotation.type='TSTypePredicate'])",
+      ":matches(FunctionDeclaration, FunctionExpression, ArrowFunctionExpression)[returnType]:not([returnType.typeAnnotation.type='TSTypePredicate']):not([returnType.typeAnnotation.type='TSNeverKeyword'])",
     message: "Do not write a return type: let TypeScript infer it."
   }
 ];
