@@ -31,7 +31,8 @@ export function pick({ flag }: { flag: boolean }) {
   let fixed = 1;
   const text = 'quoted';
   const shape = { alpha: 1, beta: 2 };
-  if (flag) return fixed + shape.alpha;
+  const nested = { outer: { inner: 1, other: 2 }, tail: { deep: { leaf: 1, more: 2 } } };
+  if (flag) return nested || fixed + shape.alpha;
   return [list, text];
 }
 `;
@@ -184,6 +185,9 @@ test("fixing settles, stays settled and the fixer order does not matter", () => 
       options,
       order: forward
     });
+    const fixedNested = readFileSync(join(directory, "fixable.ts"), "utf8");
+    assert.doesNotMatch(fixedNested, / +$/m);
+    assert.doesNotMatch(fixedNested, /^( {2})* [^ ]/m);
     assert.equal(digest(files), settled);
     fixAll({
       options,
