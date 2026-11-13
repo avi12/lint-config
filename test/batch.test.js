@@ -60,5 +60,9 @@ test("batches run in order with a fake spawner and the exit codes merge", async 
     }
   });
   assert.equal(merged, 1);
-  assert.deepEqual(seen, [["a", true], ["b", false], ["c", false]]);
+  assert.deepEqual(seen, [
+    ["a", true],
+    ["b", false],
+    ["c", false]
+  ]);
 });

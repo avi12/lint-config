@@ -23,6 +23,7 @@ const OPPOSITES = [
   ["sort-imports", "perfectionist/sort-imports"]
 ];
 const MAX_FIX_CYCLES = 4;
+const BACKSLASH = String.fromCharCode(92);
 const FIX_DIRECTORY = "clash-fix-run";
 const FIXABLE_SOURCE = `import { second, first, unused } from "./elsewhere";
 export const list = [first, second];
@@ -49,6 +50,8 @@ export const called = resolve({
   more: [first, second]
 }
 );
+export const escaped = "a\\u2014b";
+export const hooks = { build: arg => { resolve(arg); }, "build:done": async (value: string, count = 1) => { resolve(value, count); }, [escaped]: arg => { resolve(arg); }, uses: () => { this.run(); }, expression: arg => arg + 1, nested: { deep: arg => { resolve(arg); } } };
 export const wrapped = list.filter(item => item.startsWith("long-prefix-value") && item.endsWith("long-suffix-value") && item.length > 3);
 `;
 
@@ -203,6 +206,17 @@ test("fixing settles, stays settled and the fixer order does not matter", () => 
     const fixedNested = readFileSync(join(directory, "fixable.ts"), "utf8");
     assert.doesNotMatch(fixedNested, / +$/m);
     assert.doesNotMatch(fixedNested, /^( {2})* [^ ]/m);
+    for (const expected of [
+      "  build(arg) {",
+      '  async "build:done"(value: string, count = 1) {',
+      "  [escaped](arg) {",
+      "    deep(arg) {",
+      "  uses: () => {",
+      "  expression: arg => arg + 1,",
+      `a${BACKSLASH}u2014b`
+    ]) {
+      assert.ok(fixedNested.includes(expected), expected);
+    }
     assert.equal(digest(files), settled);
     fixAll({
       options,
