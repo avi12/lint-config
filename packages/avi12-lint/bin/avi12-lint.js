@@ -4,8 +4,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-import { argumentBudget, batchCommands, runSequentially } from "../src/batch.js";
-import { changedFiles, mergeBase, stagedFiles } from "../src/changed-files.js";
+import { argumentBudget, batchCommands, runSequentially } from "#src/batch.js";
+import { changedFiles, mergeBase, stagedFiles } from "#src/changed-files.js";
 import {
   guardLimits,
   killCommands,
@@ -14,8 +14,8 @@ import {
   processTableCommand,
   treeUsage,
   watchdog
-} from "../src/guard.js";
-import { plan } from "../src/plan.js";
+} from "#src/guard.js";
+import { plan } from "#src/plan.js";
 
 const args = process.argv.slice(2);
 const concurrencyIndex = args.indexOf("--concurrency");

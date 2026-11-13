@@ -12,6 +12,9 @@
   ],
   "type": "module",
   "sideEffects": false,
+  "imports": {
+    "#src/*": "./src/*"
+  },
   "exports": {
     "./eslint-flags": "./src/eslint-flags.js",
     "./plan": "./src/plan.js",
