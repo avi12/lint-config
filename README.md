@@ -22,13 +22,13 @@ They are consumed straight from GitHub and never published to npm
 Every package installs from a tag of this repository
 
 ```sh
-pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.3&path:/packages/oxlint-config"
-pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.3&path:/packages/oxlint-plugin-naming"
-pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.3&path:/packages/oxfmt-config"
-pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.3&path:/packages/eslint-config"
-pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.3&path:/packages/stylelint-config"
-pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.3&path:/packages/fallow-config"
-pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.3&path:/packages/avi12-lint"
+pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/oxlint-config"
+pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.4&path:/packages/oxlint-plugin-naming"
+pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/oxfmt-config"
+pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/eslint-config"
+pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/stylelint-config"
+pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.4&path:/packages/fallow-config"
+pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.4&path:/packages/avi12-lint"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -109,6 +109,13 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.4.3
+
+- `avi12-lint` no longer declares `eslint-config-avi12` as a peer, which does not exist on npm and failed to install in repos without Svelte files; the concurrency and cache flags now live in `avi12-lint/eslint-flags`, and `eslint-config-avi12/defaults` and its re-exports (`clampConcurrency`, `eslintFlags` and the constants) are gone; only `IGNORES` stays
+- `avi12-lint --fix` ends with oxfmt, after the last oxlint pass, and plans oxfmt when only its binary is installed, so no odd indentation or trailing space is left
+- oxfmt hugs a function parameter's type literal onto the parameter line, which `house/expand-nested-type-literal` expanded again forever; the rule now leaves parameter types to oxfmt, and `@stylistic/object-property-newline` is dropped, since the house rules already own property layout and its fix split members mid-line; the fixture of `test/clash.test.js` holds a type literal, a nested object and a parameter type, so oxfmt and oxlint settle in either order
+- `fallow audit` in `--changed` and `--staged` runs with `NODE_OPTIONS=--max-old-space-size=4096` (added to any `NODE_OPTIONS` you set), because it once grew to 38 GB on a dirty tree
+
 ### Migrating from 0.4.1
 
 - `house/expand-nested-object-expression` now replaces the gap between tokens, so its fixes leave no odd indent or trailing space
@@ -155,6 +162,7 @@ Output is printed per tool when it finishes, so lines never interleave
 - With `--changed` or `--staged`, oxlint, ESLint, stylelint and `fallow audit` get the file list;
   tsrs checks the whole project, as a type error can sit in an untouched file
 - A tool with no matching changed file is skipped
+- `fallow audit` runs with its Node heap capped at 4 GB (`--max-old-space-size=4096`), a guard against a runaway audit on a dirty tree
 
 ### Measured on a 2263-file TypeScript and Svelte codebase
 
