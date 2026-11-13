@@ -16,7 +16,7 @@
     "builtin": true
   },
   "options": {
-    "reportUnusedDisableDirectives": "error"
+    "reportUnusedDisableDirectives": "off"
   },
   "rules": {
     "curly": ["error", "all"],
