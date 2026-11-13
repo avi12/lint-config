@@ -20,7 +20,14 @@ function childNodes(node) {
 }
 
 function containsType({ node, types }) {
-  return childNodes(node).some(child => types.has(child.type) || containsType({ node: child, types }));
+  return childNodes(node).some(
+    child =>
+      types.has(child.type) ||
+      containsType({
+        node: child,
+        types
+      })
+  );
 }
 
 function isNarrowingCheck(node) {
@@ -38,29 +45,48 @@ function isNarrowingCheck(node) {
 
 function isTruthinessGuard(node) {
   const isGuardType = TRUTHINESS_TYPES.has(node.type) && (node.type !== "UnaryExpression" || node.operator === "!");
-  return isGuardType && !containsType({ node, types: OPAQUE_TYPES });
+  return (
+    isGuardType &&
+    !containsType({
+      node,
+      types: OPAQUE_TYPES
+    })
+  );
 }
 
-function variableNames(node, names = new Set()) {
+function variableNames(node) {
+  const names = new Set();
+  collectNames({
+    node,
+    names
+  });
+  return names;
+}
+
+function collectNames({ node, names }) {
   if (node.type === "Identifier") {
     names.add(node.name);
-    return names;
+    return;
   }
 
   const isPlainMember = node.type === "MemberExpression" && !node.computed;
   const children = isPlainMember ? [node.object] : childNodes(node);
   for (const child of children) {
-    variableNames(child, names);
+    collectNames({
+      node: child,
+      names
+    });
   }
-
-  return names;
 }
 
 function guardSubjects(node) {
   if (node.type === "CallExpression") {
     const names = new Set();
     for (const argument of node.arguments) {
-      variableNames(argument, names);
+      collectNames({
+        node: argument,
+        names
+      });
     }
 
     return names;
@@ -75,7 +101,10 @@ function sharesName({ first, second }) {
 }
 
 function chainLeaves(node) {
-  const isChain = child => child.type === "LogicalExpression" && child.operator === node.operator;
+  function isChain(child) {
+    return child.type === "LogicalExpression" && child.operator === node.operator;
+  }
+
   return [node.left, node.right].flatMap(child => (isChain(child) ? chainLeaves(child) : [child]));
 }
 
@@ -83,12 +112,18 @@ function isGuarded({ leaf, chain }) {
   const index = chain.indexOf(leaf);
   const names = variableNames(leaf);
   const subjects = guardSubjects(leaf);
-  const isAfterGuard = chain
-    .slice(0, index)
-    .some(earlier => sharesName({ first: guardSubjects(earlier), second: names }));
-  const isGuardOfLater = chain
-    .slice(index + 1)
-    .some(later => sharesName({ first: subjects, second: variableNames(later) }));
+  const isAfterGuard = chain.slice(0, index).some(earlier =>
+    sharesName({
+      first: guardSubjects(earlier),
+      second: names
+    })
+  );
+  const isGuardOfLater = chain.slice(index + 1).some(later =>
+    sharesName({
+      first: subjects,
+      second: variableNames(later)
+    })
+  );
   return isAfterGuard || isGuardOfLater;
 }
 
@@ -103,7 +138,12 @@ function leavesOf({ node, depth = 1 }) {
   }
 
   return [node.left, node.right].flatMap(child =>
-    child.type === "LogicalExpression" ? leavesOf({ node: child, depth: depth + 1 }) : [child]
+    child.type === "LogicalExpression"
+      ? leavesOf({
+          node: child,
+          depth: depth + 1
+        })
+      : [child]
   );
 }
 
@@ -115,6 +155,9 @@ export function extractableOperands(condition) {
     }
 
     const chain = chainLeaves(topChain(leaf.parent));
-    return !isGuarded({ leaf, chain });
+    return !isGuarded({
+      leaf,
+      chain
+    });
   });
 }

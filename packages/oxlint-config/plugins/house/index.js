@@ -30,14 +30,20 @@ function createGoogleSyntaxRule(entries) {
 
       return {
         ...selectorRule.create(context),
-        "IfStatement > LogicalExpression.test": condition => {
+        "IfStatement > LogicalExpression.test"(condition) {
           const isElseIf = condition.parent.parent.type === "IfStatement";
           if (!isElseIf) {
-            reportOperands({ condition, message: EXTRACT_IF_MESSAGE });
+            reportOperands({
+              condition,
+              message: EXTRACT_IF_MESSAGE
+            });
           }
         },
         "ConditionalExpression > LogicalExpression.test": condition =>
-          reportOperands({ condition, message: EXTRACT_TERNARY_MESSAGE })
+          reportOperands({
+            condition,
+            message: EXTRACT_TERNARY_MESSAGE
+          })
       };
     }
   };

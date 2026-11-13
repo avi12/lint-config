@@ -243,10 +243,6 @@ function collectBooleanFunctions(program) {
   return names;
 }
 
-function isLiteralValue(node) {
-  return literalKind(node) !== null || (node.type === "Literal" && typeof node.value === "boolean");
-}
-
 function isStringLiteral(node) {
   return literalKind(node) === "string";
 }
