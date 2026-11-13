@@ -22,13 +22,13 @@ They are consumed straight from GitHub and never published to npm
 Every package installs from a tag of this repository
 
 ```sh
-pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/oxlint-config"
-pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.0&path:/packages/oxlint-plugin-naming"
-pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/oxfmt-config"
-pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/eslint-config"
-pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/stylelint-config"
-pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.0&path:/packages/fallow-config"
-pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.0&path:/packages/avi12-lint"
+pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.1&path:/packages/oxlint-config"
+pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.1&path:/packages/oxlint-plugin-naming"
+pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.1&path:/packages/oxfmt-config"
+pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.1&path:/packages/eslint-config"
+pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.1&path:/packages/stylelint-config"
+pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.1&path:/packages/fallow-config"
+pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.1&path:/packages/avi12-lint"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -108,6 +108,16 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.4.0
+
+- `no-magic-numbers` is now `house/no-magic-numbers`: a numeric literal type is exempt anywhere (`Exclude<T, 720 | 480>`), a literal inside a `const` initializer, an enum member, a class property or a `parseInt` radix is named already, and `0`, `1`, `-1` and `2` are allowed
+  Turn it off for files with an oxlint override of `house/no-magic-numbers`
+- oxlint no longer judges unused imports or variables in `.svelte` files, since it sees the script block and not the markup
+  The Svelte ESLint layer owns them: `unused-imports/no-unused-imports` runs there with the template in view, and `eslint-config-avi12` now depends on `eslint-plugin-unused-imports`
+- `avi12-lint` passes oxfmt your `.gitignore` and `.prettierignore` and the preset's default ignore set: `.claude`, `_locales`, `locales`, lock files, `.wxt`, `.output`, `.svelte-kit`, `dist`, `build` and `coverage`
+  oxfmt has no `extends`, so a copied `.oxfmtrc.json` cannot inherit them; the runner reads `ignorePatterns` from `oxfmt-config-avi12/oxfmt.json`
+  Add more with `ignorePatterns` in your `.oxfmtrc.json`, or a line in `.gitignore` or `.prettierignore`
 
 ### Migrating from 0.3.0
 

@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-naming",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Naming conventions for oxlint's JS plugin API: Google style names plus is/has/can/should booleans, no type information needed",
   "license": "Apache-2.0",
   "files": [
