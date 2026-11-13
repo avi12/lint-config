@@ -247,17 +247,58 @@ function isLiteralValue(node) {
   return literalKind(node) !== null || (node.type === "Literal" && typeof node.value === "boolean");
 }
 
-function isEnumLike(objectExpression) {
+function isStringLiteral(node) {
+  return literalKind(node) === "string";
+}
+
+function isNumberLiteral(node) {
+  return literalKind(node) === "number";
+}
+
+function hasMatchingUnionAlias({ program, name }) {
+  return program.body.some(statement => {
+    const declaration = statement.declaration ?? statement;
+    const query = declaration.typeAnnotation?.objectType;
+    return (
+      declaration.type === "TSTypeAliasDeclaration" &&
+      declaration.id.name === name &&
+      declaration.typeAnnotation.type === "TSIndexedAccessType" &&
+      query?.type === "TSTypeQuery" &&
+      query.exprName?.name === name
+    );
+  });
+}
+
+function isEnumLike({ objectExpression, program }) {
   const cast = objectExpression.parent;
+  const declarator = cast?.parent;
   const isConstAssertion =
     cast?.type === "TSAsExpression" &&
     cast.typeAnnotation?.type === "TSTypeReference" &&
     cast.typeAnnotation.typeName?.name === "const";
-  const isDeclared = cast?.parent?.type === "VariableDeclarator";
-  const hasOnlyLiterals =
-    objectExpression.properties.length > 0 &&
-    objectExpression.properties.every(member => member.type === "Property" && isLiteralValue(member.value));
-  return isConstAssertion && isDeclared && hasOnlyLiterals;
+  const isDeclared = declarator?.type === "VariableDeclarator" && declarator.id.type === "Identifier";
+  const members = objectExpression.properties;
+  const isPlain = members.length > 0 && members.every(member => member.type === "Property");
+  if (!isConstAssertion || !isDeclared || !isPlain) {
+    return false;
+  }
+
+  const isAllStrings = members.every(member => isStringLiteral(member.value));
+  if (isAllStrings) {
+    return true;
+  }
+
+  const isAllNumbers = members.every(member => isNumberLiteral(member.value));
+  const isExported = declarator.parent?.parent?.type === "ExportNamedDeclaration";
+  return (
+    isAllNumbers &&
+    isExported &&
+    program !== null &&
+    hasMatchingUnionAlias({
+      program,
+      name: declarator.id.name
+    })
+  );
 }
 
 function keyName(node) {
@@ -355,6 +396,7 @@ const rule = {
       })
     ]);
     const allowedPatterns = compileAllowedPatterns(options);
+    let program = null;
     let booleanFunctions = new Set();
     function report({ node, message }) {
       context.report({
@@ -634,6 +676,7 @@ const rule = {
 
     return {
       Program(node) {
+        program = node;
         booleanFunctions = collectBooleanFunctions(node);
       },
       VariableDeclarator: checkVariable,
@@ -678,7 +721,12 @@ const rule = {
         if (isObjectLiteralMember) {
           const isFunctionValue =
             node.method || node.value?.type === "ArrowFunctionExpression" || node.value?.type === "FunctionExpression";
-          const isEnumMember = !isFunctionValue && isEnumLike(node.parent);
+          const isEnumMember =
+            !isFunctionValue &&
+            isEnumLike({
+              objectExpression: node.parent,
+              program
+            });
           const formats = isEnumMember ? ["UPPER_CASE"] : ["camelCase", "UPPER_CASE", "PascalCase"];
           checkMember({
             node,

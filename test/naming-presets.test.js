@@ -157,3 +157,22 @@ test("the sveltekit preset exempts the route options in route files only", () =>
     }).length > 0
   );
 });
+
+test("numeric config objects stay free-form; enum-likeness needs strings, or exported numbers with a union alias", () => {
+  const check = source =>
+    findings({
+      options: {},
+      source
+    }).length;
+  assert.equal(check("export const range = { min: 0, max: 10, step: 1 } as const;\n"), 0);
+  assert.equal(check("const range = { min: 0, max: 10 } as const;\nexport const x = range;\n"), 0);
+  assert.equal(check("export const Mixed = { min: 0, label: 'a' } as const;\n"), 0);
+  assert.equal(
+    check(
+      "export const Level = { low: 0, HIGH: 1 } as const;\nexport type Level = typeof Level[keyof typeof Level];\n"
+    ),
+    1
+  );
+  assert.equal(check("const Level = { low: 0 } as const;\nexport type Level = typeof Level[keyof typeof Level];\n"), 0);
+  assert.equal(check("export const Mode = { fast: 'f' } as const;\n"), 1);
+});

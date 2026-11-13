@@ -57,7 +57,7 @@ oxlint, including the naming rule
 - `allowedNames` exempts exact identifiers, `fileOverrides` exempts whole files
 - Every entry needs a `reason`; an entry without one makes the rule fail loudly
 - `presets` exempts keys that an outside format dictates: `webextension-manifest` (snake_case manifest keys), `webextension-messages` (PascalCase message names), `hook-names` (colon-style names such as `build:publicAssets`), `sveltekit` (`ssr`, `csr`, `prerender` and `trailingSlash`, only in `+page`/`+layout` route files, `.server` ones included)
-- Enum-like objects follow the project pattern: in `export const X = { A: "a" } as const` with only literal values every member must be `UPPER_CASE`; the keys of any other object (a PascalCase lookup, for example) may be camelCase, `UPPER_CASE` or PascalCase
+- Enum-like objects follow the project pattern: in `export const X = { A: "a" } as const` where every value is a string literal, every member must be `UPPER_CASE`; an object of only numbers counts too when it is exported and the file has `type X = typeof X[keyof typeof X]`; the keys of any other object (a numeric config such as `{ min: 0, max: 10 } as const`, a PascalCase lookup) may be camelCase, `UPPER_CASE` or PascalCase
 - `allowedPatterns` is the same with your own regex: `[{ "pattern": "^x_", "reason": "vendor keys" }]`
 
 Presets for oxlint: `oxlint-config-avi12/browser.json` adds the browser globals, `oxlint-config-avi12/webextension.json` adds the extension globals (`chrome`, `browser`) on top of it, `oxlint-config-avi12/wxt.json` adds WXT's default exports in `entrypoints/` and in `*.d.ts` on top of that (`wxt.config.ts` is already exempt)
