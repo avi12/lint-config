@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
+import { argumentBudget, batchCommands, runSequentially } from "../src/batch.js";
 import { changedFiles, mergeBase, stagedFiles } from "../src/changed-files.js";
 import {
   guardLimits,
@@ -111,7 +112,7 @@ function terminate({ pid, usage }) {
 
 const GUARDED_STEP = "fallow";
 
-function run({ name, command, env }) {
+function run({ name, command, env, isFirst }) {
   return new Promise(resolve => {
     const child = spawn("pnpm", ["exec", ...command], {
       shell: true,
@@ -154,7 +155,11 @@ function run({ name, command, env }) {
     child.stderr.on("data", chunk => chunks.push(chunk));
     child.on("close", status => {
       isDone = true;
-      console.log(`avi12-lint: ${name}`);
+
+      if (isFirst) {
+        console.log(`avi12-lint: ${name}`);
+      }
+
       process.stdout.write(Buffer.concat(chunks));
 
       if (failure) {
@@ -167,10 +172,33 @@ function run({ name, command, env }) {
   });
 }
 
+function runStep(step) {
+  const { name, command, env, split } = step;
+  const commands = split
+    ? batchCommands({
+        ...split,
+        budget: argumentBudget({
+          platform: process.platform,
+          env: process.env
+        })
+      })
+    : [command];
+  return runSequentially({
+    commands,
+    runOne: ({ command: batch, isFirst }) =>
+      run({
+        name,
+        command: batch,
+        env,
+        isFirst
+      })
+  });
+}
+
 const parallel = steps.filter(({ isParallel }) => isParallel);
 const serial = steps.filter(({ isParallel }) => !isParallel);
-const results = await Promise.all(parallel.map(run));
+const results = await Promise.all(parallel.map(runStep));
 for (const step of serial) {
-  results.push(await run(step));
+  results.push(await runStep(step));
 }
 process.exit(results.includes(1) ? 1 : 0);

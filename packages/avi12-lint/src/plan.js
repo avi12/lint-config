@@ -57,6 +57,15 @@ export function plan({
     return files?.length === 0;
   }
   const isParallel = !isFix;
+  function splitOf({ head, files, tail = [] }) {
+    return files
+      ? {
+          head,
+          files,
+          tail
+        }
+      : undefined;
+  }
   const scripts = only(SCRIPT_PATTERN);
   const svelteFiles = only(SVELTE_PATTERN);
   const styles = only(STYLE_PATTERN);
@@ -73,6 +82,10 @@ export function plan({
         ...(isFix ? ["--fix"] : []),
         ...(svelteFiles ?? [])
       ],
+      split: splitOf({
+        head: ["eslint", ...eslintFlags(clampConcurrency(requested)), ...(isFix ? ["--fix"] : [])],
+        files: svelteFiles
+      }),
       env: {},
       isParallel
     });
@@ -84,6 +97,10 @@ export function plan({
   const oxlintStep = {
     name: "oxlint",
     command: ["oxlint", ...(isTypeAware ? ["--type-aware"] : []), ...(isFix ? ["--fix"] : []), ...(scripts ?? [])],
+    split: splitOf({
+      head: ["oxlint", ...(isTypeAware ? ["--type-aware"] : []), ...(isFix ? ["--fix"] : [])],
+      files: scripts
+    }),
     env: isTypeAware ? { OXLINT_TSGOLINT_PATH: `${TSRS_LINT_BINARY}${extension}` } : {},
     isParallel
   };
@@ -105,6 +122,11 @@ export function plan({
     steps.push({
       name: "stylelint",
       command: ["stylelint", ...(styles ?? [STYLE_GLOB]), ...(isFix ? ["--fix"] : [])],
+      split: splitOf({
+        head: ["stylelint"],
+        files: styles,
+        tail: isFix ? ["--fix"] : []
+      }),
       env: {},
       isParallel
     });
@@ -125,6 +147,15 @@ export function plan({
       ...IGNORE_FILES.filter(hasFile).flatMap(file => ["--ignore-path", file]),
       ...oxfmtTargets
     ],
+    split: splitOf({
+      head: [
+        "oxfmt",
+        ...(isFix ? [] : ["--check"]),
+        ...IGNORE_FILES.filter(hasFile).flatMap(file => ["--ignore-path", file])
+      ],
+      files: formattable,
+      tail: oxfmtExcludes
+    }),
     env: {},
     isParallel
   };
