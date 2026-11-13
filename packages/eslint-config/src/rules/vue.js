@@ -1,3 +1,5 @@
+export const KEPT_LAYOUT_RULES = new Set(["html-self-closing"]);
+
 export const VUE_RULES = {
   "vue/block-order": ["error", { order: ["script", "template", "style"] }],
   "vue/block-lang": [
@@ -11,8 +13,6 @@ export const VUE_RULES = {
   "vue/component-name-in-template-casing": ["error", "PascalCase"],
   "vue/define-macros-order": ["error", { order: ["defineOptions", "defineProps", "defineEmits", "defineSlots"] }],
   "vue/v-on-event-hyphenation": ["error", "always"],
-  "vue/html-indent": ["error", 2],
-  "vue/html-quotes": ["error", "double"],
   "vue/html-self-closing": [
     "error",
     {

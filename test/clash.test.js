@@ -329,8 +329,13 @@ import Unused from "./Unused.vue";
 </script>
 
 <template>
-  <Child />
+      <div   class="a"   id="b" data-x="1" data-y="2" data-z="3" data-w="4" data-q="5" data-r="6" data-s="7" data-t="8"><h3>hi</h3>
+  <Child /></div>
 </template>
+
+<style>
+p{color:red}
+</style>
 `;
 
 test("Vue: no rule is enforced by both ESLint and oxlint, none opposes another", () => {
