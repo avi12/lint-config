@@ -27,7 +27,10 @@ const MAX_FIX_CYCLES = 4;
 const FIX_DIRECTORY = "clash-fix-run";
 const FIXABLE_SOURCE = `import { second, first, unused } from "./elsewhere";
 export const list = [first, second];
-export function pick({ flag }: { flag: boolean }) {
+export interface Options { readonly a: number; readonly b: { readonly c: string; readonly d: string } }
+export type Pair = { first: number; second: { deep: string; other: number } };
+export function pick({ flag }: { flag: boolean }, extra: { p: number; q: number }) {
+  resolve({ key: 1, value: 2 });
   let fixed = 1;
   const text = 'quoted';
   const shape = { alpha: 1, beta: 2 };

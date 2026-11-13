@@ -217,12 +217,6 @@
         }
       }
     ],
-    "@stylistic/object-property-newline": [
-      "error",
-      {
-        "allowAllPropertiesOnSameLine": false
-      }
-    ],
     "@stylistic/padding-line-between-statements": [
       "error",
       {
