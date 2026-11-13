@@ -11,8 +11,8 @@ They are consumed straight from GitHub and never published to npm
 | `packages/oxlint-config` | oxlint preset: correctness, Google style rules, `@/` imports with `../` banned, any lint-disable text is an error, and the former ESLint rules as JS plugins (unused imports, sorting, stylistic layout, the house rules); `library.json` adds the JSDoc and tree-shaking rules for `src/`; `wxt.json` for WXT extensions |
 | `packages/oxlint-plugin-naming` | `naming/convention` for oxlint's JS plugin API, with `allowedNames` and `fileOverrides` that each carry a reason |
 | `packages/oxfmt-config` | oxfmt preset: formatting and import order |
-| `packages/eslint-config` | ESLint flat config for Svelte files only: the template rules oxlint and oxfmt cannot see; a TypeScript-only repo needs no ESLint |
-| `packages/stylelint-config` | stylelint preset for CSS and Svelte or HTML style blocks |
+| `packages/eslint-config` | ESLint flat configs for Svelte and Vue files only: the template rules oxlint and oxfmt cannot see; a TypeScript-only repo needs no ESLint |
+| `packages/stylelint-config` | stylelint preset for CSS and Svelte, Vue or HTML style blocks |
 | `packages/fallow-config` | fallow preset for the dead-code audit |
 | `packages/biome-config` | optional and minimal: only `noFloatingPromises` |
 | `packages/avi12-lint` | `avi12-lint` runs the tools one after another |
@@ -76,7 +76,23 @@ export default svelte();
 ```
 
 - `svelte({ ignores, overrides })` is the whole config: install `eslint`, `eslint-plugin-svelte`, `svelte-eslint-parser` and `typescript`
-- A repo without Svelte files has no `eslint.config.js` and no ESLint dependency at all
+- A repo without Svelte or Vue files has no `eslint.config.js` and no ESLint dependency at all
+
+ESLint, only when the repo has `.vue` files
+
+```js
+import { vue } from "eslint-config-avi12/vue";
+
+export default vue();
+```
+
+- `vue({ ignores, overrides })` mirrors the Svelte layer: install `eslint`, `eslint-plugin-vue`, `vue-eslint-parser` and `typescript`; `eslint-plugin-svelte` and `svelte-eslint-parser` stay optional peers, so a Vue repo installs neither
+- It runs on `.vue` files only and holds what needs the template AST: `eslint-plugin-vue`'s `flat/recommended` (essential, strongly-recommended and recommended), `vue/block-order` (script, template, style), `vue/block-lang` (`ts`), PascalCase components in templates, `vue/define-macros-order`, `vue/no-v-html`, hyphenated `v-on` events, shorthand `v-bind`, `v-on` and `v-slot`, `local/no-padded-tag`, and the em dash check
+- Parity with Svelte: a ternary in a template tag (`{{ a ? b : c }}`) is banned, since Svelte bans it too; use `v-if`/`v-else`; a ternary inside a directive value such as `:label="a ? b : c"` stays allowed, as in Svelte attributes
+- oxfmt does not format the template of a `.vue` file, so `vue/html-indent`, `vue/html-quotes`, `vue/html-self-closing` and `vue/attributes-order` own the markup; the script is oxlint's and oxfmt's, and `vue/script-indent` is deliberately not enabled
+- oxlint judges the script of a `.vue` file like a `.ts` file, except unused imports and variables, which ESLint decides with the template in view; the naming plugin treats a `.vue` script like a `.svelte` one
+- No `nuxt` naming preset: Nuxt's mandated names (`defineProps`, `definePageMeta`, `pages/[id].vue`) are functions and file names the naming rule does not judge; a Nuxt repo that meets a mandated key adds an `allowedNames` entry with its reason
+- stylelint reads the `<style>` of a `.vue` file through `postcss-html`, as for Svelte
 
 Other presets: `extends` the JSON of `stylelint-config-avi12` and
 `fallow-config-avi12`, and pass `oxfmt-config-avi12/oxfmt.json` to `oxfmt -c`
@@ -135,6 +151,13 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.4.15
+
+- New, optional: `eslint-config-avi12/vue` for Vue repos; install `eslint`, `eslint-plugin-vue`, `vue-eslint-parser` and `typescript`, write `export default vue();`
+- `eslint-config-avi12` declares its Svelte and Vue plugins as optional peers; a Svelte repo changes nothing
+- `avi12-lint` plans ESLint when the repo holds `.svelte` or `.vue` files, and passes stylelint, oxlint and oxfmt the `.vue` files too
+- oxlint's `.svelte` override (no unused-import or unused-variable judgement) now covers `.vue`
 
 ### Migrating from 0.4.14
 
