@@ -13,13 +13,20 @@ const PRESET = join(ROOT, "packages", "stylelint-config", "stylelint.json");
 function warnings(css) {
   const directory = mkdtempSync(join(tmpdir(), "stylelint-"));
   try {
-    writeFileSync(join(directory, "sample.svelte"), `<style>
+    writeFileSync(
+      join(directory, "sample.svelte"),
+      `<style>
 ${css}</style>
-`);
-    const { stdout, stderr } = spawnSync(process.execPath, [STYLELINT, "--config", PRESET, "-f", "json", "sample.svelte"], {
-      cwd: directory,
-      encoding: "utf8"
-    });
+`
+    );
+    const { stdout, stderr } = spawnSync(
+      process.execPath,
+      [STYLELINT, "--config", PRESET, "-f", "json", "sample.svelte"],
+      {
+        cwd: directory,
+        encoding: "utf8"
+      }
+    );
     return JSON.parse((stdout || stderr).slice((stdout || stderr).indexOf("[{")))[0].warnings.map(({ rule }) => rule);
   } finally {
     rmSync(directory, { recursive: true, force: true });

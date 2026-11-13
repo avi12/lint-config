@@ -22,7 +22,7 @@ const SOURCE = [
   'export { j } from "../a/b";',
   'export * from "../../x";',
   'export const k = import("../a/b");',
-  'export const values = [a, b, c, d, e, f, g, h, j];',
+  "export const values = [a, b, c, d, e, f, g, h, j];",
   ""
 ].join("\n");
 
@@ -33,8 +33,8 @@ test("every ../ import is banned and ./ imports stay allowed", () => {
     writeFileSync(join(directory, ".oxlintrc.json"), JSON.stringify({ extends: [PRESET], rules: {} }));
     writeFileSync(join(directory, "src", "sample.ts"), SOURCE);
     const lines = oxlintFindings({ cwd: directory, files: ["src/sample.ts"] })
-      .filter((finding) => finding.startsWith(RULE))
-      .map((finding) => Number(finding.split("@")[1]))
+      .filter(finding => finding.startsWith(RULE))
+      .map(finding => Number(finding.split("@")[1]))
       .sort((first, second) => first - second);
     assert.deepEqual(lines, [1, 2, 3, 6, 7, 8, 9, 10, 11, 12]);
   } finally {

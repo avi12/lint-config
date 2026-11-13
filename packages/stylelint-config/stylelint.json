@@ -38,7 +38,10 @@
     "plugin/no-unsupported-browser-features": null,
     "@stylistic/linebreaks": null,
     "@stylistic/indentation": 2,
-    "value-keyword-case": ["lower", { "camelCaseSvgKeywords": true, "ignoreProperties": ["unicode-range", "/^-winui-/"] }],
+    "value-keyword-case": [
+      "lower",
+      { "camelCaseSvgKeywords": true, "ignoreProperties": ["unicode-range", "/^-winui-/"] }
+    ],
     "no-unknown-animations": null,
     "plugin/no-low-performance-animation-properties": null,
     "font-family-no-missing-generic-family-keyword": null,
