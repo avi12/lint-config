@@ -87,9 +87,9 @@ export default vue();
 ```
 
 - `vue({ ignores, overrides })` mirrors the Svelte layer: install `eslint`, `eslint-plugin-vue`, `vue-eslint-parser` and `typescript`; `eslint-plugin-svelte` and `svelte-eslint-parser` stay optional peers, so a Vue repo installs neither
-- It runs on `.vue` files only and holds what needs the template AST: `eslint-plugin-vue`'s `flat/recommended` (essential, strongly-recommended and recommended), `vue/block-order` (script, template, style), `vue/block-lang` (`ts`), PascalCase components in templates, `vue/define-macros-order`, `vue/no-v-html`, hyphenated `v-on` events, shorthand `v-bind`, `v-on` and `v-slot`, `local/no-padded-tag`, and the em dash check
+- It runs on `.vue` files only and holds what needs the template AST: `eslint-plugin-vue`'s `flat/recommended` (essential, strongly-recommended and recommended), `vue/block-order` (script, template, style), `vue/block-lang` (`ts`), `vue/attributes-order`, PascalCase components in templates, `vue/define-macros-order`, `vue/no-v-html`, hyphenated `v-on` events, shorthand `v-bind`, `v-on` and `v-slot`, `local/no-padded-tag`, and the em dash check
 - Parity with Svelte: a ternary in a template tag (`{{ a ? b : c }}`) is banned, since Svelte bans it too; use `v-if`/`v-else`; a ternary inside a directive value such as `:label="a ? b : c"` stays allowed, as in Svelte attributes
-- oxfmt does not format the template of a `.vue` file, so `vue/html-indent`, `vue/html-quotes`, `vue/html-self-closing` and `vue/attributes-order` own the markup; the script is oxlint's and oxfmt's, and `vue/script-indent` is deliberately not enabled
+- Unlike `.svelte`, oxfmt formats `.vue` files whole (script, template and style), so every layout rule of `eslint-plugin-vue` is off except `vue/html-self-closing`, which oxfmt does not do; `eslint-plugin-vue`'s warnings are errors here, and ESLint keeps only the rules oxfmt cannot express
 - oxlint judges the script of a `.vue` file like a `.ts` file, except unused imports and variables, which ESLint decides with the template in view; the naming plugin treats a `.vue` script like a `.svelte` one
 - No `nuxt` naming preset: Nuxt's mandated names (`defineProps`, `definePageMeta`, `pages/[id].vue`) are functions and file names the naming rule does not judge; a Nuxt repo that meets a mandated key adds an `allowedNames` entry with its reason
 - stylelint reads the `<style>` of a `.vue` file through `postcss-html`, as for Svelte
@@ -151,6 +151,10 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.5.0
+
+- `vue()` turns off every layout rule of `eslint-plugin-vue` that oxfmt owns (it formats `.vue` templates), and makes the plugin's warnings errors
 
 ### Migrating from 0.4.15
 
@@ -263,7 +267,7 @@ Where one program or one build must see several packages, keep `@/` for the pack
 `avi12-lint` plans a tool only when its config file or binary exists
 Default run: oxlint (type-aware through `tsrs-lint` when installed), `tsrs --noEmit` when installed,
 stylelint, oxfmt and ESLint
-ESLint is planned only when `eslint.config.js` exists and the repo holds a `.svelte` file, and it gets the Svelte files alone
+ESLint is planned only when `eslint.config.js` exists and the repo holds a `.svelte` or `.vue` file, and it gets those files alone
 It starts first because it is the one that peaks in memory, and the light tools run beside it
 Output is printed per tool when it finishes, so lines never interleave
 
