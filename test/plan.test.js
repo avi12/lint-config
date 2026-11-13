@@ -330,3 +330,13 @@ test("oxlint ignores nested configs unless the consumer opts in", () => {
   const optedIn = plan({ hasFile, isNestedConfigAllowed: true }).find(({ name }) => name === "oxlint");
   assert.ok(!optedIn.command.includes("--disable-nested-config"));
 });
+
+test("fallow runs over the full tree only with isFallowFull, and never beside a changed-files run", () => {
+  const hasFile = file => ALL_CONFIGS.has(file) || file === "node_modules/.bin/fallow";
+  assert.equal(plan({ hasFile }).find(({ name }) => name === "fallow"), undefined);
+  const full = plan({ hasFile, isFallowFull: true }).find(({ name }) => name === "fallow");
+  assert.deepEqual(full.command, ["fallow"]);
+  assert.ok(full.env.NODE_OPTIONS.includes("max-old-space-size"));
+  const changed = plan({ hasFile, isFallowFull: true, changedFiles: ["a.ts"] }).find(({ name }) => name === "fallow");
+  assert.equal(changed, undefined);
+});

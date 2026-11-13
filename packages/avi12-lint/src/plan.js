@@ -46,6 +46,7 @@ export function plan({
   changedFiles,
   oxfmtIgnores = [],
   fallowBase,
+  isFallowFull = false,
   isNestedConfigAllowed = false,
   platform = "linux"
 }) {
@@ -180,6 +181,18 @@ export function plan({
     steps.push({
       name: "fallow",
       command: ["fallow", "audit", "--base", fallowBase],
+      env: {
+        NODE_OPTIONS: FALLOW_NODE_OPTIONS
+      },
+      isParallel
+    });
+  }
+
+  const isFullFallowPlanned = isFallowFull && !isFallowPlanned && !changedFiles && hasFile(FALLOW_BINARY);
+  if (isFullFallowPlanned) {
+    steps.push({
+      name: "fallow",
+      command: ["fallow"],
       env: {
         NODE_OPTIONS: FALLOW_NODE_OPTIONS
       },
