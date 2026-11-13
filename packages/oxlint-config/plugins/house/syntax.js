@@ -25,7 +25,9 @@ export const POSITIONAL_PARAMETER_SYNTAX = [
 
 export const GOOGLE_SYNTAX = [
   {
-    selector: NON_NARROWING_OPERANDS.map(operand => `${IS_NOT_ELSE_IF} > LogicalExpression.test > ${operand}`).join(", "),
+    selector: NON_NARROWING_OPERANDS.map(operand => `${IS_NOT_ELSE_IF} > LogicalExpression.test > ${operand}`).join(
+      ", "
+    ),
     message: "Extract the condition into a descriptively-named const (is/has/can/should) right before the if."
   },
   {
@@ -33,7 +35,9 @@ export const GOOGLE_SYNTAX = [
     message: "Extract the comparison into a descriptively-named const (is/has/can/should) right before the if."
   },
   {
-    selector: NON_NARROWING_OPERANDS.map(operand => `ConditionalExpression > LogicalExpression.test > ${operand}`).join(", "),
+    selector: NON_NARROWING_OPERANDS.map(operand => `ConditionalExpression > LogicalExpression.test > ${operand}`).join(
+      ", "
+    ),
     message: "Extract the ternary's condition into a descriptively-named const (is/has/can/should)."
   },
   {
