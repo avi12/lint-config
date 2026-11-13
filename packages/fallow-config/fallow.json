@@ -8,7 +8,14 @@
     "**/.svelte-kit/**",
     "**/.worktrees/**",
     "**/.claude/worktrees/**",
-    "**/.verify/**"
+    "**/.verify/**",
+    "**/.output/**",
+    "**/.wxt/**",
+    "**/vendor/**",
+    "**/*.min.js",
+    "**/*.wasm",
+    "**/*.jsdos",
+    "**/*.zip"
   ],
   "entry": ["src/index.ts", "**/*.test.ts", "eslint.config.js", "svelte.config.js", "vite.config.ts"],
   "health": {
