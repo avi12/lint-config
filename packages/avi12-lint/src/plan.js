@@ -5,7 +5,7 @@ const NESTED_CONFIG_FLAG = "--disable-nested-config";
 const OXFMT_CONFIG = ".oxfmtrc.json";
 const ESLINT_CONFIGS = ["eslint.config.js", "eslint.config.mjs", "eslint.config.ts"];
 const STYLELINT_CONFIGS = [".stylelintrc.json", ".stylelintrc", "stylelint.config.js", "stylelint.config.mjs"];
-const STYLE_GLOB = "**/*.{css,svelte,html}";
+const STYLE_GLOB = "**/*.{css,svelte,vue,html}";
 const BIN_DIRECTORY = "node_modules/.bin";
 const TSRS_BINARY = `${BIN_DIRECTORY}/tsrs`;
 const TSRS_LINT_BINARY = `${BIN_DIRECTORY}/tsrs-lint`;
@@ -14,10 +14,11 @@ const FALLOW_NODE_OPTIONS = "--max-old-space-size=4096";
 const FALLOW_BINARY = `${BIN_DIRECTORY}/fallow`;
 const WINDOWS_LAUNCHER_EXTENSION = ".CMD";
 const IGNORE_FILES = [".gitignore", ".prettierignore"];
-const SCRIPT_PATTERN = /\.(?:[cm]?[jt]s|svelte)$/;
+const SCRIPT_PATTERN = /\.(?:[cm]?[jt]s|svelte|vue)$/;
 const SVELTE_PATTERN = /\.svelte(?:\.[cm]?[jt]s)?$/;
-const FORMAT_PATTERN = /\.(?:[cm]?[jt]sx?|jsonc?|json5|md|mdx|svelte|css|scss|less|html|ya?ml|toml)$/;
-const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
+const VUE_PATTERN = /[.]vue$/;
+const FORMAT_PATTERN = /\.(?:[cm]?[jt]sx?|jsonc?|json5|md|mdx|svelte|vue|css|scss|less|html|ya?ml|toml)$/;
+const STYLE_PATTERN = /\.(?:css|svelte|vue|html)$/;
 
 /**
  * Builds the ordered list of steps to run in a repo: a tool is planned only when its config file or binary exists.
@@ -26,8 +27,8 @@ const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
  * race on the same file, and oxlint fixes twice around oxfmt because one pass leaves fixes that overlap; oxfmt runs
  * last so the final oxlint pass leaves no odd indentation or trailing spaces, and fix mode plans oxfmt when only its
  * binary is installed.
- * ESLint is the Svelte layer only: it is planned when it has a config and `hasSvelte` (the repo holds Svelte
- * files) is true, and it is given the Svelte files alone.
+ * ESLint is the Svelte and Vue layers only: it is planned when it has a config and `hasSvelte` or `hasVue` (the repo holds Svelte
+ * or Vue files) is true, and it is given those template files alone.
  * oxfmt is given the consumer's `.gitignore` and `.prettierignore` plus `oxfmtIgnores` (globs, the preset's default
  * ignore set), because oxfmt has no `extends` and a copied config cannot inherit them.
  * `isFix` turns the checkers into fixers; `concurrency` reaches ESLint clamped to 1-4 (2 when absent).
@@ -41,6 +42,7 @@ const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
 export function plan({
   hasFile,
   hasSvelte = false,
+  hasVue = false,
   isFix = false,
   concurrency,
   changedFiles,
@@ -70,11 +72,11 @@ export function plan({
       : undefined;
   }
   const scripts = only(SCRIPT_PATTERN);
-  const svelteFiles = only(SVELTE_PATTERN);
+  const svelteFiles = changedFiles?.filter(file => SVELTE_PATTERN.test(file) || VUE_PATTERN.test(file));
   const styles = only(STYLE_PATTERN);
   const formattable = only(FORMAT_PATTERN);
   const steps = [];
-  const isEslintPlanned = hasAny(ESLINT_CONFIGS) && hasSvelte && !isSkipped(svelteFiles);
+  const isEslintPlanned = hasAny(ESLINT_CONFIGS) && (hasSvelte || hasVue) && !isSkipped(svelteFiles);
   if (isEslintPlanned) {
     const requested = concurrency ?? (changedFiles ? MIN_CONCURRENCY : undefined);
     steps.push({

@@ -357,3 +357,18 @@ test("fallow runs over the full tree only with isFallowFull, and never beside a 
   }).find(({ name }) => name === "fallow");
   assert.equal(changed, undefined);
 });
+
+test("a Vue repo plans ESLint, and stylelint and oxlint take the .vue files", () => {
+  const steps = plan({
+    hasFile: file => ALL_CONFIGS.has(file),
+    hasVue: true,
+    changedFiles: ["src/App.vue", "src/a.ts", "README.md"]
+  });
+  assert.deepEqual(
+    steps.map(({ name }) => name),
+    ["eslint", "oxlint", "stylelint", "oxfmt"]
+  );
+  assert.deepEqual(steps[0].command.slice(-1), ["src/App.vue"]);
+  assert.deepEqual(steps[1].command.slice(-2), ["src/App.vue", "src/a.ts"]);
+  assert.deepEqual(steps[2].command.slice(-1), ["src/App.vue"]);
+});

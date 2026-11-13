@@ -64,15 +64,12 @@ if (isStaged) {
 }
 
 const SVELTE_GLOB = "*.svelte";
+const VUE_GLOB = "*.vue";
 
-function repoHasSvelte() {
-  const { stdout, status } = spawnSync(
-    "git",
-    ["ls-files", "--cached", "--others", "--exclude-standard", "--", SVELTE_GLOB],
-    {
-      encoding: "utf8"
-    }
-  );
+function repoHas(glob) {
+  const { stdout, status } = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", glob], {
+    encoding: "utf8"
+  });
   return status === 0 ? stdout.trim() !== "" : true;
 }
 
@@ -89,7 +86,8 @@ function presetIgnores() {
 
 const steps = plan({
   hasFile: existsSync,
-  hasSvelte: repoHasSvelte(),
+  hasSvelte: repoHas(SVELTE_GLOB),
+  hasVue: repoHas(VUE_GLOB),
   isFix: args.includes("--fix"),
   concurrency: requested,
   changedFiles: files,
