@@ -9,6 +9,7 @@ const BIN_DIRECTORY = "node_modules/.bin";
 const TSRS_BINARY = `${BIN_DIRECTORY}/tsrs`;
 const TSRS_LINT_BINARY = `${BIN_DIRECTORY}/tsrs-lint`;
 const OXFMT_BINARY = `${BIN_DIRECTORY}/oxfmt`;
+const FALLOW_NODE_OPTIONS = "--max-old-space-size=4096";
 const FALLOW_BINARY = `${BIN_DIRECTORY}/fallow`;
 const WINDOWS_LAUNCHER_EXTENSION = ".CMD";
 const IGNORE_FILES = [".gitignore", ".prettierignore"];
@@ -29,7 +30,8 @@ const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
  * ignore set), because oxfmt has no `extends` and a copied config cannot inherit them.
  * `isFix` turns the checkers into fixers; `concurrency` reaches ESLint clamped to 1-4 (2 when absent).
  * `changedFiles`, when given, narrows oxlint, ESLint, stylelint and fallow to those files and drops ESLint to
- * concurrency 1 unless `concurrency` says otherwise; tsrs always checks the whole project. Pure, so it is testable.
+ * concurrency 1 unless `concurrency` says otherwise; tsrs always checks the whole project. fallow gets `NODE_OPTIONS` capping the Node heap at 4 GB, since a dirty tree once ran it to 38 GB. Pure, so it is
+ * testable.
  */
 export function plan({
   hasFile,
@@ -128,7 +130,9 @@ export function plan({
     steps.push({
       name: "fallow",
       command: ["fallow", "audit"],
-      env: {},
+      env: {
+        NODE_OPTIONS: FALLOW_NODE_OPTIONS
+      },
       isParallel
     });
   }

@@ -53,13 +53,32 @@ const steps = plan({
   platform: process.platform
 });
 
+const NODE_OPTIONS = "NODE_OPTIONS";
+
+function resolveEnv({ key, value }) {
+  const isNodeOptions = key === NODE_OPTIONS;
+  if (isNodeOptions) {
+    return [process.env[NODE_OPTIONS], value].filter(Boolean).join(" ");
+  }
+
+  return path.resolve(value);
+}
+
 function run({ name, command, env }) {
   return new Promise(resolve => {
     const child = spawn("pnpm", ["exec", ...command], {
       shell: true,
       env: {
         ...process.env,
-        ...Object.fromEntries(Object.entries(env).map(([key, value]) => [key, path.resolve(value)]))
+        ...Object.fromEntries(
+          Object.entries(env).map(([key, value]) => [
+            key,
+            resolveEnv({
+              key,
+              value
+            })
+          ])
+        )
       }
     });
     const chunks = [];

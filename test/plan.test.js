@@ -241,3 +241,17 @@ test("avi12-lint declares no sibling package as a dependency or peer, so a repo 
     []
   );
 });
+
+test("fallow runs with a 4 GB Node heap cap", () => {
+  const steps = plan({
+    hasFile: file => FULL.has(file),
+    changedFiles: ["src/a.ts"]
+  });
+  assert.equal(
+    find({
+      steps: steps,
+      name: "fallow"
+    }).env.NODE_OPTIONS,
+    "--max-old-space-size=4096"
+  );
+});
