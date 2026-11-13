@@ -1,6 +1,6 @@
 {
   "name": "oxlint-config-avi12",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "oxlint preset: Google style correctness, @/ imports, no lint-disable comments",
   "license": "Apache-2.0",
   "files": [

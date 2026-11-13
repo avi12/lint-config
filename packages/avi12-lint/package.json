@@ -1,6 +1,6 @@
 {
   "name": "avi12-lint",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "One command that runs oxlint, ESLint, oxfmt and stylelint, in parallel, for whichever configs a repo has",
   "license": "Apache-2.0",
   "bin": {
