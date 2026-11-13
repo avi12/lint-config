@@ -7,7 +7,8 @@ function git(args) {
   return execFileSync("git", args, { encoding: "utf8" }).split("\n").filter(Boolean);
 }
 
-function mergeBase() {
+/** The merge base of HEAD with `origin/main` or `main`, or `HEAD` when neither exists. */
+export function mergeBase() {
   for (const candidate of BASE_CANDIDATES) {
     try {
       return git(["merge-base", "HEAD", candidate])[0];

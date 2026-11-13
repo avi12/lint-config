@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-import { changedFiles, stagedFiles } from "../src/changed-files.js";
+import { changedFiles, mergeBase, stagedFiles } from "../src/changed-files.js";
 import {
   guardLimits,
   killCommands,
@@ -58,9 +58,16 @@ const steps = plan({
   isFix: args.includes("--fix"),
   concurrency: requested,
   changedFiles: files,
+  fallowBase: isChanged && !isStaged ? mergeBase() : undefined,
   oxfmtIgnores: presetIgnores(),
   platform: process.platform
 });
+
+if (isStaged && existsSync("node_modules/.bin/fallow")) {
+  console.log(
+    "avi12-lint: fallow skipped with --staged (it audits commits against a base, not the index); use --changed or pnpm lint"
+  );
+}
 
 const NODE_OPTIONS = "NODE_OPTIONS";
 

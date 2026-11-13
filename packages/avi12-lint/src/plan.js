@@ -15,6 +15,7 @@ const WINDOWS_LAUNCHER_EXTENSION = ".CMD";
 const IGNORE_FILES = [".gitignore", ".prettierignore"];
 const SCRIPT_PATTERN = /\.(?:[cm]?[jt]s|svelte)$/;
 const SVELTE_PATTERN = /\.svelte(?:\.[cm]?[jt]s)?$/;
+const FORMAT_PATTERN = /\.(?:[cm]?[jt]sx?|jsonc?|json5|md|mdx|svelte|css|scss|less|html|ya?ml|toml)$/;
 const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
 
 /**
@@ -29,8 +30,11 @@ const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
  * oxfmt is given the consumer's `.gitignore` and `.prettierignore` plus `oxfmtIgnores` (globs, the preset's default
  * ignore set), because oxfmt has no `extends` and a copied config cannot inherit them.
  * `isFix` turns the checkers into fixers; `concurrency` reaches ESLint clamped to 1-4 (2 when absent).
- * `changedFiles`, when given, narrows oxlint, ESLint, stylelint and fallow to those files and drops ESLint to
- * concurrency 1 unless `concurrency` says otherwise; tsrs always checks the whole project. fallow gets `NODE_OPTIONS` capping the Node heap at 4 GB, since a dirty tree once ran it to 38 GB. Pure, so it is
+ * `changedFiles`, when given, narrows oxlint, ESLint, stylelint and oxfmt to those files (a tool with no
+ * matching file is skipped) and drops ESLint to concurrency 1 unless `concurrency` says otherwise; tsrs always
+ * checks the whole project. fallow has no file list: it is planned only with `fallowBase` (a git ref), through its
+ * own changed-files mode `fallow audit --base <ref>`, so a staged run, which has no base, leaves it out.
+ * fallow gets `NODE_OPTIONS` capping the Node heap at 4 GB, since a dirty tree once ran it to 38 GB. Pure, so it is
  * testable.
  */
 export function plan({
@@ -40,6 +44,7 @@ export function plan({
   concurrency,
   changedFiles,
   oxfmtIgnores = [],
+  fallowBase,
   platform = "linux"
 }) {
   function hasAny(names) {
@@ -55,6 +60,7 @@ export function plan({
   const scripts = only(SCRIPT_PATTERN);
   const svelteFiles = only(SVELTE_PATTERN);
   const styles = only(STYLE_PATTERN);
+  const formattable = only(FORMAT_PATTERN);
   const steps = [];
   const isEslintPlanned = hasAny(ESLINT_CONFIGS) && hasSvelte && !isSkipped(svelteFiles);
   if (isEslintPlanned) {
@@ -104,14 +110,19 @@ export function plan({
     });
   }
 
-  const isOxfmtPlanned = hasFile(OXFMT_CONFIG) || (isFix && hasFile(OXFMT_BINARY));
+  const isOxfmtPlanned = (hasFile(OXFMT_CONFIG) || (isFix && hasFile(OXFMT_BINARY))) && !isSkipped(formattable);
+  const oxfmtExcludes = oxfmtIgnores.map(glob => `"!${glob}"`);
+  let oxfmtTargets = oxfmtIgnores.length > 0 ? [...oxfmtExcludes, "."] : [];
+  if (formattable) {
+    oxfmtTargets = [...formattable, ...oxfmtExcludes];
+  }
   const oxfmtStep = {
     name: "oxfmt",
     command: [
       "oxfmt",
       ...(isFix ? [] : ["--check"]),
       ...IGNORE_FILES.filter(hasFile).flatMap(file => ["--ignore-path", file]),
-      ...(oxfmtIgnores.length > 0 ? [...oxfmtIgnores.map(glob => `"!${glob}"`), "."] : [])
+      ...oxfmtTargets
     ],
     env: {},
     isParallel
@@ -125,11 +136,11 @@ export function plan({
     steps.push(oxlintStep, oxfmtStep);
   }
 
-  const isFallowPlanned = changedFiles && hasFile(FALLOW_BINARY);
+  const isFallowPlanned = fallowBase !== undefined && changedFiles && hasFile(FALLOW_BINARY);
   if (isFallowPlanned) {
     steps.push({
       name: "fallow",
-      command: ["fallow", "audit"],
+      command: ["fallow", "audit", "--base", fallowBase],
       env: {
         NODE_OPTIONS: FALLOW_NODE_OPTIONS
       },

@@ -141,7 +141,8 @@ test("changed mode narrows to the files, ESLint to 1, tsrs stays whole-project, 
   const steps = plan({
     hasFile: file => FULL.has(file),
     hasSvelte: true,
-    changedFiles: ["src/a.ts", "src/b.svelte", "README.md"]
+    changedFiles: ["src/a.ts", "src/b.svelte", "README.md"],
+    fallowBase: "abc123"
   });
   const eslint = find({
     steps,
@@ -168,7 +169,14 @@ test("changed mode narrows to the files, ESLint to 1, tsrs stays whole-project, 
       steps,
       name: "fallow"
     }).command,
-    ["fallow", "audit"]
+    ["fallow", "audit", "--base", "abc123"]
+  );
+  assert.deepEqual(
+    find({
+      steps,
+      name: "oxfmt"
+    }).command,
+    ["oxfmt", "--check", "src/a.ts", "src/b.svelte", "README.md"]
   );
 });
 
@@ -251,7 +259,8 @@ test("avi12-lint declares no sibling package as a dependency or peer, so a repo 
 test("fallow runs with a 4 GB Node heap cap", () => {
   const steps = plan({
     hasFile: file => FULL.has(file),
-    changedFiles: ["src/a.ts"]
+    changedFiles: ["src/a.ts"],
+    fallowBase: "abc123"
   });
   assert.equal(
     find({
@@ -260,4 +269,34 @@ test("fallow runs with a 4 GB Node heap cap", () => {
     }).env.NODE_OPTIONS,
     "--max-old-space-size=4096"
   );
+});
+
+test("a run with changed files and no fallow base leaves fallow out, as --staged does", () => {
+  const steps = plan({
+    hasFile: file => FULL.has(file),
+    changedFiles: ["src/a.ts"]
+  });
+  assert.equal(find({ steps, name: "fallow" }), undefined);
+});
+
+test("oxfmt gets only the changed files it can format, with the preset exclusions, and is skipped without any", () => {
+  const steps = plan({
+    hasFile: file => file === ".oxfmtrc.json" || file === ".gitignore",
+    changedFiles: ["a.ts", "logo.png", "b.json"],
+    oxfmtIgnores: ["**/_locales/**"]
+  });
+  assert.deepEqual(find({ steps, name: "oxfmt" }).command, [
+    "oxfmt",
+    "--check",
+    "--ignore-path",
+    ".gitignore",
+    "a.ts",
+    "b.json",
+    '"!**/_locales/**"'
+  ]);
+  const none = plan({
+    hasFile: file => file === ".oxfmtrc.json",
+    changedFiles: ["logo.png"]
+  });
+  assert.deepEqual(none, []);
 });
