@@ -171,3 +171,20 @@ test("a compound condition made only of narrowing checks is not extracted, any o
     assert.ok(codes({ source: wrap(condition) }).includes(GOOGLE), condition);
   }
 });
+
+test("a type literal typing a parameter is left to oxfmt in every function-like signature", () => {
+  const shapes = [
+    "export interface Api {\n  run(options: { first: number; second: number }): void;\n}\n",
+    "export type Callback = (options: { first: number; second: number }) => void;\n",
+    "export type Factory = new (options: { first: number; second: number }) => object;\n",
+    "export interface Call {\n  (options: { first: number; second: number }): void;\n}\n",
+    "export interface Make {\n  new (options: { first: number; second: number }): object;\n}\n",
+    "export const run = (options: { first: number; second: number }) => options;\n",
+    "export class Box {\n  put(options: { first: number; second: number }) {\n    return options;\n  }\n}\n"
+  ];
+  for (const source of shapes) {
+    assert.ok(!codes({ source }).includes("house(expand-nested-type-literal)"), source);
+  }
+  const property = "export interface Shape {\n  readonly pair: { first: number; second: number };\n}\n";
+  assert.ok(codes({ source: property }).includes("house(expand-nested-type-literal)"));
+});

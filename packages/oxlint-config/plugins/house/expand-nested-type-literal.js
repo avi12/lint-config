@@ -4,7 +4,7 @@
  * - Any member's type annotation is itself a type literal (direct nesting), OR
  * - Any member's key name exceeds LONG_KEY_NAME_LENGTH characters
  *
- * A literal that types a function parameter is left to oxfmt, which hugs it onto the parameter line and would
+ * A literal that types a parameter of a function, method signature, function type, constructor type or call signature is left to oxfmt, which hugs it onto the parameter line and would
  * undo the expansion forever.
  *
  * Single-member leaf types with short keys may stay on one line:
@@ -33,7 +33,13 @@ const FUNCTION_TYPES = new Set([
   "FunctionDeclaration",
   "FunctionExpression",
   "ArrowFunctionExpression",
-  "TSDeclareFunction"
+  "TSDeclareFunction",
+  "TSEmptyBodyFunctionExpression",
+  "TSMethodSignature",
+  "TSFunctionType",
+  "TSConstructorType",
+  "TSCallSignatureDeclaration",
+  "TSConstructSignatureDeclaration"
 ]);
 
 function isParameterType(node) {
@@ -41,7 +47,10 @@ function isParameterType(node) {
   const parameter = annotation?.parent;
   const isAnnotated = annotation?.type === "TSTypeAnnotation" && parameter?.parent;
   return (
-    Boolean(isAnnotated) && FUNCTION_TYPES.has(parameter.parent.type) && parameter.parent.params.includes(parameter)
+    Boolean(isAnnotated) &&
+    FUNCTION_TYPES.has(parameter.parent.type) &&
+    Array.isArray(parameter.parent.params) &&
+    parameter.parent.params.includes(parameter)
   );
 }
 
