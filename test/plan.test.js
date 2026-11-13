@@ -321,3 +321,12 @@ test("no package installs a Git hook: no lifecycle scripts and no hook manager a
     );
   }
 });
+
+test("oxlint ignores nested configs unless the consumer opts in", () => {
+  const hasFile = file => ALL_CONFIGS.has(file);
+  const flagged = plan({ hasFile }).find(({ name }) => name === "oxlint");
+  assert.ok(flagged.command.includes("--disable-nested-config"));
+  assert.ok(flagged.command.includes("--disable-nested-config"));
+  const optedIn = plan({ hasFile, isNestedConfigAllowed: true }).find(({ name }) => name === "oxlint");
+  assert.ok(!optedIn.command.includes("--disable-nested-config"));
+});

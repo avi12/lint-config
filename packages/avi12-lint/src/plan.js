@@ -1,6 +1,7 @@
 import { clampConcurrency, eslintFlags, MIN_CONCURRENCY } from "./eslint-flags.js";
 
 const OXLINT_CONFIG = ".oxlintrc.json";
+const NESTED_CONFIG_FLAG = "--disable-nested-config";
 const OXFMT_CONFIG = ".oxfmtrc.json";
 const ESLINT_CONFIGS = ["eslint.config.js", "eslint.config.mjs", "eslint.config.ts"];
 const STYLELINT_CONFIGS = [".stylelintrc.json", ".stylelintrc", "stylelint.config.js", "stylelint.config.mjs"];
@@ -45,6 +46,7 @@ export function plan({
   changedFiles,
   oxfmtIgnores = [],
   fallowBase,
+  isNestedConfigAllowed = false,
   platform = "linux"
 }) {
   function hasAny(names) {
@@ -94,11 +96,16 @@ export function plan({
   const isOxlintPlanned = hasFile(OXLINT_CONFIG) && !isSkipped(scripts);
   const isTypeAware = hasFile(TSRS_LINT_BINARY);
   const extension = platform === "win32" ? WINDOWS_LAUNCHER_EXTENSION : "";
+  const oxlintFlags = [
+    ...(isTypeAware ? ["--type-aware"] : []),
+    ...(isNestedConfigAllowed ? [] : [NESTED_CONFIG_FLAG]),
+    ...(isFix ? ["--fix"] : [])
+  ];
   const oxlintStep = {
     name: "oxlint",
-    command: ["oxlint", ...(isTypeAware ? ["--type-aware"] : []), ...(isFix ? ["--fix"] : []), ...(scripts ?? [])],
+    command: ["oxlint", ...oxlintFlags, ...(scripts ?? [])],
     split: splitOf({
-      head: ["oxlint", ...(isTypeAware ? ["--type-aware"] : []), ...(isFix ? ["--fix"] : [])],
+      head: ["oxlint", ...oxlintFlags],
       files: scripts
     }),
     env: isTypeAware ? { OXLINT_TSGOLINT_PATH: `${TSRS_LINT_BINARY}${extension}` } : {},

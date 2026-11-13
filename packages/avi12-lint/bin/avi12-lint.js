@@ -60,6 +60,7 @@ const steps = plan({
   concurrency: requested,
   changedFiles: files,
   fallowBase: isChanged && !isStaged ? mergeBase() : undefined,
+  isNestedConfigAllowed: process.env["AVI12_LINT_NESTED_CONFIG"] === "1" || args.includes("--nested-config"),
   oxfmtIgnores: presetIgnores(),
   platform: process.platform
 });
