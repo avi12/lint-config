@@ -109,6 +109,11 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.4.1
+
+- `house/expand-nested-object-expression` now replaces the gap between tokens, so its fixes leave no odd indent or trailing space
+- `house/google-syntax` no longer reports a compound condition whose operands are all narrowing checks (`===` or `!==` against a literal, `typeof`, `in`, `instanceof`), up to four levels of `&&` and `||`, because extracting it into a named boolean breaks TypeScript narrowing of a union; a compound condition with any other operand is still reported
+
 ### Migrating from 0.4.0
 
 - `no-magic-numbers` is now `house/no-magic-numbers`: a numeric literal type is exempt anywhere (`Exclude<T, 720 | 480>`), a literal inside a `const` initializer, an enum member, a class property or a `parseInt` radix is named already, and `0`, `1`, `-1` and `2` are allowed
