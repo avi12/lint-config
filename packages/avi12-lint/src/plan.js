@@ -8,6 +8,7 @@ const STYLE_GLOB = "**/*.{css,svelte,html}";
 const BIN_DIRECTORY = "node_modules/.bin";
 const TSRS_BINARY = `${BIN_DIRECTORY}/tsrs`;
 const TSRS_LINT_BINARY = `${BIN_DIRECTORY}/tsrs-lint`;
+const OXFMT_BINARY = `${BIN_DIRECTORY}/oxfmt`;
 const FALLOW_BINARY = `${BIN_DIRECTORY}/fallow`;
 const WINDOWS_LAUNCHER_EXTENSION = ".CMD";
 const IGNORE_FILES = [".gitignore", ".prettierignore"];
@@ -19,7 +20,9 @@ const STYLE_PATTERN = /\.(?:css|svelte|html)$/;
  * Builds the ordered list of steps to run in a repo: a tool is planned only when its config file or binary exists.
  * Each step is `{ name, command, env, isParallel }`; the parallel steps run together, ESLint first because it is
  * the one that peaks in memory, and the rest start beside it. Fixing is never parallel, since fixers must not
- * race on the same file, and oxlint fixes twice around oxfmt because one pass leaves fixes that overlap.
+ * race on the same file, and oxlint fixes twice around oxfmt because one pass leaves fixes that overlap; oxfmt runs
+ * last so the final oxlint pass leaves no odd indentation or trailing spaces, and fix mode plans oxfmt when only its
+ * binary is installed.
  * ESLint is the Svelte layer only: it is planned when it has a config and `hasSvelte` (the repo holds Svelte
  * files) is true, and it is given the Svelte files alone.
  * oxfmt is given the consumer's `.gitignore` and `.prettierignore` plus `oxfmtIgnores` (globs, the preset's default
@@ -99,23 +102,25 @@ export function plan({
     });
   }
 
-  if (hasFile(OXFMT_CONFIG)) {
-    steps.push({
-      name: "oxfmt",
-      command: [
-        "oxfmt",
-        ...(isFix ? [] : ["--check"]),
-        ...IGNORE_FILES.filter(hasFile).flatMap(file => ["--ignore-path", file]),
-        ...(oxfmtIgnores.length > 0 ? [...oxfmtIgnores.map(glob => `"!${glob}"`), "."] : [])
-      ],
-      env: {},
-      isParallel
-    });
+  const isOxfmtPlanned = hasFile(OXFMT_CONFIG) || (isFix && hasFile(OXFMT_BINARY));
+  const oxfmtStep = {
+    name: "oxfmt",
+    command: [
+      "oxfmt",
+      ...(isFix ? [] : ["--check"]),
+      ...IGNORE_FILES.filter(hasFile).flatMap(file => ["--ignore-path", file]),
+      ...(oxfmtIgnores.length > 0 ? [...oxfmtIgnores.map(glob => `"!${glob}"`), "."] : [])
+    ],
+    env: {},
+    isParallel
+  };
+  if (isOxfmtPlanned) {
+    steps.push(oxfmtStep);
   }
 
-  const isSecondOxlintPassPlanned = isFix && isOxlintPlanned && hasFile(OXFMT_CONFIG);
+  const isSecondOxlintPassPlanned = isFix && isOxlintPlanned && isOxfmtPlanned;
   if (isSecondOxlintPassPlanned) {
-    steps.push(oxlintStep);
+    steps.push(oxlintStep, oxfmtStep);
   }
 
   const isFallowPlanned = changedFiles && hasFile(FALLOW_BINARY);

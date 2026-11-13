@@ -111,7 +111,19 @@ test("fixing runs oxlint again after oxfmt, because one pass leaves overlapping 
     hasFile: file => ALL_CONFIGS.has(file),
     isFix: true
   }).map(({ name }) => name);
-  assert.deepEqual(names, ["oxlint", "stylelint", "oxfmt", "oxlint"]);
+  assert.deepEqual(names, ["oxlint", "stylelint", "oxfmt", "oxlint", "oxfmt"]);
+});
+
+test("fixing runs oxfmt when only its binary is installed, and checking does not", () => {
+  const hasFile = file => file === ".oxlintrc.json" || file === "node_modules/.bin/oxfmt";
+  assert.deepEqual(
+    plan({ hasFile, isFix: true }).map(({ name }) => name),
+    ["oxlint", "oxfmt", "oxlint", "oxfmt"]
+  );
+  assert.deepEqual(
+    plan({ hasFile }).map(({ name }) => name),
+    ["oxlint"]
+  );
 });
 
 test("fixing is serial", () => {
