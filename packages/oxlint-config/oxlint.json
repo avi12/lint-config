@@ -98,7 +98,7 @@
       {
         "patterns": [
           {
-            "group": ["../*", "./../*"],
+            "group": ["..", "../**", "./../**"],
             "message": "Import from the project root with \"@/path\", never \"../\""
           }
         ]
