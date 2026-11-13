@@ -4,11 +4,11 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const STYLELINT = join(ROOT, "node_modules", "stylelint", "bin", "stylelint.mjs");
-const PRESET = join(ROOT, "packages", "stylelint-config", "stylelint.json");
+const PRESET = join(ROOT, "packages", "stylelint-config", "stylelint.mjs");
 
 function warnings(css) {
   const directory = mkdtempSync(join(tmpdir(), "stylelint-"));
@@ -39,4 +39,11 @@ test("a -winui-* property keeps its style key as written", () => {
 
 test("value-keyword-case still applies to other properties", () => {
   assert.deepEqual(warnings("a {\n  display: BLOCK;\n}\n"), ["value-keyword-case"]);
+});
+
+test("the preset sets only rules the installed stylelint knows", async () => {
+  const { default: stylelint } = await import("stylelint");
+  const { default: preset } = await import(pathToFileURL(PRESET).href);
+  const unknown = Object.keys(preset.rules).filter(name => !name.includes("/") && !(name in stylelint.rules));
+  assert.deepEqual(unknown, []);
 });

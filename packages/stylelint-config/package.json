@@ -4,13 +4,15 @@
   "description": "stylelint preset for CSS and the style blocks of Svelte and HTML files, on stylelint-config-ccb",
   "license": "Apache-2.0",
   "files": [
-    "stylelint.json"
+    "stylelint.json",
+    "stylelint.mjs"
   ],
   "type": "module",
   "sideEffects": false,
-  "main": "./stylelint.json",
+  "main": "./stylelint.mjs",
   "exports": {
-    ".": "./stylelint.json",
+    ".": "./stylelint.mjs",
+    "./stylelint.json": "./stylelint.json",
     "./package.json": "./package.json"
   },
   "dependencies": {
@@ -18,6 +20,6 @@
   },
   "peerDependencies": {
     "postcss-html": "^1.8.1",
-    "stylelint": ">=16"
+    "stylelint": "^17.0.0 || ^18.0.0"
   }
 }
