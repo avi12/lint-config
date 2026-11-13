@@ -246,7 +246,6 @@
       }
     ],
     "@stylistic/function-call-argument-newline": ["error", "consistent"],
-    "@stylistic/function-paren-newline": ["error", "consistent"],
     "house/expand-nested-object-expression": "error",
     "house/expand-nested-type-literal": "error",
     "house/multiline-arg-paren-newline": "error",

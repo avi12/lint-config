@@ -37,6 +37,19 @@ export function pick({ flag }: { flag: boolean }, extra: { p: number; q: number 
   if (flag) return nested || fixed + shape.alpha;
   return [list, text];
 }
+export const mapped = list.map(item =>
+  pick(
+    { flag: Boolean(item) },
+    { p: 1, q: 2 }
+  )
+);
+export const called = resolve({
+  key: 1,
+  value: 2,
+  more: [first, second]
+}
+);
+export const wrapped = list.filter(item => item.startsWith("long-prefix-value") && item.endsWith("long-suffix-value") && item.length > 3);
 `;
 
 function normalize(name) {
