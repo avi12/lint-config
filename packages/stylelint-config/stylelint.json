@@ -11,6 +11,7 @@
     "csstree/validator": null,
     "no-unknown-custom-properties": null,
     "csstools/value-no-unknown-custom-properties": null,
+    "unit-disallowed-list": [["cm", "mm", "Q", "in", "pc", "pt", "s", "grad", "rad", "turn", "dpcm"]],
     "color-no-hex": null,
     "selector-pseudo-class-no-unknown": [true, { "ignorePseudoClasses": ["global"] }],
     "property-disallowed-list": null,

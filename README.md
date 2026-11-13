@@ -136,6 +136,11 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.4.14
+
+- The stylelint preset now allows the font-relative units `ch`, `lh`, `rlh`, `ex`, `cap` and `ic` (they were banned through `stylelint-config-ccb`); a consumer that rewrote them to `em` can restore the originals
+- Still banned, as print or non-layout units: `cm`, `mm`, `Q`, `in`, `pc`, `pt`, `s` (use `ms`), `grad`, `rad`, `turn`, `dpcm`
+
 ### Migrating from 0.4.13
 
 - `typescript/consistent-type-assertions` (`assertionStyle: never`) is now in the base oxlint preset, so a consumer that never had its own copy starts seeing errors on every `as Type`, `<Type>x` and `{} as T`; `as const` and `satisfies` are fine
