@@ -273,3 +273,51 @@ test("fixing keeps an import that only the markup uses and drops one nothing use
     });
   }
 });
+
+const CODEMOD_SOURCE = `import { call } from "./elsewhere";
+export const a = call({
+  alpha: 1, beta: 2 });
+export const b = call({ alpha: 1, beta: 2
+});
+export const c = call(
+  { alpha: 1, beta: 2 }, { gamma: 3 });
+export const d = call({ alpha: 1, beta: 2 }, { gamma: 3, delta: 4 }, { epsilon: 5, zeta: 6 }, { eta: 7, theta: 8 }, { iota: 9, kappa: 10 }, { lambda: 11 });
+export const e = call({ alpha: call({ beta: 1, gamma: 2 }, { delta: 3, epsilon: 4 }), zeta: call({ eta: 5, theta: 6 }, { iota: 7, kappa: 8 }) });
+export const { f, g } = call({ alpha: 1, beta: 2 }, { gamma: 3, delta: 4 });
+export function h({ i, j }: { i: number; j: number }) { return call({ i, j }, { k: 1, l: 2 }); }
+export const m = call({ alpha: 1, beta: { gamma: 2,
+  delta: 3 } });
+`;
+
+test("one planned fix run settles codemod-style one-line object arguments", () => {
+  const directory = join(TS_SVELTE, FIX_DIRECTORY);
+  rmSync(directory, {
+    recursive: true,
+    force: true
+  });
+  mkdirSync(directory);
+  try {
+    const file = join(directory, "codemod.ts");
+    writeFileSync(file, CODEMOD_SOURCE);
+    const options = {
+      cwd: TS_SVELTE,
+      files: [`${FIX_DIRECTORY}/codemod.ts`]
+    };
+    const plannedRun = ["oxlint", "oxfmt", "oxlint", "oxfmt"];
+    fixAll({
+      options,
+      order: plannedRun
+    });
+    const afterFirstRun = readFileSync(file, "utf8");
+    fixAll({
+      options,
+      order: plannedRun
+    });
+    assert.equal(readFileSync(file, "utf8"), afterFirstRun);
+  } finally {
+    rmSync(directory, {
+      recursive: true,
+      force: true
+    });
+  }
+});

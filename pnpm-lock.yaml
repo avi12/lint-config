@@ -125,7 +125,7 @@ importers:
         specifier: ^1.8.1
         version: 1.8.1
       stylelint:
-        specifier: '>=16'
+        specifier: ^17.0.0 || ^18.0.0
         version: 17.16.0(typescript@6.0.3)
       stylelint-config-ccb:
         specifier: ^3.32.0
