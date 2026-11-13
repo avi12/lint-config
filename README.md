@@ -22,13 +22,13 @@ They are consumed straight from GitHub and never published to npm
 Every package installs from a tag of this repository
 
 ```sh
-pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.7&path:/packages/oxlint-config"
-pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.7&path:/packages/oxlint-plugin-naming"
-pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.7&path:/packages/oxfmt-config"
-pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.7&path:/packages/eslint-config"
-pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.7&path:/packages/stylelint-config"
-pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.7&path:/packages/fallow-config"
-pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.7&path:/packages/avi12-lint"
+pnpm add -D "oxlint-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/oxlint-config"
+pnpm add -D "oxlint-plugin-naming@github:avi12/lint-config#v0.4.8&path:/packages/oxlint-plugin-naming"
+pnpm add -D "oxfmt-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/oxfmt-config"
+pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/eslint-config"
+pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/stylelint-config"
+pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.8&path:/packages/fallow-config"
+pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.8&path:/packages/avi12-lint"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -108,6 +108,11 @@ Other presets: `extends` the JSON of `stylelint-config-avi12` and
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.4.7
+
+- `avi12-lint --staged` and `--changed` split the file arguments of oxlint, ESLint, stylelint and oxfmt into batches under a character budget (6000 on Windows, whose command line stops at 8191 characters, 100000 elsewhere), so about 150 or more files no longer fail with "The command line is too long"; set `AVI12_LINT_ARG_BUDGET` to change it
+- Batches of one step run one after another, and a step fails if any batch failed; `avi12-lint` exits 0 when every step passed and 1 when any step failed
 
 ### Migrating from 0.4.6
 
