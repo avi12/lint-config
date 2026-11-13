@@ -10,6 +10,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./fallow.json",
+    "./fallow.json": "./fallow.json",
     "./package.json": "./package.json"
   },
   "peerDependencies": {

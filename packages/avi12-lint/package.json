@@ -18,6 +18,7 @@
   "exports": {
     "./eslint-flags": "./src/eslint-flags.js",
     "./plan": "./src/plan.js",
+    "./fallow-config": "./src/fallow-config.js",
     "./package.json": "./package.json"
   }
 }
