@@ -1,11 +1,12 @@
-const IS_LONE_LITERAL_COMPARISON =
-  ":matches([left.type='Literal'], [right.type='Literal'], [left.name='undefined'], [right.name='undefined'])";
 const IS_NARROWING_CHECK =
   ":matches(BinaryExpression[operator='in'], BinaryExpression[operator='instanceof'], BinaryExpression[operator=/^(===|!==)$/]:matches([left.type='UnaryExpression'][left.operator='typeof'], [right.type='Literal'], [right.name='undefined'], [left.type='Literal']))";
+const IS_TRUTHINESS_GUARD =
+  ":matches(Identifier, MemberExpression, ChainExpression, UnaryExpression[operator='!']):not(:has(:matches(CallExpression, NewExpression, BinaryExpression, LogicalExpression)))";
 const MAX_LOGICAL_DEPTH = 4;
 const NON_NARROWING_OPERANDS = Array.from(
   { length: MAX_LOGICAL_DEPTH },
-  (_, depth) => `${"LogicalExpression > ".repeat(depth)}:not(LogicalExpression):not(${IS_NARROWING_CHECK})`
+  (_, depth) =>
+    `${"LogicalExpression > ".repeat(depth)}:not(LogicalExpression):not(${IS_NARROWING_CHECK}):not(${IS_TRUTHINESS_GUARD})`
 );
 const IS_NOT_ELSE_IF = "IfStatement[parent.type!='IfStatement']";
 const NAMED_FUNCTION_MESSAGE =
@@ -29,10 +30,6 @@ export const GOOGLE_SYNTAX = [
       ", "
     ),
     message: "Extract the condition into a descriptively-named const (is/has/can/should) right before the if."
-  },
-  {
-    selector: `${IS_NOT_ELSE_IF} > BinaryExpression.test:not(${IS_LONE_LITERAL_COMPARISON})`,
-    message: "Extract the comparison into a descriptively-named const (is/has/can/should) right before the if."
   },
   {
     selector: NON_NARROWING_OPERANDS.map(operand => `ConditionalExpression > LogicalExpression.test > ${operand}`).join(

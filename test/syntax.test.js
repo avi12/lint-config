@@ -23,13 +23,37 @@ test("a lone comparison against a literal, null or undefined stays inline", () =
   }
 });
 
-test("a comparison of two values and a compound condition still extract", () => {
-  const compare =
-    "export function run(left: number, other: number) {\n  if (left === other) {\n    return 1;\n  }\n\n  return 2;\n}\n";
-  assert.ok(codes({ source: compare }).includes(GOOGLE));
-  const compound =
-    "export function run(value: number, other: boolean) {\n  if (value === 1 || other) {\n    return 1;\n  }\n\n  return 2;\n}\n";
-  assert.ok(codes({ source: compound }).includes(GOOGLE));
+function wrap(condition) {
+  return `export function run(a: string | null, b: string | null, left: number, other: number, status: number, node: object) {
+  if (${condition}) {
+    return 1;
+  }
+
+  return 2;
+}
+`;
+}
+
+test("a lone comparison of any kind stays inline", () => {
+  for (const condition of ["left === other", "node instanceof Date", "status === Number.MAX_VALUE", "left < other"]) {
+    assert.ok(!codes({ source: wrap(condition) }).includes(GOOGLE), condition);
+  }
+});
+
+test("a truthiness-only compound stays inline", () => {
+  for (const condition of ["!a || !b", "a && b", "a && node.constructor", "!a?.length || !b"]) {
+    assert.ok(!codes({ source: wrap(condition) }).includes(GOOGLE), condition);
+  }
+});
+
+test("a compound with a call or several non-narrowing comparisons still extracts", () => {
+  for (const condition of [
+    "a && b.trim()",
+    "left === other || status === Number.MAX_VALUE",
+    "left === 1 || a && left > other"
+  ]) {
+    assert.ok(codes({ source: wrap(condition) }).includes(GOOGLE), condition);
+  }
 });
 
 test("positional parameters are reported until an override turns the group off for the files", () => {
@@ -37,12 +61,14 @@ test("positional parameters are reported until an override turns the group off f
   const found = codes({
     source: TWO_PARAMETERS,
     filename: "vendor/mirror.ts",
-    overrides: [{
-       files: ["vendor/**"],
-       rules: {
-       "house/positional-parameters": "off" 
-    } 
-    }]
+    overrides: [
+      {
+        files: ["vendor/**"],
+        rules: {
+          "house/positional-parameters": "off"
+        }
+      }
+    ]
   });
   assert.ok(!found.includes("house(positional-parameters)"));
 });
@@ -115,7 +141,10 @@ test("a compound condition made only of narrowing checks is not extracted, any o
   ]) {
     assert.ok(!codes({ source: wrap(condition) }).includes(GOOGLE), condition);
   }
-  for (const condition of ["shape.kind === 'a' || other", "shape.kind === 'a' && (other || shape.kind === 'b')"]) {
+  for (const condition of [
+    "shape.kind === 'a' || other.valueOf()",
+    "shape.kind === 'a' && (key.trim() || shape.kind === 'b')"
+  ]) {
     assert.ok(codes({ source: wrap(condition) }).includes(GOOGLE), condition);
   }
 });
