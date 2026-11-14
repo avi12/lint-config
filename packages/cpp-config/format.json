@@ -1,0 +1,18 @@
+{
+  "BasedOnStyle": "Google",
+  "ColumnLimit": 80,
+  "DerivePointerAlignment": false,
+  "PointerAlignment": "Left",
+  "InsertBraces": true,
+  "SpacesInLineCommentPrefix": { "Minimum": 1, "Maximum": -1 },
+  "QualifierAlignment": "Left",
+  "AllowShortBlocksOnASingleLine": "Never",
+  "AllowShortIfStatementsOnASingleLine": "Never",
+  "AllowShortLoopsOnASingleLine": false,
+  "AllowShortCaseLabelsOnASingleLine": false,
+  "AllowShortEnumsOnASingleLine": false,
+  "AllowShortFunctionsOnASingleLine": "None",
+  "AllowShortLambdasOnASingleLine": "None",
+  "SortIncludes": "Never",
+  "ReflowComments": "Never"
+}

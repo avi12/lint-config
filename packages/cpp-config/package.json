@@ -1,0 +1,16 @@
+{
+  "name": "cpp-config-avi12",
+  "version": "0.9.0",
+  "description": "clang-format and clang-tidy presets for Avi's C++ repositories; avi12-lint cpp-config writes .clang-format and .clang-tidy into a repo",
+  "license": "Apache-2.0",
+  "files": [
+    "format.json",
+    "tidy.json"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./format.json": "./format.json",
+    "./tidy.json": "./tidy.json"
+  }
+}
