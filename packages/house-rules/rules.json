@@ -58,7 +58,7 @@
       "rust": ["variant", "clippy cognitive_complexity with cognitive-complexity-threshold"],
       "cpp": ["variant", "readability-function-cognitive-complexity"],
       "csharp": ["map", "Sonar S134 (max 3)"],
-      "kotlin": ["map", "detekt NestedBlockDepth (threshold 3)"]
+      "kotlin": ["map", "detekt NestedBlockDepth (threshold 4: a depth of 4 is flagged, so at most 3 deep passes)"]
     },
     {
       "id": "named-boolean-condition",
@@ -97,7 +97,7 @@
         "google-readability-casting, cppcoreguidelines-pro-type-cstyle-cast, -const-cast, -reinterpret-cast"
       ],
       "csharp": ["map", "AllowUnsafeBlocks off, IDE0019, IDE0038"],
-      "kotlin": ["map", "detekt UnsafeCast"]
+      "kotlin": ["map", "detekt UnsafeCast (only a cast that can never succeed)"]
     },
     {
       "id": "parameter-object",
@@ -124,7 +124,10 @@
       "rust": ["map", "clippy min_ident_chars with allowed-idents-below-min-chars"],
       "cpp": ["map", "readability-identifier-length (IgnoredVariableNames)"],
       "csharp": ["gap", "ast-grep house-identifier-length"],
-      "kotlin": ["map", "detekt VariableMinLength, FunctionMinLength"]
+      "kotlin": [
+        "map",
+        "detekt VariableMinLength, FunctionMinLength (minimum 2; a single letter such as i, x or y is flagged, and of, on, to and id pass)"
+      ]
     },
     {
       "id": "naming-case",

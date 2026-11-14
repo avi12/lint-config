@@ -17,7 +17,8 @@ They are consumed straight from GitHub and never published to npm
 | `packages/biome-config` | optional and minimal: only `noFloatingPromises` |
 | `packages/house-rules` | the rule parity matrix (`rules.json`): each TypeScript house rule and its Rust, C++, C# and Kotlin equivalent; see `docs/non-ts-languages.md` |
 | `packages/ast-grep-rules` | ast-grep rule packs, one per language (`rust`, `cpp`, `csharp`, `kotlin`): the house rules no linter of those languages has; each rule has a fixture of must-flag and must-not-flag lines |
-| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check |
+| `packages/kotlin-config` | the Kotlin presets: `.editorconfig` for ktlint, `detekt.yml`, and `tools.json` with the pinned ktlint and detekt versions and checksums; fixtures of must-flag and must-not-flag files per rule |
+| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check, and for Kotlin also ktlint and detekt |
 
 ## Install
 
@@ -153,6 +154,17 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.6.0
+
+- A repository with Kotlin now also runs `ktlint` and `detekt` (serial, one JVM at a time, `-Xmx768m`), without Gradle
+  - add `kotlin-config-avi12` as a devDependency (`github:avi12/lint-config#v0.7.0&path:/packages/kotlin-config`) and a Java 17 or newer runtime; the runner says so when either is missing and skips both tools (`AVI12_LINT_REQUIRE_KOTLIN=1` turns the skip into a failure)
+  - the two CLI jars are downloaded once into `.verify/kotlin-tools` and checked against the SHA-256 pinned in `tools.json`; `.verify/` belongs in `.gitignore`
+  - ktlint reads the preset `.editorconfig` as its default, so the repo's own `.editorconfig` wins on any property it sets; detekt reads the preset `detekt.yml` and then the repo's own `detekt.yml` (the shallowest one), whose keys win, so an exemption is a key in that file with a comment saying why
+  - `--fix` runs `ktlint --format`; detekt never autocorrects; `--changed` and `--staged` pass only the Kotlin files that changed; `--only=kotlin` runs these two steps alone
+  - detekt gets its own jar as the classpath, so the rules that need type resolution (`BooleanPropertyNaming`, `VarCouldBeVal`, `UnsafeCast`, `UnnecessaryLet`, `ForbiddenAnnotation`) run against the Kotlin standard library; `AVI12_LINT_KOTLIN_TYPES=0` drops the classpath, which is three times faster and runs those rules not at all
+  - `UnreachableCode` and `UnreachableCatchBlock` are off in the preset: with a partial classpath they flag every call into an unresolved library, and the Kotlin compiler reports them exactly
+- The matrix text for `max-nesting`, `identifier-length` and `no-unchecked-cast` now says what the Kotlin config does
 
 ### Migrating from 0.5.1
 
@@ -299,6 +311,7 @@ Output is printed per tool when it finishes, so lines never interleave
   tsrs checks the whole project, as a type error can sit in an untouched file
 - A tool with no matching changed file is skipped
 - Rust, C++, C# and Kotlin: a language is detected by its marker file; each gets its own `ast-grep` step over its changed files outside `target`, `build`, `bin`, `obj`, `vendor` and other build or dependency folders (the whole project with those folders excluded otherwise), plus one `text-check` step; both are guarded like fallow (`AVI12_LINT_FALLOW_MEMORY_MB`, `AVI12_LINT_FALLOW_TIME_LIMIT_MS`)
+- Kotlin: `ktlint` and `detekt` run from cached CLI jars over the repo's Kotlin files (changed ones with `--changed`), batched to fit a Windows command line, in the same watchdog; the report is one line per finding, `file:line:column  tool/rule  message`, then a count; Java 17 or newer is required
 - `fallow audit` runs with its Node heap capped at 4 GB (`--max-old-space-size=4096`), a guard against a runaway audit on a dirty tree
 
 ### Measured on a 2263-file TypeScript and Svelte codebase

@@ -1,7 +1,7 @@
 # Linting Rust, C++, C# and Kotlin
 
 Research for extending lint-config beyond TypeScript
-Status: phases 0 and 1 done (0.6.0): the matrix with every tool id verified, the ast-grep rule packs and the runner steps; phases 2 to 6 are open
+Status: phases 0 to 2 done (0.7.0): the matrix with every tool id verified, the ast-grep rule packs, the runner steps and the Kotlin presets with their ktlint and detekt step; phases 3 to 6 are open
 
 ## Summary
 
@@ -74,14 +74,14 @@ Cell legend: a plain cell is an existing rule to configure, `~` an idiomatic var
 | immutable-by-default | const or val unless reassigned; readonly on what is never reassigned | `prefer-const`, `no-var` | rustc unused_mut | misc-const-correctness | IDE0044, RCS1118 | detekt VarCouldBeVal |
 | no-nested-ternary | no nested conditional expression | `no-nested-ternary` | n/a: no ternary; nesting is covered by max-nesting | readability-avoid-nested-conditional-operator | RCS1238 | n/a: no ternary; nesting is covered by max-nesting |
 | early-return | no else after return, no lonely if in an else | `no-else-return`, `no-lonely-if` | clippy redundant_else, collapsible_else_if | readability-else-after-return | RCS1208 | **gap**: ast-grep house-else-after-return, house-lonely-if |
-| max-nesting | block nesting at most 3 deep, callbacks at most 3 deep | `max-depth`, `max-nested-callbacks` | ~ clippy cognitive_complexity with cognitive-complexity-threshold | ~ readability-function-cognitive-complexity | Sonar S134 (max 3) | detekt NestedBlockDepth (threshold 3) |
+| max-nesting | block nesting at most 3 deep, callbacks at most 3 deep | `max-depth`, `max-nested-callbacks` | ~ clippy cognitive_complexity with cognitive-complexity-threshold | ~ readability-function-cognitive-complexity | Sonar S134 (max 3) | detekt NestedBlockDepth (threshold 4: a depth of 4 is flagged, so at most 3 deep passes) |
 | named-boolean-condition | a compound or comparing condition is extracted into a named boolean first | `house/google-syntax` | **gap**: ast-grep house-compound-condition | **gap**: ast-grep house-compound-condition | **gap**: ast-grep house-compound-condition | **gap**: ast-grep house-compound-condition |
 | no-magic-numbers | a number other than 0, 1, -1, 2 is a named constant | `house/no-magic-numbers` | **gap**: ast-grep house-magic-number | readability-magic-numbers (IgnoredIntegerValues) | Sonar S109 | detekt MagicNumber (ignoreNumbers) |
 | no-unchecked-unwrap | no non-null assertion and no unwrap of an absent value | `typescript/no-non-null-assertion` | clippy unwrap_used, expect_used | bugprone-unchecked-optional-access | **gap**: ast-grep house-null-forgiving, with CS8602 as an error | detekt UnsafeCallOnNullableType; ast-grep house-null-forgiving for the !! operator |
-| no-unchecked-cast | no unsafe or unchecked cast | `typescript/consistent-type-assertions` | rustc unsafe_code = forbid, clippy as_conversions, cast_possible_truncation | google-readability-casting, cppcoreguidelines-pro-type-cstyle-cast, -const-cast, -reinterpret-cast | AllowUnsafeBlocks off, IDE0019, IDE0038 | detekt UnsafeCast |
+| no-unchecked-cast | no unsafe or unchecked cast | `typescript/consistent-type-assertions` | rustc unsafe_code = forbid, clippy as_conversions, cast_possible_truncation | google-readability-casting, cppcoreguidelines-pro-type-cstyle-cast, -const-cast, -reinterpret-cast | AllowUnsafeBlocks off, IDE0019, IDE0038 | detekt UnsafeCast (only a cast that can never succeed) |
 | parameter-object | two or more parameters become one parameter object | `house/positional-parameters` | ~ clippy too_many_arguments with too-many-arguments-threshold | ~ bugprone-easily-swappable-parameters | ~ named arguments; CA1068 and Sonar S107 past a threshold | ~ named arguments; detekt LongParameterList past a threshold |
 | no-written-return-types | infer return types instead of writing them | `house/house-syntax` | n/a: the language requires them | n/a: the language requires them | n/a: the language requires them | n/a: the language style guide wins |
-| identifier-length | names of at least 3 characters, with a short allow-list | `id-length` | clippy min_ident_chars with allowed-idents-below-min-chars | readability-identifier-length (IgnoredVariableNames) | **gap**: ast-grep house-identifier-length | detekt VariableMinLength, FunctionMinLength |
+| identifier-length | names of at least 3 characters, with a short allow-list | `id-length` | clippy min_ident_chars with allowed-idents-below-min-chars | readability-identifier-length (IgnoredVariableNames) | **gap**: ast-grep house-identifier-length | detekt VariableMinLength, FunctionMinLength (minimum 2; a single letter such as i, x or y is flagged, and of, on, to and id pass) |
 | naming-case | types in UpperCamelCase, values in lowerCamelCase, constants in CONSTANT_CASE (a language that dictates its own case keeps it) | `naming/convention` | rustc non_camel_case_types, non_snake_case, non_upper_case_globals | readability-identifier-naming | IDE1006 with dotnet_naming_rule in .editorconfig | ktlint class-naming, property-naming, function-naming; detekt naming set |
 | boolean-prefix | a boolean starts with is, has, can or should and reads positively | `naming/convention` | **gap**: ast-grep house-boolean-prefix (declared bool) | **gap**: ast-grep house-boolean-prefix (declared bool) | **gap**: ast-grep house-boolean-prefix (declared bool) | detekt BooleanPropertyNaming (allowedPattern is|has|can|should) |
 | no-abbreviations | full words; a deny-list of known abbreviations | `naming/convention` | **gap**: ast-grep house-abbreviation | **gap**: ast-grep house-abbreviation | **gap**: ast-grep house-abbreviation | **gap**: ast-grep house-abbreviation |
@@ -185,7 +185,8 @@ the runner integration and the per-language presets; nothing else until a measur
   clang-tidy `-j` is the free memory divided by 450 MB, JVM tools never run together, `dotnet build -m:1`, `cargo clippy -j`
 - Changed-files mode: ast-grep, clang-format, clang-tidy, ktlint and detekt take file lists;
   clippy and `dotnet build` are project-wide and run only when a file of their language changed
-- Kotlin runs the CLI jars from a cache folder instead of Gradle; Gradle stays the build's own gate
+- Kotlin runs the CLI jars from a cache folder instead of Gradle (done, 0.7.0); Gradle stays the build's own gate
+- detekt rules that need types run against the Kotlin standard library only (detekt's own jar as the classpath), because the project classpath needs Gradle; the two rules that misfire on unresolved calls are off
 - The no-disable-comments rule is the matrix row `no-suppression`, enforced per language;
   an exemption lives in the preset's config with a reason, never at the line
 - Tests, one per language: a clash test (the configured rule set contains no pair that
@@ -200,7 +201,7 @@ the runner integration and the per-language presets; nothing else until a measur
 |---|---|---|
 | 0 | Done (0.6.0): the matrix, its renderer and tests; every rule id verified against the committed per-tool id lists | 0.5 day |
 | 1 | Done (0.6.0): `ast-grep-rules` packs (one config per language, because ast-grep rejects a repeated id in one config), the `text-check` step, the runner steps with changed-files mode, fixtures | 1.5 days |
-| 2 | `kotlin-config`: detekt and ktlint presets read from the matrix, CLI-jar runner step; converges the three Kotlin repos | 1 day |
+| 2 | Done (0.7.0): `kotlin-config`: detekt and ktlint presets read from the matrix, CLI-jar runner step with pinned checksums, fixtures and a fixer-stability test; winui-svelte `ide/webstorm`, ide-code-walkthrough and sb-companion converge on it | 1 day |
 | 3 | `rust-config`: `[lints]` snippet, `clippy.toml`, `rustfmt.toml`, deny and machete steps | 1 day |
 | 4 | `cpp-config`: `.clang-tidy` preset from edge-plus and any-stt, `compile_commands.json`, `run-clang-tidy -j`, vcvars once, changed units only | 1.5 days |
 | 5 | `csharp-config`: `Directory.Build.props`, `.editorconfig` severities, analyzer references, `BannedSymbols.txt`, `dotnet format` step | 1.5 days |
