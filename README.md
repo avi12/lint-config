@@ -16,7 +16,8 @@ They are consumed straight from GitHub and never published to npm
 | `packages/fallow-config` | fallow preset for the dead-code audit |
 | `packages/biome-config` | optional and minimal: only `noFloatingPromises` |
 | `packages/house-rules` | the rule parity matrix (`rules.json`): each TypeScript house rule and its Rust, C++, C# and Kotlin equivalent; see `docs/non-ts-languages.md` |
-| `packages/avi12-lint` | `avi12-lint` runs the tools one after another |
+| `packages/ast-grep-rules` | ast-grep rule packs, one per language (`rust`, `cpp`, `csharp`, `kotlin`): the house rules no linter of those languages has; each rule has a fixture of must-flag and must-not-flag lines |
+| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check |
 
 ## Install
 
@@ -153,6 +154,16 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.5.1
+
+- Nothing changes for a TypeScript-only repository: no language step is planned without a marker file
+- A repository with Rust, C++, C# or Kotlin (`Cargo.toml`, `CMakeLists.txt`, `.clang-tidy`, `.clang-format`, a `*.csproj`, `build.gradle.kts` or `detekt.yml` at any depth) now also runs, under the memory and time guard
+  - one `ast-grep <language>` step per language, with the rule pack `ast-grep-rules-avi12` (add both `@ast-grep/cli` and the pack as devDependencies; the runner says so when either is missing and skips that language)
+  - one `text-check` step: a suppress comment (`#[allow(`, `NOLINT`, `#pragma warning disable`, `@Suppress`, `SuppressMessage`, `#pragma clang diagnostic ignored`, `eslint-disable`) or an em dash is an error
+- An exemption of the text check lives in `avi12-lint.config.json` as `textCheck.exemptions` (`files` globs, `rules` of `no-suppress-comment` or `no-em-dash`, and a `reason` that is required); an ast-grep rule exempts files with `ignores` and a `note`
+- `avi12-lint text-check [files]` runs the text check alone
+- `house-rules-avi12` ships `tool-ids/*.txt` (every rule id of clippy, rustc, clang-tidy, the Roslyn analyzers, detekt and ktlint); `pnpm ids:refresh` regenerates them
+
 ### Migrating from 0.5.0
 
 - `vue()` turns off every layout rule of `eslint-plugin-vue` that oxfmt owns (it formats `.vue` templates), and makes the plugin's warnings errors
@@ -287,6 +298,7 @@ Output is printed per tool when it finishes, so lines never interleave
 - With `--changed` or `--staged`, oxlint, ESLint, stylelint and oxfmt get the file list, and `fallow audit --base` gets the merge base (`--changed` only);
   tsrs checks the whole project, as a type error can sit in an untouched file
 - A tool with no matching changed file is skipped
+- Rust, C++, C# and Kotlin: a language is detected by its marker file; each gets its own `ast-grep` step over its changed files outside `target`, `build`, `bin`, `obj`, `vendor` and other build or dependency folders (the whole project with those folders excluded otherwise), plus one `text-check` step; both are guarded like fallow (`AVI12_LINT_FALLOW_MEMORY_MB`, `AVI12_LINT_FALLOW_TIME_LIMIT_MS`)
 - `fallow audit` runs with its Node heap capped at 4 GB (`--max-old-space-size=4096`), a guard against a runaway audit on a dirty tree
 
 ### Measured on a 2263-file TypeScript and Svelte codebase

@@ -1,7 +1,7 @@
 # Linting Rust, C++, C# and Kotlin
 
 Research for extending lint-config beyond TypeScript
-Status: step 1 (research and the parity matrix); nothing here is released
+Status: phases 0 and 1 done (0.6.0): the matrix with every tool id verified, the ast-grep rule packs and the runner steps; phases 2 to 6 are open
 
 ## Summary
 
@@ -110,8 +110,10 @@ Cell legend: a plain cell is an existing rule to configure, `~` an idiomatic var
 
 <!-- matrix:end -->
 
-Rule ids marked from memory (Roslynator, Sonar and StyleCop ids, some clippy names)
-are verified in phase 0 against each tool's own rule listing
+Every tool rule id in the matrix is verified against `packages/house-rules/tool-ids/*.txt`,
+written by `pnpm ids:refresh` from the tools themselves (clippy and rustc `-W help`, `clang-tidy --list-checks`,
+the Roslyn analyzer packages, `detekt --generate-config`, the ktlint standard rule set), and a test fails on an id no list has
+Config keys (clippy.toml thresholds, clang-tidy options, detekt properties) are not rule ids and are not checked
 
 ## Tools surveyed (versions of 2026-11)
 
@@ -171,7 +173,7 @@ packages/
 | Text (em dash, Markdown prose) | one check in `avi12-lint`, any file |
 | Needs types (boolean prefix of an inferred type, swappable parameters) | Later: a detekt rule, a Roslyn analyzer or dylint, only if the declared-type ast-grep rule proves too weak |
 
-What we write ourselves: the ast-grep pack (about 12 small YAML rules),
+What we wrote ourselves: the ast-grep packs (25 small YAML rules over the four languages),
 the runner integration and the per-language presets; nothing else until a measured need
 
 ### Runner
@@ -196,8 +198,8 @@ the runner integration and the per-language presets; nothing else until a measur
 
 | Phase | Work | Effort |
 |---|---|---|
-| 0 | The matrix, its renderer and tests (done in this change); verify every rule id against each tool's own listing in a test that skips when the tool is missing | 0.5 day |
-| 1 | `ast-grep-rules` pack for the structural gaps, runner step with changed-files mode, fixtures; first because it covers all four languages at once with no toolchain | 1.5 days |
+| 0 | Done (0.6.0): the matrix, its renderer and tests; every rule id verified against the committed per-tool id lists | 0.5 day |
+| 1 | Done (0.6.0): `ast-grep-rules` packs (one config per language, because ast-grep rejects a repeated id in one config), the `text-check` step, the runner steps with changed-files mode, fixtures | 1.5 days |
 | 2 | `kotlin-config`: detekt and ktlint presets read from the matrix, CLI-jar runner step; converges the three Kotlin repos | 1 day |
 | 3 | `rust-config`: `[lints]` snippet, `clippy.toml`, `rustfmt.toml`, deny and machete steps | 1 day |
 | 4 | `cpp-config`: `.clang-tidy` preset from edge-plus and any-stt, `compile_commands.json`, `run-clang-tidy -j`, vcvars once, changed units only | 1.5 days |
