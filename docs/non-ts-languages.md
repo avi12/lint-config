@@ -145,6 +145,15 @@ One run each on this machine, one at a time, wall time and peak working set of t
 | clang-format, one process per file | the same tree plus its build folder | 153 s | 619 MB |
 | clang-tidy | one translation unit, edge-plus `dllmain.cpp` | 6.2 s | 416 MB |
 | ast-grep, two rules | edge-plus DLL | 0.5 s | 58 MB |
+| clang-tidy, cold | any-stt dictation DLL, 65 units, 32 workers | 13.6 s | 4167 MB |
+| clang-tidy, warm (every unit cached) | any-stt | 3.4 s | 168 MB |
+| clang-tidy, one unit edited | any-stt | 4.8 s | 121 MB |
+| clang-tidy `--fix`, in place, one unit at a time | any-stt | 88 s | n/a |
+| clang-tidy `--fix`, exported, merged and applied once | any-stt | 13 s | n/a |
+| clang-tidy, cold | edge-plus DLL, 27 units | 15.4 s | 2369 MB |
+| clang-tidy, warm | edge-plus | 4.0 s | 98 MB |
+| clang-tidy, cold | windows-skin-switcher, 13 C++/WinRT units | 68.9 s | 13356 MB |
+| clang-tidy, warm | windows-skin-switcher | 3.5 s | 179 MB |
 | `dotnet build` with analyzers | companion, 5.3k lines, cold | 9.8 s | 634 MB |
 | ast-grep, one rule | companion | 0.5 s | 81 MB |
 | ktlint | ide-code-walkthrough, 19k lines | 4.0 s | 827 MB |
@@ -155,6 +164,8 @@ What the numbers say
 - ast-grep is 10 to 100 times cheaper than any compiler-backed tool, and its cost does not grow with the toolchain
 - Spawning a formatter per file is 100 times slower than one call; the runner always batches
 - clang-tidy costs about 6 s and 400 MB a unit; 27 units run serially is minutes, so the runner needs `-j` bounded by the memory guard and a changed-files mode
+- A C++/WinRT unit costs 2 GB where a plain Win32 unit costs 130 MB, so the pool learns the cost from the running units; the guard is soft (windows-skin-switcher peaked at 13 GB with the default pool, `AVI12_LINT_TIDY_JOBS=5` keeps it near 8 GB)
+- The cache makes a warm run cost the node start, the Visual Studio environment and one clang-format call, about 3.5 s, whatever the unit count
 - ktlint and detekt are cheap as CLI jars; run them one after another, not together (827 MB)
 - A cold clippy on a Tauri crate compiles the dependency tree once, 45 to 70 s and about 2.6 GB with four jobs; every later run is under 5 s; the 1.2 GB target folder lives in `.verify/rust-target`, apart from the dev build, so a lint run never waits for the lock of a running `cargo tauri dev` (`AVI12_LINT_RUST_TARGET=shared` opts out; a shared folder was not measured)
 - The house rule that ast-grep fills most, a compound condition not extracted into a named boolean, finds 64 places in pade, 13 in ide-code-walkthrough, 12 in the companion and 1 in the edge-plus C++; there is no narrowing exemption yet (the TypeScript rule has one, see `guarded-conditions.js`)
@@ -194,6 +205,10 @@ the runner integration and the per-language presets; nothing else until a measur
   clippy and `dotnet build` are project-wide and run only when a file of their language changed; Rust narrows to the crates that own a changed `.rs` file (`-p crate`)
 - Kotlin runs the CLI jars from a cache folder instead of Gradle (done, 0.7.0); Gradle stays the build's own gate
 - detekt rules that need types run against the Kotlin standard library only (detekt's own jar as the classpath), because the project classpath needs Gradle; the two rules that misfire on unresolved calls are off
+- C++ runs one `clang-format` call over every covered file and one `clang-tidy` process per translation unit through a pool; a passed unit is cached by the tool version, the `.clang-tidy`, the compile arguments, the unit and the project headers it includes (found by following its `#include` lines), so a header edit reruns every unit that includes it and nothing else
+- clang-tidy `--fix` is opt in (`AVI12_LINT_TIDY_FIX=1`) and runs as export, merge and apply: an in-place fix per unit renames a declaration and only the uses in that unit, so every unit analysed after it fails to compile; the merge is per diagnostic (whole or not at all) and keys a file by its canonical path, because a unit in `test/` names a header as `test/../src/x.h`
+- Four fixer defects found by the pilots: `modernize-use-ranges` writes `std::ranges::sort(range, , comparator)` (off in the preset), `misc-use-internal-linkage` makes `DllMain` and `wmain` static (off in the preset), a rename of `__ImageBase` or `wmain` breaks the link (ignored by default), and `readability-identifier-naming` renames a hand-declared mirror of a Windows type (each repo ignores its mirrors, with a reason)
+- Per-folder exemptions are a `.clang-tidy` with `InheritParentConfig: true`, written by the generator from `tidy.directories`; findings in generated code are `tidy.ignoredPaths`
 - Rust runs `cargo fmt`, `cargo clippy --keep-going`, `cargo machete` and `cargo deny` per Cargo root, serially, with `CARGO_BUILD_JOBS` 4 and a guard of 8 GB and 30 minutes (a cold Tauri tree peaks near 2.8 GB)
 - clippy has no `extends`, so `avi12-lint rust-config` writes `clippy.toml`, `rustfmt.toml`, `deny.toml` and a managed `[lints]` block into each root; `avi12-rust.local.toml` holds the repo's exemptions, each with its reason, per workspace or per member crate
 - `--keep-going` matters: a crate that fails hides the lints of every crate that depends on it, so without it a migration needs one build per layer
@@ -214,7 +229,7 @@ the runner integration and the per-language presets; nothing else until a measur
 | 1 | Done (0.6.0): `ast-grep-rules` packs (one config per language, because ast-grep rejects a repeated id in one config), the `text-check` step, the runner steps with changed-files mode, fixtures | 1.5 days |
 | 2 | Done (0.7.0): `kotlin-config`: detekt and ktlint presets read from the matrix, CLI-jar runner step with pinned checksums, fixtures and a fixer-stability test; winui-svelte `ide/webstorm`, ide-code-walkthrough and sb-companion converge on it | 1 day |
 | 3 | Done (0.8.0): `rust-config`: lint levels, `clippy.toml`, `rustfmt.toml`, `deny.toml`, the generator `avi12-lint rust-config`, fmt, clippy, machete and deny steps, fixture crates; pilots winui-svelte `launcher`, pade, edge-plus, any-stt and agentic-gaming-assistant | 1 day |
-| 4 | `cpp-config`: `.clang-tidy` preset from edge-plus and any-stt, `compile_commands.json`, `run-clang-tidy -j`, vcvars once, changed units only | 1.5 days |
+| 4 | Done (0.9.0): `cpp-config`: `.clang-format` and `.clang-tidy` presets with fixtures, the generator `avi12-lint cpp-config`, a compile database from CMake, a sighmake buildscript or a flat description, vcvars read once, one clang-format call, a cached memory-bounded clang-tidy pool, merged parallel fixes, changed units only; pilots edge-plus, any-stt and windows-skin-switcher | 1.5 days |
 | 5 | `csharp-config`: `Directory.Build.props`, `.editorconfig` severities, analyzer references, `BannedSymbols.txt`, `dotnet format` step | 1.5 days |
 | 6 | Optional, only for measured gaps that need types: a detekt rule, a Roslyn analyzer or a dylint lint | 2 days |
 

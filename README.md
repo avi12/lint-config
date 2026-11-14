@@ -19,7 +19,8 @@ They are consumed straight from GitHub and never published to npm
 | `packages/ast-grep-rules` | ast-grep rule packs, one per language (`rust`, `cpp`, `csharp`, `kotlin`): the house rules no linter of those languages has; each rule has a fixture of must-flag and must-not-flag lines |
 | `packages/kotlin-config` | the Kotlin presets: `.editorconfig` for ktlint, `detekt.yml`, and `tools.json` with the pinned ktlint and detekt versions and checksums; fixtures of must-flag and must-not-flag files per rule |
 | `packages/rust-config` | the Rust presets: `lints.toml` (every matrix row as a rustc or clippy lint level), `clippy.toml` (thresholds, the short-name idioms, tests may unwrap), `rustfmt.toml` (width 100) and `deny.toml` (advisories, licences, bans, sources); `avi12-lint rust-config` writes them into a repo; fixture crates mark the line each lint must flag |
-| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check, for Kotlin also ktlint and detekt, and for Rust also `cargo fmt`, `clippy`, `machete` and `deny` |
+| `packages/cpp-config` | the C++ presets: `format.json` (Google, 80 columns, `InsertBraces`) and `tidy.json` (every matrix row for C++ as clang-tidy checks, the house naming and the thresholds, a reason for each check that is off); `avi12-lint cpp-config` writes `.clang-format` and `.clang-tidy` into a repo; fixtures mark the line each check must flag |
+| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check, for Kotlin also ktlint and detekt, for Rust also `cargo fmt`, `clippy`, `machete` and `deny`, and for C++ also `clang-format` and a cached, memory-bounded `clang-tidy` |
 
 ## Install
 
@@ -34,6 +35,7 @@ pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.13&path:/packa
 pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages/fallow-config"
 pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.13&path:/packages/avi12-lint"
 pnpm add -D "rust-config-avi12@github:avi12/lint-config#v0.8.0&path:/packages/rust-config"
+pnpm add -D "cpp-config-avi12@github:avi12/lint-config#v0.9.0&path:/packages/cpp-config"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -156,6 +158,19 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.8.0
+
+- A repository with C++ (a `CMakeLists.txt`, a `*.vcxproj`, a `.clang-format` or a `.clang-tidy`) now also runs `clang-format` and `clang-tidy`
+  - add `cpp-config-avi12` as a devDependency (`github:avi12/lint-config#v0.9.0&path:/packages/cpp-config`), keep the repo's own exemptions in `avi12-cpp.local.json` at the repo root and run `avi12-lint cpp-config`; commit what it writes (`.clang-format`, `.clang-tidy`, and a `.clang-tidy` in each folder named under `tidy.directories`) and run it again after bumping the tag; the runner fails when a generated file is stale
+  - LLVM is found on the PATH, in Visual Studio's `VC/Tools/Llvm` folder or in `C:/Program Files/LLVM/bin` (`AVI12_LINT_LLVM_BIN` names another); a missing tool is a one-line notice and the step is skipped (`AVI12_LINT_REQUIRE_CPP=1` turns a notice into a failure); on Windows the Visual Studio x64 environment is read once from `vcvars64.bat` so clang finds the MSVC and SDK headers
+  - `avi12-cpp.local.json` keys: `sources` (`include` and `exclude` regexes over repo-relative paths; vendored, build and output folders are always out), `database` (where the compile flags come from, below), `format` (a clang-format key to set, or `null` to drop), and `tidy`: `enable` (extra checks), `disable` (a check name to its reason), `options` with `optionReasons` (every option needs a reason), `headerFilterRegex`, `directories` (a folder to `disable`, `options` and `optionReasons`, written as a `.clang-tidy` that inherits the root one), and `ignoredPaths` (a regex to its reason: findings in generated code, such as a C++/WinRT projection, do not fail a unit)
+  - the compile database is written to `.verify/clang-tidy` from one of three sources: `{ "path": "build/native-Release/compile_commands.json", "externalIncludes": "regex" }` for a CMake database (precompiled header flags are dropped, an include folder matching the regex becomes external), `{ "buildscript": { "file", "project", "includeRoot", "flags" } }` for a sighmake buildscript (the standard, the solution and project defines and the include folders are read from it, so there is no second copy), or `{ "flat": { "standard", "defines", "includes", "flags" } }`
+  - `clang-format --dry-run --Werror` runs once over every covered file, batched by the argument budget, never one process per file (`--fix` runs it with `-i`)
+  - `clang-tidy` runs one process per translation unit through a pool bounded by the CPU count, by free memory over a unit's measured cost and by `AVI12_LINT_CPP_MEMORY_MB` (8192), `AVI12_LINT_TIDY_JOBS` sets the size; a unit that passed is not run again until the tool, the `.clang-tidy`, its compile arguments, the unit or a project header it includes changes (`.verify/clang-tidy-cache`; add `.verify/` to `.gitignore`); `--changed` and `--staged` run the changed units and the units that include a changed header
+  - `clang-tidy` fixes are opt in: `AVI12_LINT_TIDY_FIX=1 avi12-lint --fix` exports each unit's fixes, merges them as `clang-apply-replacements` does, applies them once and then formats; run it until it reports 0 files; a fixer can still write wrong code, so build and test afterwards (the fixer made `DllMain` and `wmain` static before `misc-use-internal-linkage` was switched off, and rewrote `modernize-use-ranges` calls into code that does not compile, which is off too)
+  - `--only=cpp` runs these steps alone
+- The `plan` export gained a `cpp` argument, and the `avi12-lint` exports `cpp`, `cpp-config`, `cpp-fixes`, `cpp-tidy` and `cpp-tools` are new
 
 ### Migrating from 0.7.0
 
