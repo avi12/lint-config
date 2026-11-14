@@ -122,6 +122,7 @@ export function kotlinSteps({
       env: {},
       isDirect: true,
       reporter: "ktlint",
+      family: "kotlin",
       isGuarded: true,
       isParallel: false
     },
@@ -132,6 +133,7 @@ export function kotlinSteps({
       env: {},
       isDirect: true,
       reporter: "detekt",
+      family: "kotlin",
       isGuarded: true,
       isParallel: false
     }

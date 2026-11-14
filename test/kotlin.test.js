@@ -49,7 +49,13 @@ test("a missing or old java is reported clearly, and a failed download names its
   assert.match(kotlinNotices({ javaMajor: undefined })[0], /Java 17 or newer \(none was found/);
   assert.match(kotlinNotices({ javaMajor: 11 })[0], /Java 11 was found/);
   assert.deepEqual(kotlinNotices({ javaMajor: MINIMUM_JAVA_VERSION }), []);
-  assert.match(kotlinNotices({ javaMajor: 21, toolError: "offline" })[0], /could not be prepared \(offline\)/);
+  assert.match(
+    kotlinNotices({
+      javaMajor: 21,
+      toolError: "offline"
+    })[0],
+    /could not be prepared \(offline\)/
+  );
 });
 
 test("a full run gives ktlint the preset editorconfig and the repo's Kotlin files minus ignored folders, serially", () => {
@@ -109,9 +115,19 @@ test("a long file list is batched so no command passes the budget", () => {
 });
 
 test("plan adds the Kotlin steps only when the runner prepared them", () => {
-  const names = given => plan({ hasFile: () => false, ...given }).map(step => step.name);
+  const names = given =>
+    plan({
+      hasFile: () => false,
+      ...given
+    }).map(step => step.name);
   assert.deepEqual(names({ languages: ["kotlin"] }), ["text-check"]);
-  assert.deepEqual(names({ languages: ["kotlin"], kotlin: BASE }), ["text-check", "ktlint", "detekt"]);
+  assert.deepEqual(
+    names({
+      languages: ["kotlin"],
+      kotlin: BASE
+    }),
+    ["text-check", "ktlint", "detekt"]
+  );
 });
 
 test("the report reads both tools into one shape, drops the noise and keeps a crash", () => {
@@ -134,8 +150,20 @@ test("the report reads both tools into one shape, drops the noise and keeps a cr
     detekt,
     "C:\\repo\\A.kt:2:35  detekt/MagicNumber  This expression contains a magic number.\navi12-lint: detekt: 1 finding\n"
   );
-  assert.equal(formatReport({ tool: "detekt", text: "WARNING: x\n" }), "");
-  assert.match(formatReport({ tool: "detekt", text: "Provided configuration file is invalid\n" }), /invalid/);
+  assert.equal(
+    formatReport({
+      tool: "detekt",
+      text: "WARNING: x\n"
+    }),
+    ""
+  );
+  assert.match(
+    formatReport({
+      tool: "detekt",
+      text: "Provided configuration file is invalid\n"
+    }),
+    /invalid/
+  );
 });
 
 function fakeSystem({ cached, downloaded }) {
@@ -144,7 +172,7 @@ function fakeSystem({ cached, downloaded }) {
   return {
     calls,
     dependencies: {
-      hashFile: async file => {
+      async hashFile(file) {
         calls.push(`hash ${file}`);
         const hash = files.get(file);
         if (hash === undefined) {
@@ -153,17 +181,17 @@ function fakeSystem({ cached, downloaded }) {
 
         return hash;
       },
-      download: async ({ file }) => {
+      async download({ file }) {
         calls.push("download");
         files.set(file, downloaded);
       },
-      makeDirectory: async () => {},
-      move: async (from, to) => {
+      async makeDirectory() {},
+      async move(from, to) {
         calls.push(`move ${from} ${to}`);
         files.set(to, files.get(from));
         files.delete(from);
       },
-      remove: async file => {
+      async remove(file) {
         calls.push(`remove ${file}`);
         files.delete(file);
       }
@@ -179,15 +207,32 @@ const TOOL = {
 
 test("a cached jar with the pinned hash is used without a download", async () => {
   const { calls, dependencies } = fakeSystem({ cached: "good" });
-  const found = await ensureTool({ tool: TOOL, cacheDirectory: "cache", dependencies });
-  assert.equal(found, toolPath({ cacheDirectory: "cache", tool: TOOL }));
+  const found = await ensureTool({
+    tool: TOOL,
+    cacheDirectory: "cache",
+    dependencies
+  });
+  assert.equal(
+    found,
+    toolPath({
+      cacheDirectory: "cache",
+      tool: TOOL
+    })
+  );
   assert.ok(!calls.includes("download"));
 });
 
 test("a missing or corrupt jar is downloaded, verified and moved into place", async () => {
   for (const cached of [undefined, "corrupt"]) {
-    const { calls, dependencies } = fakeSystem({ cached, downloaded: "good" });
-    await ensureTool({ tool: TOOL, cacheDirectory: "cache", dependencies });
+    const { calls, dependencies } = fakeSystem({
+      cached,
+      downloaded: "good"
+    });
+    await ensureTool({
+      tool: TOOL,
+      cacheDirectory: "cache",
+      dependencies
+    });
     assert.ok(calls.includes("download"));
     assert.ok(calls.includes("move cache/tool.jar.part cache/tool.jar"));
   }
@@ -195,7 +240,14 @@ test("a missing or corrupt jar is downloaded, verified and moved into place", as
 
 test("a download that does not match the pinned hash is deleted and rejected", async () => {
   const { calls, dependencies } = fakeSystem({ downloaded: "evil" });
-  await assert.rejects(ensureTool({ tool: TOOL, cacheDirectory: "cache", dependencies }), /expected good/);
+  await assert.rejects(
+    ensureTool({
+      tool: TOOL,
+      cacheDirectory: "cache",
+      dependencies
+    }),
+    /expected good/
+  );
   assert.ok(calls.includes("remove cache/tool.jar.part"));
   assert.ok(!calls.some(call => call.startsWith("move")));
 });

@@ -25,8 +25,16 @@ import {
   kotlinNotices,
   parseJavaMajor
 } from "#src/kotlin.js";
-import { detectLanguages } from "#src/languages.js";
+import { detectLanguages, isIgnoredPath } from "#src/languages.js";
 import { languageNotices, plan } from "#src/plan.js";
+import {
+  cargoRoots,
+  planRustConfig,
+  RUST_LOCAL_FILE,
+  RUST_PRESET_DIRECTORY,
+  staleRustFiles
+} from "#src/rust-config.js";
+import { probeRustTools, rustNotices } from "#src/rust.js";
 import { findingsOf, isTextChecked, parseExemptions, withoutExempted } from "#src/text-check.js";
 
 const args = process.argv.slice(2);
@@ -95,6 +103,83 @@ if (args[0] === "fallow-config") {
 
 if (args[0] === "text-check") {
   process.exit(runTextCheck(args.slice(1)));
+}
+
+const RUST_PRESET_FILES = {
+  lints: "lints.toml",
+  clippy: "clippy.toml",
+  rustfmt: "rustfmt.toml",
+  deny: "deny.toml"
+};
+
+function rustPresetFile(file) {
+  const directory = process.env["AVI12_LINT_RUST_PRESET"] ?? path.join(process.cwd(), RUST_PRESET_DIRECTORY);
+  return path.join(directory, file);
+}
+
+function readRustPlan() {
+  const preset = Object.fromEntries(
+    Object.entries(RUST_PRESET_FILES).map(([name, file]) => [name, readFileSync(rustPresetFile(file), "utf8")])
+  );
+  const manifests = listProjectFiles()
+    .filter(file => path.basename(file) === "Cargo.toml" && !isIgnoredPath(file))
+    .map(file => ({
+      path: file,
+      text: readFileSync(file, "utf8")
+    }));
+  const locals = new Map();
+  for (const root of cargoRoots(manifests)) {
+    const localPath = root.directory === "." ? RUST_LOCAL_FILE : `${root.directory}/${RUST_LOCAL_FILE}`;
+    if (existsSync(localPath)) {
+      locals.set(root.directory, readFileSync(localPath, "utf8"));
+    }
+  }
+
+  const { files, problems } = planRustConfig({
+    preset,
+    manifests,
+    locals
+  });
+  const existing = new Map(
+    [...files.keys()].map(file => [file, existsSync(file) ? readFileSync(file, "utf8") : undefined])
+  );
+  return {
+    files,
+    problems,
+    stale: staleRustFiles({
+      files,
+      existing
+    })
+  };
+}
+
+function runRustConfig() {
+  const { files, problems, stale } = readRustPlan();
+  const isCheck = args.includes("--check");
+  for (const problem of problems) {
+    console.log(`avi12-lint: ${problem}`);
+  }
+
+  if (isCheck) {
+    for (const file of stale) {
+      console.log(`avi12-lint: ${file} differs from rust-config-avi12; run avi12-lint rust-config`);
+    }
+
+    const isOutOfDate = stale.length > 0 || problems.length > 0;
+    return isOutOfDate ? 1 : 0;
+  }
+
+  for (const file of stale) {
+    writeFileSync(file, files.get(file));
+    console.log(`avi12-lint: wrote ${file}`);
+  }
+
+  const hasProblems = problems.length > 0;
+  return hasProblems ? 1 : 0;
+}
+
+if (args[0] === "rust-config") {
+  process.exit(runRustConfig());
 }
 
 const concurrencyIndex = args.indexOf("--concurrency");
@@ -202,6 +287,49 @@ async function prepareKotlin() {
 
 const kotlinPreparation = languages.includes("kotlin") ? await prepareKotlin() : { notices: [] };
 
+const IS_RUST_REQUIRED = process.env["AVI12_LINT_REQUIRE_RUST"] === "1";
+function isRunnable(probeArguments) {
+  const probe = spawnSync("cargo", probeArguments, { encoding: "utf8" });
+  return !probe.error && probe.status === 0;
+}
+
+function prepareRust() {
+  const { hasCargo, tools } = probeRustTools(isRunnable);
+  const isPresetInstalled = existsSync(rustPresetFile("lints.toml"));
+  const configPlan = isPresetInstalled
+    ? readRustPlan()
+    : {
+        stale: [],
+        problems: []
+      };
+  const manifests = listProjectFiles()
+    .filter(file => path.basename(file) === "Cargo.toml" && !isIgnoredPath(file))
+    .map(file => ({
+      path: file,
+      text: readFileSync(file, "utf8")
+    }));
+  return {
+    notices: rustNotices({
+      hasCargo,
+      tools,
+      isPresetInstalled,
+      staleFiles: configPlan.stale,
+      problems: configPlan.problems
+    }),
+    isBlocked: configPlan.stale.length > 0 || configPlan.problems.length > 0,
+    rust: hasCargo
+      ? {
+          roots: cargoRoots(manifests),
+          tools,
+          env: process.env,
+          cwd: process.cwd().replaceAll("\\", "/")
+        }
+      : undefined
+  };
+}
+
+const rustPreparation = languages.includes("rust") ? prepareRust() : { notices: [] };
+
 const steps = plan({
   hasFile: existsSync,
   hasSvelte: repoHas(SVELTE_GLOB),
@@ -215,6 +343,7 @@ const steps = plan({
   oxfmtIgnores: presetIgnores(),
   languages,
   kotlin: kotlinPreparation.kotlin,
+  rust: rustPreparation.rust,
   platform: process.platform
 });
 
@@ -225,7 +354,7 @@ for (const notice of languageNotices({
   console.log(notice);
 }
 
-for (const notice of kotlinPreparation.notices) {
+for (const notice of [...kotlinPreparation.notices, ...rustPreparation.notices]) {
   console.log(notice);
 }
 
@@ -275,7 +404,7 @@ function terminate({ pid, usage }) {
   }
 }
 
-function run({ name, command, env, isFirst, isGuarded, isDirect, reporter }) {
+function run({ name, command, env, rawEnv, limits, isFirst, isGuarded, isDirect, reporter }) {
   return new Promise(resolve => {
     const [program, ...programArguments] = isDirect ? command : ["pnpm", "exec", ...command];
     const child = spawn(program, programArguments, {
@@ -290,7 +419,8 @@ function run({ name, command, env, isFirst, isGuarded, isDirect, reporter }) {
               value
             })
           ])
-        )
+        ),
+        ...rawEnv
       }
     });
     const chunks = [];
@@ -298,7 +428,7 @@ function run({ name, command, env, isFirst, isGuarded, isDirect, reporter }) {
     let failure;
     if (isGuarded) {
       watchdog({
-        ...guardLimits(process.env),
+        ...(limits ?? guardLimits(process.env)),
         readUsage: () => readUsage(child.pid),
         terminate: usage =>
           terminate({
@@ -345,7 +475,7 @@ function run({ name, command, env, isFirst, isGuarded, isDirect, reporter }) {
 }
 
 function runStep(step) {
-  const { name, command, env, split, isGuarded, isDirect, reporter } = step;
+  const { name, command, env, rawEnv, limits, split, isGuarded, isDirect, reporter } = step;
   const commands =
     step.commands ??
     (split
@@ -364,6 +494,8 @@ function runStep(step) {
         name,
         command: batch,
         env,
+        rawEnv,
+        limits,
         isFirst,
         isGuarded,
         isDirect,
@@ -372,8 +504,9 @@ function runStep(step) {
   });
 }
 
-const isKotlinOnly = args.includes("--only=kotlin");
-const selected = isKotlinOnly ? steps.filter(({ isDirect }) => isDirect) : steps;
+const ONLY_PREFIX = "--only=";
+const onlyFamily = args.find(argument => argument.startsWith(ONLY_PREFIX))?.slice(ONLY_PREFIX.length);
+const selected = onlyFamily ? steps.filter(({ family }) => family === onlyFamily) : steps;
 const parallel = selected.filter(({ isParallel }) => isParallel);
 const serial = selected.filter(({ isParallel }) => !isParallel);
 const results = await Promise.all(parallel.map(runStep));
@@ -381,5 +514,6 @@ for (const step of serial) {
   results.push(await runStep(step));
 }
 const isKotlinSkipped = IS_KOTLIN_REQUIRED && kotlinPreparation.notices.length > 0;
-const isFailed = results.includes(1) || isKotlinSkipped;
+const isRustBlocked = IS_RUST_REQUIRED && rustPreparation.notices.length > 0;
+const isFailed = results.includes(1) || isKotlinSkipped || isRustBlocked || Boolean(rustPreparation.isBlocked);
 process.exit(isFailed ? 1 : 0);

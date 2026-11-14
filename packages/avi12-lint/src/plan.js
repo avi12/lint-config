@@ -1,6 +1,7 @@
 import { clampConcurrency, eslintFlags, MIN_CONCURRENCY } from "./eslint-flags.js";
 import { kotlinSteps } from "./kotlin.js";
 import { ignoredGlobs, isIgnoredPath, LANGUAGE_PATTERNS } from "./languages.js";
+import { rustSteps } from "./rust.js";
 import { isTextChecked as isTextCheckedFile } from "./text-check.js";
 
 const OXLINT_CONFIG = ".oxlintrc.json";
@@ -44,6 +45,7 @@ const STYLE_PATTERN = /\.(?:css|svelte|vue|html)$/;
  * own changed-files mode `fallow audit --base <ref>`, so a staged run, which has no base, leaves it out.
  * `kotlin` (`{ java, tools, presetDirectory, consumerDetekt }`, see `kotlinSteps`) adds the ktlint and detekt steps; the
  * runner passes it only when Java and the jars are ready.
+ * `rust` (`{ roots, tools, env, cwd }`, see `rustSteps`) adds the cargo fmt, clippy, machete and deny steps.
  * fallow gets `NODE_OPTIONS` capping the Node heap at 4 GB, since a dirty tree once ran it to 38 GB. Pure, so it is
  * testable.
  */
@@ -60,6 +62,7 @@ export function plan({
   isNestedConfigAllowed = false,
   languages = [],
   kotlin,
+  rust,
   platform = "linux"
 }) {
   function hasAny(names) {
@@ -230,6 +233,16 @@ export function plan({
         changedFiles,
         isFix,
         platform
+      })
+    );
+  }
+
+  if (rust) {
+    steps.push(
+      ...rustSteps({
+        ...rust,
+        changedFiles,
+        isFix
       })
     );
   }

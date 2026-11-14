@@ -46,9 +46,17 @@ function execute({ command, cwd }) {
 async function jars() {
   const { ktlint, detekt } = JSON.parse(readFileSync(TOOLS_FILE, "utf8"));
   const [ktlintJar, detektJar] = await Promise.all(
-    [ktlint, detekt].map(tool => ensureTool({ tool, cacheDirectory: CACHE }))
+    [ktlint, detekt].map(tool =>
+      ensureTool({
+        tool,
+        cacheDirectory: CACHE
+      })
+    )
   );
-  return { ktlint: resolve(ktlintJar), detekt: resolve(detektJar) };
+  return {
+    ktlint: resolve(ktlintJar),
+    detekt: resolve(detektJar)
+  };
 }
 
 async function report({ tool, files, cwd = process.cwd(), isFix = false }) {
@@ -79,7 +87,12 @@ function fileIds(output) {
 test("detekt reports each rule on its must-flag file and nothing on the must-not-flag file", { skip }, async () => {
   const flagFiles = kotlinFiles(join(FIXTURES, "detekt-flag"));
   const okFiles = kotlinFiles(join(FIXTURES, "ok"));
-  const found = fileIds(await report({ tool: "detekt", files: [...flagFiles, ...okFiles] }));
+  const found = fileIds(
+    await report({
+      tool: "detekt",
+      files: [...flagFiles, ...okFiles]
+    })
+  );
   for (const file of flagFiles) {
     const name = file.split(/[\\/]/).pop();
     const rule = name.replace(/\.kt$/, "");
@@ -96,7 +109,12 @@ test("detekt reports each rule on its must-flag file and nothing on the must-not
 test("ktlint reports each rule on its must-flag file and nothing on the must-not-flag file", { skip }, async () => {
   const flagFiles = kotlinFiles(join(FIXTURES, "ktlint-flag"));
   const okFiles = kotlinFiles(join(FIXTURES, "ok"));
-  const found = fileIds(await report({ tool: "ktlint", files: [...flagFiles, ...okFiles] }));
+  const found = fileIds(
+    await report({
+      tool: "ktlint",
+      files: [...flagFiles, ...okFiles]
+    })
+  );
   const expected = {
     "NoWildcardImports.kt": "no-wildcard-imports",
     "ImportOrdering.kt": "import-ordering",
@@ -132,13 +150,30 @@ test("ktlint --format is stable and detekt never rewrites a file", { skip }, asy
     cpSync(join(FIXTURES, "ok"), target, { recursive: true });
     cpSync(join(FIXTURES, "detekt-flag"), target, { recursive: true });
     const files = kotlinFiles(target);
-    await report({ tool: "ktlint", files, cwd: work, isFix: true });
+    await report({
+      tool: "ktlint",
+      files,
+      cwd: work,
+      isFix: true
+    });
     const once = digest(target);
-    await report({ tool: "ktlint", files, cwd: work, isFix: true });
+    await report({
+      tool: "ktlint",
+      files,
+      cwd: work,
+      isFix: true
+    });
     assert.equal(digest(target), once, "a second ktlint --format changed files");
-    await report({ tool: "detekt", files, cwd: work });
+    await report({
+      tool: "detekt",
+      files,
+      cwd: work
+    });
     assert.equal(digest(target), once, "detekt changed files");
   } finally {
-    rmSync(work, { recursive: true, force: true });
+    rmSync(work, {
+      recursive: true,
+      force: true
+    });
   }
 });
