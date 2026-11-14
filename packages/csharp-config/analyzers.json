@@ -1,0 +1,43 @@
+{
+  "packages": [
+    {
+      "id": "Roslynator.Analyzers",
+      "version": "5.0.1"
+    },
+    {
+      "id": "Meziantou.Analyzer",
+      "version": "3.0.339"
+    },
+    {
+      "id": "StyleCop.Analyzers",
+      "version": "1.3.180"
+    },
+    {
+      "id": "Microsoft.CodeAnalysis.BannedApiAnalyzers",
+      "version": "5.6.0"
+    },
+    {
+      "id": "SonarAnalyzer.CSharp",
+      "version": "10.36.0.15337"
+    }
+  ],
+  "properties": {
+    "Nullable": "enable",
+    "LangVersion": "latest",
+    "EnableNETAnalyzers": "true",
+    "AnalysisLevel": "latest",
+    "AnalysisMode": "Recommended",
+    "EnforceCodeStyleInBuild": "true",
+    "GenerateDocumentationFile": "true",
+    "TreatWarningsAsErrors": "true",
+    "WarningsNotAsErrors": "NU1900;NU1901;NU1902;NU1903;NU1904"
+  },
+  "formatExcludes": {
+    "IDE0051": "the design-time workspace dotnet format loads has no XAML-generated code, so a handler only the markup binds looks unused and the fixer deletes it; dotnet build still reports the rule",
+    "IDE0052": "the same, for a private field the generated code reads",
+    "IDE0060": "the fixer removes a parameter from an event handler the markup binds, which changes the handler signature",
+    "RCS1213": "the fixer deletes an unused member that the markup may bind",
+    "RCS1163": "the fixer removes a parameter from an event handler the markup binds",
+    "CA1515": "the fixer makes a type internal, which breaks a partial class the XAML compiler declares public"
+  }
+}

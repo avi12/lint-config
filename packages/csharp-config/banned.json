@@ -1,0 +1,6 @@
+{
+  "P:System.Threading.Tasks.Task`1.Result": "await the task instead of blocking on it",
+  "M:System.Threading.Tasks.Task.Wait": "await the task instead of blocking on it",
+  "M:System.Diagnostics.Debugger.Break": "a breakpoint is not shipped code",
+  "M:System.Diagnostics.Debugger.Launch": "a debugger launch is not shipped code"
+}

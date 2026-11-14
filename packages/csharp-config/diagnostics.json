@@ -1,0 +1,195 @@
+{
+  "diagnostics": {
+    "category-StyleCop.CSharp.SpecialRules": {
+      "severity": "none",
+      "reason": "StyleCop.Analyzers is referenced for SA1402 and SA1649 only; the layout, spacing, ordering, documentation and naming rules belong to dotnet format, the IDE rules and the house naming rules"
+    },
+    "category-StyleCop.CSharp.SpacingRules": {
+      "severity": "none",
+      "reason": "StyleCop.Analyzers is referenced for SA1402 and SA1649 only; the layout, spacing, ordering, documentation and naming rules belong to dotnet format, the IDE rules and the house naming rules"
+    },
+    "category-StyleCop.CSharp.ReadabilityRules": {
+      "severity": "none",
+      "reason": "StyleCop.Analyzers is referenced for SA1402 and SA1649 only; the layout, spacing, ordering, documentation and naming rules belong to dotnet format, the IDE rules and the house naming rules"
+    },
+    "category-StyleCop.CSharp.MaintainabilityRules": {
+      "severity": "none",
+      "reason": "StyleCop.Analyzers is referenced for SA1402 and SA1649 only; the layout, spacing, ordering, documentation and naming rules belong to dotnet format, the IDE rules and the house naming rules"
+    },
+    "category-StyleCop.CSharp.OrderingRules": {
+      "severity": "none",
+      "reason": "StyleCop.Analyzers is referenced for SA1402 and SA1649 only; the layout, spacing, ordering, documentation and naming rules belong to dotnet format, the IDE rules and the house naming rules"
+    },
+    "category-StyleCop.CSharp.NamingRules": {
+      "severity": "none",
+      "reason": "StyleCop.Analyzers is referenced for SA1402 and SA1649 only; the layout, spacing, ordering, documentation and naming rules belong to dotnet format, the IDE rules and the house naming rules"
+    },
+    "category-StyleCop.CSharp.LayoutRules": {
+      "severity": "none",
+      "reason": "StyleCop.Analyzers is referenced for SA1402 and SA1649 only; the layout, spacing, ordering, documentation and naming rules belong to dotnet format, the IDE rules and the house naming rules"
+    },
+    "category-StyleCop.CSharp.DocumentationRules": {
+      "severity": "none",
+      "reason": "StyleCop.Analyzers is referenced for SA1402 and SA1649 only; the layout, spacing, ordering, documentation and naming rules belong to dotnet format, the IDE rules and the house naming rules"
+    },
+    "IDE0011": {
+      "severity": "warning"
+    },
+    "IDE0044": {
+      "severity": "warning"
+    },
+    "RCS1118": {
+      "severity": "warning"
+    },
+    "RCS1238": {
+      "severity": "warning"
+    },
+    "RCS1208": {
+      "severity": "warning"
+    },
+    "S134": {
+      "severity": "warning"
+    },
+    "S109": {
+      "severity": "warning"
+    },
+    "S107": {
+      "severity": "warning"
+    },
+    "CS8602": {
+      "severity": "error"
+    },
+    "IDE0019": {
+      "severity": "warning"
+    },
+    "IDE0017": {
+      "severity": "warning"
+    },
+    "IDE0028": {
+      "severity": "warning"
+    },
+    "IDE0090": {
+      "severity": "warning"
+    },
+    "IDE0005": {
+      "severity": "warning"
+    },
+    "IDE0060": {
+      "severity": "warning"
+    },
+    "IDE1006": {
+      "severity": "warning"
+    },
+    "IDE0051": {
+      "severity": "warning"
+    },
+    "IDE0052": {
+      "severity": "warning"
+    },
+    "IDE0040": {
+      "severity": "warning"
+    },
+    "CA1812": {
+      "severity": "warning"
+    },
+    "S1135": {
+      "severity": "warning"
+    },
+    "RS0030": {
+      "severity": "warning"
+    },
+    "CA2201": {
+      "severity": "warning"
+    },
+    "CA1031": {
+      "severity": "warning"
+    },
+    "CS4014": {
+      "severity": "error"
+    },
+    "CA1810": {
+      "severity": "warning"
+    },
+    "CA2207": {
+      "severity": "warning"
+    },
+    "CS1591": {
+      "severity": "warning"
+    },
+    "SA1649": {
+      "severity": "warning"
+    },
+    "SA1402": {
+      "severity": "warning"
+    },
+    "CA1502": {
+      "severity": "warning"
+    },
+    "CA1506": {
+      "severity": "warning"
+    },
+    "CA1068": {
+      "severity": "warning"
+    },
+    "IDE0020": {
+      "severity": "warning"
+    },
+    "MA0048": {
+      "severity": "none",
+      "reason": "SA1649 and SA1402 own the one-type-per-file and file-name rules"
+    },
+    "MA0026": {
+      "severity": "none",
+      "reason": "S1135 owns the TODO rule"
+    },
+    "MA0134": {
+      "severity": "none",
+      "reason": "CS4014 owns the unobserved async call rule"
+    },
+    "MA0004": {
+      "severity": "none",
+      "reason": "an application resumes on the context it captured; a library opts back in through avi12-csharp.local.json"
+    },
+    "MA0006": {
+      "severity": "none",
+      "reason": "== on two strings is already an ordinal comparison, so the rule asks for String.Equals and a comparison type on every check without finding a defect"
+    },
+    "MA0051": {
+      "severity": "none",
+      "reason": "CA1502 owns the size limit by cyclomatic complexity; a line count punishes a long switch or a table that is no harder to read"
+    },
+    "CA1515": {
+      "severity": "warning"
+    },
+    "CA1707": {
+      "severity": "none",
+      "reason": "CONSTANT_CASE is the house constant style and needs underscores; IDE1006 checks the case of every name"
+    },
+    "MA0011": {
+      "severity": "none",
+      "reason": "CA1305 owns the missing IFormatProvider rule"
+    },
+    "MA0046": {
+      "severity": "none",
+      "reason": "Action and Action<T> events are the house shape for in-process notifications; sender and event args belong to events a framework raises"
+    },
+    "MA0016": {
+      "severity": "none",
+      "reason": "it targets a library surface; a concrete array or list in an application type is a choice, not an API leak, and WinUI forces those types public"
+    }
+  },
+  "thresholds": {
+    "codeMetrics": {
+      "CA1502": 15,
+      "CA1506": 95
+    },
+    "sonar": {
+      "S107": {
+        "max": 4
+      },
+      "S134": {
+        "max": 3
+      }
+    }
+  }
+}
