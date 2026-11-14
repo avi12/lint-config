@@ -29,6 +29,9 @@ importers:
       fallow:
         specifier: 2.103.0
         version: 2.103.0
+      house-rules-avi12:
+        specifier: workspace:*
+        version: link:packages/house-rules
       oxfmt:
         specifier: 0.78.0
         version: 0.78.0(svelte@5.57.3(@typescript-eslint/types@8.72.2))
@@ -103,6 +106,8 @@ importers:
       fallow:
         specifier: '>=2.103.0'
         version: 2.103.0
+
+  packages/house-rules: {}
 
   packages/oxfmt-config:
     dependencies:

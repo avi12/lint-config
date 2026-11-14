@@ -1,0 +1,355 @@
+{
+  "statuses": {
+    "map": "an existing rule does it; configure it",
+    "variant": "an existing rule does the idiomatic version of it",
+    "gap": "no rule exists; we write it in the engine named",
+    "na": "the language makes it moot or the language style guide wins"
+  },
+  "rules": [
+    {
+      "id": "braces",
+      "intent": "every if, else, for and while body is braced",
+      "ts": ["curly"],
+      "rust": ["na", "the grammar requires braces"],
+      "cpp": ["map", "clang-format InsertBraces"],
+      "csharp": ["map", "IDE0011 (csharp_prefer_braces = true)"],
+      "kotlin": ["map", "detekt BracesOnIfStatements, MandatoryBracesLoops"]
+    },
+    {
+      "id": "strict-equality",
+      "intent": "no loose equality",
+      "ts": ["eqeqeq"],
+      "rust": ["na", "no loose equality"],
+      "cpp": ["na", "no loose equality"],
+      "csharp": ["na", "no loose equality"],
+      "kotlin": ["na", "no loose equality"]
+    },
+    {
+      "id": "immutable-by-default",
+      "intent": "const or val unless reassigned; readonly on what is never reassigned",
+      "ts": ["prefer-const", "no-var"],
+      "rust": ["map", "rustc unused_mut"],
+      "cpp": ["map", "misc-const-correctness"],
+      "csharp": ["map", "IDE0044, RCS1118"],
+      "kotlin": ["map", "detekt VarCouldBeVal"]
+    },
+    {
+      "id": "no-nested-ternary",
+      "intent": "no nested conditional expression",
+      "ts": ["no-nested-ternary"],
+      "rust": ["na", "no ternary; nesting is covered by max-nesting"],
+      "cpp": ["map", "readability-avoid-nested-conditional-operator"],
+      "csharp": ["map", "RCS1238"],
+      "kotlin": ["na", "no ternary; nesting is covered by max-nesting"]
+    },
+    {
+      "id": "early-return",
+      "intent": "no else after return, no lonely if in an else",
+      "ts": ["no-else-return", "no-lonely-if"],
+      "rust": ["map", "clippy redundant_else, collapsible_else_if"],
+      "cpp": ["map", "readability-else-after-return"],
+      "csharp": ["map", "RCS1208"],
+      "kotlin": ["gap", "ast-grep house-else-after-return"]
+    },
+    {
+      "id": "max-nesting",
+      "intent": "block nesting at most 3 deep, callbacks at most 3 deep",
+      "ts": ["max-depth", "max-nested-callbacks"],
+      "rust": ["variant", "clippy cognitive_complexity with cognitive-complexity-threshold"],
+      "cpp": ["variant", "readability-function-cognitive-complexity"],
+      "csharp": ["map", "Sonar S134 (max 3)"],
+      "kotlin": ["map", "detekt NestedBlockDepth (threshold 3)"]
+    },
+    {
+      "id": "named-boolean-condition",
+      "intent": "a compound or comparing condition is extracted into a named boolean first",
+      "ts": ["house/google-syntax"],
+      "rust": ["gap", "ast-grep house-compound-condition"],
+      "cpp": ["gap", "ast-grep house-compound-condition"],
+      "csharp": ["gap", "ast-grep house-compound-condition"],
+      "kotlin": ["gap", "ast-grep house-compound-condition"]
+    },
+    {
+      "id": "no-magic-numbers",
+      "intent": "a number other than 0, 1, -1, 2 is a named constant",
+      "ts": ["house/no-magic-numbers"],
+      "rust": ["gap", "ast-grep house-magic-number"],
+      "cpp": ["map", "readability-magic-numbers (IgnoredIntegerValues)"],
+      "csharp": ["map", "Sonar S109"],
+      "kotlin": ["map", "detekt MagicNumber (ignoreNumbers)"]
+    },
+    {
+      "id": "no-unchecked-unwrap",
+      "intent": "no non-null assertion and no unwrap of an absent value",
+      "ts": ["typescript/no-non-null-assertion"],
+      "rust": ["map", "clippy unwrap_used, expect_used"],
+      "cpp": ["map", "bugprone-unchecked-optional-access"],
+      "csharp": ["gap", "ast-grep house-null-forgiving, with CS8602 as an error"],
+      "kotlin": ["map", "detekt UnsafeCallOnNullableType, ast-grep for the !! operator"]
+    },
+    {
+      "id": "no-unchecked-cast",
+      "intent": "no unsafe or unchecked cast",
+      "ts": ["typescript/consistent-type-assertions"],
+      "rust": ["map", "rustc unsafe_code = forbid, clippy as_conversions, cast_possible_truncation"],
+      "cpp": [
+        "map",
+        "google-readability-casting, cppcoreguidelines-pro-type-cstyle-cast, -const-cast, -reinterpret-cast"
+      ],
+      "csharp": ["map", "AllowUnsafeBlocks off, IDE0019, IDE0038"],
+      "kotlin": ["map", "detekt UnsafeCast"]
+    },
+    {
+      "id": "parameter-object",
+      "intent": "two or more parameters become one parameter object",
+      "ts": ["house/positional-parameters"],
+      "rust": ["variant", "clippy too_many_arguments with too-many-arguments-threshold"],
+      "cpp": ["variant", "bugprone-easily-swappable-parameters"],
+      "csharp": ["variant", "named arguments; CA1068 and Sonar S107 past a threshold"],
+      "kotlin": ["variant", "named arguments; detekt LongParameterList past a threshold"]
+    },
+    {
+      "id": "no-written-return-types",
+      "intent": "infer return types instead of writing them",
+      "ts": ["house/house-syntax"],
+      "rust": ["na", "the language requires them"],
+      "cpp": ["na", "the language requires them"],
+      "csharp": ["na", "the language requires them"],
+      "kotlin": ["na", "the language style guide wins"]
+    },
+    {
+      "id": "identifier-length",
+      "intent": "names of at least 3 characters, with a short allow-list",
+      "ts": ["id-length"],
+      "rust": ["map", "clippy min_ident_chars with allowed-idents-below-min-chars"],
+      "cpp": ["map", "readability-identifier-length (IgnoredVariableNames)"],
+      "csharp": ["gap", "ast-grep house-identifier-length"],
+      "kotlin": ["map", "detekt VariableMinLength, FunctionMinLength"]
+    },
+    {
+      "id": "naming-case",
+      "intent": "types in UpperCamelCase, values in lowerCamelCase, constants in CONSTANT_CASE (a language that dictates its own case keeps it)",
+      "ts": ["naming/convention"],
+      "rust": ["map", "rustc non_camel_case_types, non_snake_case, non_upper_case_globals"],
+      "cpp": ["map", "readability-identifier-naming"],
+      "csharp": ["map", "IDE1006 with dotnet_naming_rule in .editorconfig"],
+      "kotlin": ["map", "ktlint class-naming, property-naming, function-naming; detekt naming set"]
+    },
+    {
+      "id": "boolean-prefix",
+      "intent": "a boolean starts with is, has, can or should and reads positively",
+      "ts": ["naming/convention"],
+      "rust": ["gap", "ast-grep house-boolean-prefix (declared bool)"],
+      "cpp": ["gap", "ast-grep house-boolean-prefix (declared bool)"],
+      "csharp": ["gap", "ast-grep house-boolean-prefix (declared bool)"],
+      "kotlin": ["map", "detekt BooleanPropertyNaming (allowedPattern is|has|can|should)"]
+    },
+    {
+      "id": "no-abbreviations",
+      "intent": "full words; a deny-list of known abbreviations",
+      "ts": ["naming/convention"],
+      "rust": ["gap", "ast-grep house-abbreviation"],
+      "cpp": ["gap", "ast-grep house-abbreviation"],
+      "csharp": ["gap", "ast-grep house-abbreviation"],
+      "kotlin": ["gap", "ast-grep house-abbreviation"]
+    },
+    {
+      "id": "index-prefix",
+      "intent": "an index variable is i-prefixed (iItem) or a bare i",
+      "ts": ["naming/convention"],
+      "rust": ["gap", "ast-grep house-index-prefix"],
+      "cpp": ["gap", "ast-grep house-index-prefix"],
+      "csharp": ["gap", "ast-grep house-index-prefix"],
+      "kotlin": ["gap", "ast-grep house-index-prefix"]
+    },
+    {
+      "id": "no-parent-imports",
+      "intent": "imports from the project root, never a relative climb",
+      "ts": ["house/no-parent-imports"],
+      "rust": ["gap", "ast-grep house-no-super-path"],
+      "cpp": ["gap", "ast-grep house-no-parent-include"],
+      "csharp": ["na", "namespaces, not paths"],
+      "kotlin": ["na", "packages, not paths"]
+    },
+    {
+      "id": "no-import-cycle",
+      "intent": "no import cycle",
+      "ts": ["import/no-cycle"],
+      "rust": ["na", "crate cycles are a compile error; module cycles are legal"],
+      "cpp": ["map", "misc-header-include-cycle"],
+      "csharp": ["gap", "none free; a dependency test (NetArchTest) later"],
+      "kotlin": ["gap", "none free; a dependency test (Konsist) later"]
+    },
+    {
+      "id": "sorted-imports",
+      "intent": "imports first and in a fixed order",
+      "ts": ["perfectionist/sort-named-imports", "import/first"],
+      "rust": ["map", "rustfmt reorder_imports"],
+      "cpp": ["map", "clang-format SortIncludes"],
+      "csharp": ["map", "dotnet format with dotnet_sort_system_directives_first"],
+      "kotlin": ["map", "ktlint import-ordering"]
+    },
+    {
+      "id": "no-unused",
+      "intent": "no unused import, variable or parameter",
+      "ts": ["unused-imports/no-unused-imports"],
+      "rust": ["map", "rustc unused_imports, unused_variables"],
+      "cpp": ["map", "misc-unused-parameters, misc-unused-using-decls"],
+      "csharp": ["map", "IDE0005, IDE0060"],
+      "kotlin": ["map", "ktlint no-unused-imports; detekt UnusedParameter"]
+    },
+    {
+      "id": "no-suppression",
+      "intent": "no disable or suppress comment or attribute; exemptions live in config with a reason",
+      "ts": ["no-warning-comments", "typescript/ban-ts-comment"],
+      "rust": ["map", "clippy allow_attributes, allow_attributes_without_reason"],
+      "cpp": ["gap", "ast-grep house-no-nolint (NOLINT comments)"],
+      "csharp": ["gap", "ast-grep house-no-pragma-disable; BannedApiAnalyzers for SuppressMessage"],
+      "kotlin": ["map", "detekt ForbiddenAnnotation (Suppress), ForbiddenComment"]
+    },
+    {
+      "id": "todo-needs-owner",
+      "intent": "no TODO without an owner",
+      "ts": ["doc:CLAUDE.md Tidiness"],
+      "rust": ["map", "clippy todo, unimplemented"],
+      "cpp": ["map", "google-readability-todo"],
+      "csharp": ["map", "Sonar S1135"],
+      "kotlin": ["map", "detekt ForbiddenComment"]
+    },
+    {
+      "id": "no-em-dash",
+      "intent": "no em dash in code, comments or docs",
+      "ts": ["house/no-em-dash"],
+      "rust": ["gap", "avi12-lint text check (language-independent)"],
+      "cpp": ["gap", "avi12-lint text check (language-independent)"],
+      "csharp": ["gap", "avi12-lint text check (language-independent)"],
+      "kotlin": ["gap", "avi12-lint text check (language-independent)"]
+    },
+    {
+      "id": "banned-apis",
+      "intent": "named globals, functions and types are forbidden, each with a message",
+      "ts": ["no-restricted-globals", "typescript/no-explicit-any"],
+      "rust": ["map", "clippy disallowed_methods, disallowed_types"],
+      "cpp": ["map", "bugprone-unsafe-functions CustomFunctions"],
+      "csharp": ["map", "BannedApiAnalyzers RS0030 with BannedSymbols.txt"],
+      "kotlin": ["map", "detekt ForbiddenMethodCall, ForbiddenImport"]
+    },
+    {
+      "id": "throw-error-types",
+      "intent": "throw only error types, never a literal; catch narrowly",
+      "ts": ["no-throw-literal"],
+      "rust": ["na", "errors are typed"],
+      "cpp": ["map", "hicpp-exception-baseclass, bugprone-empty-catch"],
+      "csharp": ["map", "CA2201, CA1031"],
+      "kotlin": ["map", "detekt TooGenericExceptionThrown, TooGenericExceptionCaught, EmptyCatchBlock"]
+    },
+    {
+      "id": "no-floating-result",
+      "intent": "an ignored result or promise is deliberate",
+      "ts": ["no-void"],
+      "rust": ["map", "rustc unused_must_use, clippy let_underscore_future"],
+      "cpp": ["map", "modernize-use-nodiscard, bugprone-unused-return-value"],
+      "csharp": ["map", "CS4014"],
+      "kotlin": ["gap", "none free; ast-grep house-unused-deferred"]
+    },
+    {
+      "id": "for-of",
+      "intent": "iterate with for-of, no index loops, no forEach or reduce",
+      "ts": ["unicorn/no-array-for-each"],
+      "rust": ["map", "clippy needless_range_loop"],
+      "cpp": ["map", "modernize-loop-convert"],
+      "csharp": ["na", "foreach and LINQ are idiomatic"],
+      "kotlin": ["na", "forEach is idiomatic"]
+    },
+    {
+      "id": "concise-forms",
+      "intent": "no redundant closure, field name or object initializer",
+      "ts": ["object-shorthand", "arrow-body-style"],
+      "rust": ["map", "clippy redundant_closure, redundant_field_names"],
+      "cpp": ["map", "readability-redundant-*"],
+      "csharp": ["map", "IDE0017, IDE0028, IDE0090"],
+      "kotlin": ["map", "detekt UnnecessaryLet, UnnecessaryParentheses"]
+    },
+    {
+      "id": "no-import-work",
+      "intent": "no work at module load, so unused code is dropped",
+      "ts": ["house/tree-shaking"],
+      "rust": ["na", "statics are const-evaluated"],
+      "cpp": ["map", "cert-err58-cpp"],
+      "csharp": ["map", "CA1810, CA2207"],
+      "kotlin": ["gap", "ast-grep house-no-object-init-work"]
+    },
+    {
+      "id": "public-api-docs",
+      "intent": "every public symbol has a description",
+      "ts": ["jsdoc-js/require-jsdoc"],
+      "rust": ["map", "rustc missing_docs"],
+      "cpp": ["variant", "clang -Wdocumentation"],
+      "csharp": ["map", "CS1591 with GenerateDocumentationFile"],
+      "kotlin": ["map", "detekt UndocumentedPublicClass, UndocumentedPublicFunction"]
+    },
+    {
+      "id": "no-restating-comments",
+      "intent": "no comment that restates the code",
+      "ts": ["doc:CLAUDE.md Which rules win"],
+      "rust": ["gap", "review only"],
+      "cpp": ["gap", "review only"],
+      "csharp": ["gap", "review only"],
+      "kotlin": ["gap", "review only"]
+    },
+    {
+      "id": "file-per-concern",
+      "intent": "one concern per file, named after its main declaration",
+      "ts": ["doc:CLAUDE.md Code style"],
+      "rust": ["na", "a file is a module"],
+      "cpp": ["gap", "ast-grep house-file-name (header and source pair)"],
+      "csharp": ["map", "StyleCop SA1649, SA1402"],
+      "kotlin": ["map", "ktlint filename; detekt MatchingDeclarationName"]
+    },
+    {
+      "id": "size-limits",
+      "intent": "functions and classes stay small",
+      "ts": ["max-depth"],
+      "rust": ["map", "clippy too_many_lines, cognitive_complexity"],
+      "cpp": ["map", "readability-function-size, readability-function-cognitive-complexity"],
+      "csharp": ["map", "CA1502, CA1506"],
+      "kotlin": ["map", "detekt LongMethod, CyclomaticComplexMethod, TooManyFunctions"]
+    },
+    {
+      "id": "no-dead-code",
+      "intent": "no unused export, file or dependency",
+      "ts": ["doc:fallow"],
+      "rust": ["map", "rustc dead_code, cargo-machete"],
+      "cpp": ["variant", "-Wunused, linker --gc-sections report; no cross-file tool"],
+      "csharp": ["variant", "IDE0051, IDE0052 for private; public is a gap"],
+      "kotlin": ["variant", "compiler warnings, detekt UnusedPrivateMember; public is a gap"]
+    },
+    {
+      "id": "narrowest-visibility",
+      "intent": "private or internal by default",
+      "ts": ["typescript/explicit-member-accessibility"],
+      "rust": ["map", "rustc unreachable_pub"],
+      "cpp": ["map", "misc-use-internal-linkage, misc-use-anonymous-namespace"],
+      "csharp": ["map", "IDE0040, CA1812"],
+      "kotlin": ["map", "compiler -Xexplicit-api=strict"]
+    },
+    {
+      "id": "warnings-are-errors",
+      "intent": "correctness findings fail the run",
+      "ts": ["doc:categories.correctness"],
+      "rust": ["map", "cargo clippy -- -D warnings"],
+      "cpp": ["map", "WarningsAsErrors: '*' in .clang-tidy"],
+      "csharp": ["map", "TreatWarningsAsErrors, AnalysisMode"],
+      "kotlin": ["map", "allWarningsAsErrors, detekt maxIssues 0"]
+    },
+    {
+      "id": "formatting",
+      "intent": "the formatter owns layout; the language style guide wins over house layout rules",
+      "ts": ["doc:oxfmt"],
+      "rust": ["map", "rustfmt (width 100)"],
+      "cpp": ["map", "clang-format BasedOnStyle Google"],
+      "csharp": ["map", "dotnet format with .editorconfig"],
+      "kotlin": ["map", "ktlint format"]
+    }
+  ]
+}

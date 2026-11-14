@@ -17,6 +17,7 @@
     "eslint-plugin-svelte": "^3.24.1",
     "eslint-plugin-vue": "^10.12.1",
     "fallow": "2.103.0",
+    "house-rules-avi12": "workspace:*",
     "oxfmt": "0.78.0",
     "oxlint": "1.90.0",
     "postcss-html": "^1.8.1",
