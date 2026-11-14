@@ -163,7 +163,7 @@ Where one program or one build must see several packages, keep `@/` for the pack
   - ktlint reads the preset `.editorconfig` as its default, so the repo's own `.editorconfig` wins on any property it sets; detekt reads the preset `detekt.yml` and then the repo's own `detekt.yml` (the shallowest one), whose keys win, so an exemption is a key in that file with a comment saying why
   - `--fix` runs `ktlint --format`; detekt never autocorrects; `--changed` and `--staged` pass only the Kotlin files that changed; `--only=kotlin` runs these two steps alone
   - detekt gets its own jar as the classpath, so the rules that need type resolution (`BooleanPropertyNaming`, `VarCouldBeVal`, `UnsafeCast`, `UnnecessaryLet`, `ForbiddenAnnotation`) run against the Kotlin standard library; `AVI12_LINT_KOTLIN_TYPES=0` drops the classpath, which is three times faster and runs those rules not at all
-  - `UnreachableCode` and `UnreachableCatchBlock` are off in the preset: with a partial classpath they flag every call into an unresolved library, and the Kotlin compiler reports them exactly
+  - `UnusedImports` and `UnnecessaryParentheses` are off (ktlint owns imports and its mixed-condition-operators needs the parentheses); `UnreachableCode` and `UnreachableCatchBlock` are off in the preset: with a partial classpath they flag every call into an unresolved library, and the Kotlin compiler reports them exactly
 - The matrix text for `max-nesting`, `identifier-length` and `no-unchecked-cast` now says what the Kotlin config does
 
 ### Migrating from 0.5.1

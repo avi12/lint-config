@@ -114,6 +114,8 @@ importers:
 
   packages/house-rules: {}
 
+  packages/kotlin-config: {}
+
   packages/oxfmt-config:
     dependencies:
       oxfmt:

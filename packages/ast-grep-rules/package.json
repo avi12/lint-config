@@ -1,6 +1,6 @@
 {
   "name": "ast-grep-rules-avi12",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "ast-grep rules that carry the TypeScript house rules to Rust, C++, C# and Kotlin where no linter has them",
   "license": "Apache-2.0",
   "files": [

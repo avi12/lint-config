@@ -274,7 +274,7 @@
         "readability-redundant-member-init, readability-redundant-string-cstr, readability-redundant-smartptr-get, readability-redundant-control-flow"
       ],
       "csharp": ["map", "IDE0017, IDE0028, IDE0090"],
-      "kotlin": ["map", "detekt UnnecessaryLet, UnnecessaryParentheses"]
+      "kotlin": ["map", "detekt UnnecessaryLet; ktlint mixed-condition-operators"]
     },
     {
       "id": "no-import-work",

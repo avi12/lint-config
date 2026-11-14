@@ -23,14 +23,16 @@ style:
     active: true
   UnusedParameter:
     active: true
+  # ktlint no-unused-imports owns this; detekt misreads an import used only as a class literal
   UnusedImports:
-    active: true
+    active: false
   UnnecessaryAbstractClass:
     active: true
   UnnecessaryLet:
     active: true
+  # ktlint mixed-condition-operators requires the parentheses this rule would remove
   UnnecessaryParentheses:
-    active: true
+    active: false
   CanBeNonNullable:
     active: true
   MagicNumber:
