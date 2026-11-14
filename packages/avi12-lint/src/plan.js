@@ -1,3 +1,4 @@
+import { cppSteps } from "./cpp.js";
 import { clampConcurrency, eslintFlags, MIN_CONCURRENCY } from "./eslint-flags.js";
 import { kotlinSteps } from "./kotlin.js";
 import { ignoredGlobs, isIgnoredPath, LANGUAGE_PATTERNS } from "./languages.js";
@@ -46,6 +47,7 @@ const STYLE_PATTERN = /\.(?:css|svelte|vue|html)$/;
  * `kotlin` (`{ java, tools, presetDirectory, consumerDetekt }`, see `kotlinSteps`) adds the ktlint and detekt steps; the
  * runner passes it only when Java and the jars are ready.
  * `rust` (`{ roots, tools, env, cwd }`, see `rustSteps`) adds the cargo fmt, clippy, machete and deny steps.
+ * `cpp` (`{ files, local, tools, env, cwd }`, see `cppSteps`) adds the clang-format step and the clang-tidy step.
  * fallow gets `NODE_OPTIONS` capping the Node heap at 4 GB, since a dirty tree once ran it to 38 GB. Pure, so it is
  * testable.
  */
@@ -63,6 +65,7 @@ export function plan({
   languages = [],
   kotlin,
   rust,
+  cpp,
   platform = "linux"
 }) {
   function hasAny(names) {
@@ -241,6 +244,16 @@ export function plan({
     steps.push(
       ...rustSteps({
         ...rust,
+        changedFiles,
+        isFix
+      })
+    );
+  }
+
+  if (cpp) {
+    steps.push(
+      ...cppSteps({
+        ...cpp,
         changedFiles,
         isFix
       })

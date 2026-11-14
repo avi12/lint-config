@@ -25,7 +25,7 @@ export const AST_GREP_LANGUAGES = ["rust", "cpp", "csharp", "kotlin"];
 /** The files that mark a language, as git pathspecs that match at any depth. */
 export const LANGUAGE_MARKERS = {
   rust: ["Cargo.toml"],
-  cpp: ["CMakeLists.txt", ".clang-tidy", ".clang-format"],
+  cpp: ["CMakeLists.txt", ".clang-tidy", ".clang-format", "*.vcxproj"],
   csharp: ["*.csproj"],
   kotlin: ["build.gradle.kts", "detekt.yml"]
 };

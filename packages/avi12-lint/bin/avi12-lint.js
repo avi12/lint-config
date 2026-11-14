@@ -6,6 +6,10 @@ import path from "node:path";
 
 import { argumentBudget, batchCommands, runSequentially } from "#src/batch.js";
 import { changedFiles, mergeBase, stagedFiles } from "#src/changed-files.js";
+import { CPP_LOCAL_FILE, CPP_PRESET_DIRECTORY, planCppConfig, staleCppFiles } from "#src/cpp-config.js";
+import { runCppTidy } from "#src/cpp-tidy.js";
+import { cppDependencies, locateLlvmTools, visualStudioEnvironment } from "#src/cpp-tools.js";
+import { cppNotices, cppScope } from "#src/cpp.js";
 import { mergeFallowConfig } from "#src/fallow-config.js";
 import {
   guardLimits,
@@ -186,6 +190,68 @@ if (args[0] === "rust-config") {
   process.exit(runRustConfig());
 }
 
+function readCppText(file) {
+  return readFileSync(file, "utf8").replaceAll("\r\n", "\n");
+}
+
+function cppPresetFile(file) {
+  const directory = process.env["AVI12_LINT_CPP_PRESET"] ?? path.join(process.cwd(), CPP_PRESET_DIRECTORY);
+  return path.join(directory, file);
+}
+
+function readCppLocal() {
+  return existsSync(CPP_LOCAL_FILE) ? JSON.parse(readCppText(CPP_LOCAL_FILE)) : {};
+}
+
+function readCppPlan() {
+  const { files, problems } = planCppConfig({
+    preset: {
+      format: JSON.parse(readCppText(cppPresetFile("format.json"))),
+      tidy: JSON.parse(readCppText(cppPresetFile("tidy.json")))
+    },
+    local: readCppLocal()
+  });
+  const existing = new Map([...files.keys()].map(file => [file, existsSync(file) ? readCppText(file) : undefined]));
+  return {
+    files,
+    problems,
+    stale: staleCppFiles({
+      files,
+      existing
+    })
+  };
+}
+
+function runCppConfig() {
+  const { files, problems, stale } = readCppPlan();
+  for (const problem of problems) {
+    console.log(`avi12-lint: ${problem}`);
+  }
+
+  if (args.includes("--check")) {
+    for (const file of stale) {
+      console.log(`avi12-lint: ${file} differs from cpp-config-avi12; run avi12-lint cpp-config`);
+    }
+
+    const isOutOfDate = stale.length > 0 || problems.length > 0;
+    return isOutOfDate ? 1 : 0;
+  }
+
+  for (const file of stale) {
+    const isCrlf = existsSync(file) && readFileSync(file, "utf8").includes("\r\n");
+    const text = files.get(file);
+    writeFileSync(file, isCrlf ? text.replaceAll("\n", "\r\n") : text);
+    console.log(`avi12-lint: wrote ${file}`);
+  }
+
+  const hasProblems = problems.length > 0;
+  return hasProblems ? 1 : 0;
+}
+
+if (args[0] === "cpp-config") {
+  process.exit(runCppConfig());
+}
+
 const concurrencyIndex = args.indexOf("--concurrency");
 const requested = concurrencyIndex === -1 ? process.env["AVI12_LINT_CONCURRENCY"] : args[concurrencyIndex + 1];
 const isStaged = args.includes("--staged");
@@ -334,6 +400,47 @@ function prepareRust() {
 
 const rustPreparation = languages.includes("rust") ? prepareRust() : { notices: [] };
 
+const IS_CPP_REQUIRED = process.env["AVI12_LINT_REQUIRE_CPP"] === "1";
+
+function prepareCpp() {
+  const tools = locateLlvmTools(process.env);
+  const isPresetInstalled = existsSync(cppPresetFile("tidy.json"));
+  const configPlan = isPresetInstalled
+    ? readCppPlan()
+    : {
+        stale: [],
+        problems: []
+      };
+  const local = readCppLocal();
+  const projectFiles = listProjectFiles().filter(file => existsSync(file));
+  const hasSources =
+    cppScope({
+      files: projectFiles,
+      local
+    }).files.length > 0;
+  return {
+    notices: cppNotices({
+      tools,
+      isPresetInstalled,
+      staleFiles: configPlan.stale,
+      problems: configPlan.problems,
+      hasDatabaseSource: Boolean(local.database) || !tools.tidy
+    }),
+    isBlocked: configPlan.stale.length > 0 || configPlan.problems.length > 0,
+    cpp: hasSources
+      ? {
+          files: projectFiles,
+          local,
+          tools,
+          env: process.env,
+          cwd: process.cwd().replaceAll("\\", "/")
+        }
+      : undefined
+  };
+}
+
+const cppPreparation = languages.includes("cpp") ? prepareCpp() : { notices: [] };
+
 const steps = plan({
   hasFile: existsSync,
   hasSvelte: repoHas(SVELTE_GLOB),
@@ -348,6 +455,7 @@ const steps = plan({
   languages,
   kotlin: kotlinPreparation.kotlin,
   rust: rustPreparation.rust,
+  cpp: cppPreparation.cpp,
   platform: process.platform
 });
 
@@ -358,7 +466,7 @@ for (const notice of languageNotices({
   console.log(notice);
 }
 
-for (const notice of [...kotlinPreparation.notices, ...rustPreparation.notices]) {
+for (const notice of [...kotlinPreparation.notices, ...rustPreparation.notices, ...cppPreparation.notices]) {
   console.log(notice);
 }
 
@@ -478,7 +586,38 @@ function run({ name, command, env, rawEnv, limits, isFirst, isGuarded, isDirect,
   });
 }
 
+const USAGE_TTL_MS = 2000;
+let usageReadAt = 0;
+let usageMegabytes = 0;
+
+function memoizedUsage() {
+  const isStale = Date.now() - usageReadAt > USAGE_TTL_MS;
+  if (isStale) {
+    usageMegabytes = readUsage(process.pid)?.megabytes ?? 0;
+    usageReadAt = Date.now();
+  }
+
+  return usageMegabytes;
+}
+
+async function runTidy(step) {
+  console.log("avi12-lint: clang-tidy");
+  const code = await runCppTidy({
+    tidy: step.tidy,
+    deps: cppDependencies({
+      toolEnv: visualStudioEnvironment(process.env),
+      usageMegabytes: memoizedUsage,
+      log: text => console.log(text)
+    })
+  });
+  return code;
+}
+
 function runStep(step) {
+  if (step.tidy) {
+    return runTidy(step);
+  }
+
   const { name, command, env, rawEnv, limits, split, isGuarded, isDirect, reporter } = step;
   const commands =
     step.commands ??
@@ -519,5 +658,12 @@ for (const step of serial) {
 }
 const isKotlinSkipped = IS_KOTLIN_REQUIRED && kotlinPreparation.notices.length > 0;
 const isRustBlocked = IS_RUST_REQUIRED && rustPreparation.notices.length > 0;
-const isFailed = results.includes(1) || isKotlinSkipped || isRustBlocked || Boolean(rustPreparation.isBlocked);
+const isCppBlocked = IS_CPP_REQUIRED && cppPreparation.notices.length > 0;
+const isFailed =
+  results.includes(1) ||
+  isKotlinSkipped ||
+  isRustBlocked ||
+  Boolean(rustPreparation.isBlocked) ||
+  isCppBlocked ||
+  Boolean(cppPreparation.isBlocked);
 process.exit(isFailed ? 1 : 0);
