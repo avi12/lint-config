@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
@@ -10,6 +10,14 @@ import { CPP_LOCAL_FILE, CPP_PRESET_DIRECTORY, planCppConfig, staleCppFiles } fr
 import { runCppTidy } from "#src/cpp-tidy.js";
 import { cppDependencies, locateLlvmTools, visualStudioEnvironment } from "#src/cpp-tools.js";
 import { cppNotices, cppScope } from "#src/cpp.js";
+import {
+  CSHARP_LOCAL_FILE,
+  CSHARP_PRESET_DIRECTORY,
+  csharpPreset,
+  planCsharpConfig,
+  staleCsharpFiles
+} from "#src/csharp-config.js";
+import { csharpNotices, csharpTargets, parseDotnetMajor } from "#src/csharp.js";
 import { mergeFallowConfig } from "#src/fallow-config.js";
 import {
   guardLimits,
@@ -116,6 +124,12 @@ const RUST_PRESET_FILES = {
   deny: "deny.toml"
 };
 
+function writeGeneratedFile({ file, text, isCrlfRepo = false }) {
+  const isCrlf = isCrlfRepo || (existsSync(file) && readFileSync(file, "utf8").includes("\r\n"));
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, isCrlf ? text.replaceAll("\n", "\r\n") : text);
+}
+
 function readRustText(file) {
   return readFileSync(file, "utf8").replaceAll("\r\n", "\n");
 }
@@ -176,9 +190,10 @@ function runRustConfig() {
   }
 
   for (const file of stale) {
-    const isCrlf = existsSync(file) && readFileSync(file, "utf8").includes("\r\n");
-    const text = files.get(file);
-    writeFileSync(file, isCrlf ? text.replaceAll("\n", "\r\n") : text);
+    writeGeneratedFile({
+      file,
+      text: files.get(file)
+    });
     console.log(`avi12-lint: wrote ${file}`);
   }
 
@@ -238,9 +253,10 @@ function runCppConfig() {
   }
 
   for (const file of stale) {
-    const isCrlf = existsSync(file) && readFileSync(file, "utf8").includes("\r\n");
-    const text = files.get(file);
-    writeFileSync(file, isCrlf ? text.replaceAll("\n", "\r\n") : text);
+    writeGeneratedFile({
+      file,
+      text: files.get(file)
+    });
     console.log(`avi12-lint: wrote ${file}`);
   }
 
@@ -250,6 +266,74 @@ function runCppConfig() {
 
 if (args[0] === "cpp-config") {
   process.exit(runCppConfig());
+}
+
+function readCsharpText(file) {
+  return readFileSync(file, "utf8").replaceAll("\r\n", "\n");
+}
+
+function csharpPresetFile(file) {
+  const directory = process.env["AVI12_LINT_CSHARP_PRESET"] ?? path.join(process.cwd(), CSHARP_PRESET_DIRECTORY);
+  return path.join(directory, file);
+}
+
+function readCsharpLocal() {
+  return existsSync(CSHARP_LOCAL_FILE) ? JSON.parse(readCsharpText(CSHARP_LOCAL_FILE)) : {};
+}
+
+function readCsharpPreset() {
+  return csharpPreset(file => JSON.parse(readCsharpText(csharpPresetFile(file))));
+}
+
+function readCsharpPlan() {
+  const existingProps = "Directory.Build.props";
+  const { files, problems } = planCsharpConfig({
+    preset: readCsharpPreset(),
+    local: readCsharpLocal(),
+    existing: new Map(existsSync(existingProps) ? [[existingProps, readCsharpText(existingProps)]] : [])
+  });
+  const existing = new Map([...files.keys()].map(file => [file, existsSync(file) ? readCsharpText(file) : undefined]));
+  return {
+    files,
+    problems,
+    stale: staleCsharpFiles({
+      files,
+      existing
+    })
+  };
+}
+
+function runCsharpConfig() {
+  const { files, problems, stale } = readCsharpPlan();
+  for (const problem of problems) {
+    console.log(`avi12-lint: ${problem}`);
+  }
+
+  if (args.includes("--check")) {
+    for (const file of stale) {
+      console.log(`avi12-lint: ${file} differs from csharp-config-avi12; run avi12-lint csharp-config`);
+    }
+
+    const isOutOfDate = stale.length > 0 || problems.length > 0;
+    return isOutOfDate ? 1 : 0;
+  }
+
+  const isCrlfRepo = /^end_of_line = crlf$/m.test(files.get(".editorconfig"));
+  for (const file of stale) {
+    writeGeneratedFile({
+      file,
+      text: files.get(file),
+      isCrlfRepo
+    });
+    console.log(`avi12-lint: wrote ${file}`);
+  }
+
+  const hasProblems = problems.length > 0;
+  return hasProblems ? 1 : 0;
+}
+
+if (args[0] === "csharp-config") {
+  process.exit(runCsharpConfig());
 }
 
 const concurrencyIndex = args.indexOf("--concurrency");
@@ -441,6 +525,49 @@ function prepareCpp() {
 
 const cppPreparation = languages.includes("cpp") ? prepareCpp() : { notices: [] };
 
+const IS_CSHARP_REQUIRED = process.env["AVI12_LINT_REQUIRE_CSHARP"] === "1";
+
+function prepareCsharp() {
+  const probe = spawnSync("dotnet", ["--version"], { encoding: "utf8" });
+  const dotnetMajor = probe.error || probe.status !== 0 ? undefined : parseDotnetMajor(probe.stdout);
+  const isPresetInstalled = existsSync(csharpPresetFile("diagnostics.json"));
+  const configPlan = isPresetInstalled
+    ? readCsharpPlan()
+    : {
+        stale: [],
+        problems: []
+      };
+  const local = readCsharpLocal();
+  const notices = csharpNotices({
+    dotnetMajor,
+    isPresetInstalled,
+    staleFiles: configPlan.stale,
+    problems: configPlan.problems
+  });
+  const targets = csharpTargets({
+    files: listProjectFiles().filter(file => existsSync(file)),
+    local
+  });
+  return {
+    notices,
+    isBlocked: configPlan.stale.length > 0 || configPlan.problems.length > 0,
+    csharp:
+      targets.length > 0
+        ? {
+            targets,
+            tools: {
+              dotnet: dotnetMajor !== undefined
+            },
+            formatExcludes: isPresetInstalled ? Object.keys(readCsharpPreset().formatExcludes) : [],
+            env: process.env,
+            cwd: process.cwd().replaceAll("\\", "/")
+          }
+        : undefined
+  };
+}
+
+const csharpPreparation = languages.includes("csharp") ? prepareCsharp() : { notices: [] };
+
 const steps = plan({
   hasFile: existsSync,
   hasSvelte: repoHas(SVELTE_GLOB),
@@ -456,6 +583,7 @@ const steps = plan({
   kotlin: kotlinPreparation.kotlin,
   rust: rustPreparation.rust,
   cpp: cppPreparation.cpp,
+  csharp: csharpPreparation.csharp,
   platform: process.platform
 });
 
@@ -466,7 +594,12 @@ for (const notice of languageNotices({
   console.log(notice);
 }
 
-for (const notice of [...kotlinPreparation.notices, ...rustPreparation.notices, ...cppPreparation.notices]) {
+for (const notice of [
+  ...kotlinPreparation.notices,
+  ...rustPreparation.notices,
+  ...cppPreparation.notices,
+  ...csharpPreparation.notices
+]) {
   console.log(notice);
 }
 
@@ -659,11 +792,14 @@ for (const step of serial) {
 const isKotlinSkipped = IS_KOTLIN_REQUIRED && kotlinPreparation.notices.length > 0;
 const isRustBlocked = IS_RUST_REQUIRED && rustPreparation.notices.length > 0;
 const isCppBlocked = IS_CPP_REQUIRED && cppPreparation.notices.length > 0;
+const isCsharpBlocked = IS_CSHARP_REQUIRED && csharpPreparation.notices.length > 0;
 const isFailed =
   results.includes(1) ||
   isKotlinSkipped ||
   isRustBlocked ||
   Boolean(rustPreparation.isBlocked) ||
   isCppBlocked ||
-  Boolean(cppPreparation.isBlocked);
+  Boolean(cppPreparation.isBlocked) ||
+  isCsharpBlocked ||
+  Boolean(csharpPreparation.isBlocked);
 process.exit(isFailed ? 1 : 0);

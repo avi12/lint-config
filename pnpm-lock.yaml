@@ -78,6 +78,8 @@ importers:
 
   packages/cpp-config: {}
 
+  packages/csharp-config: {}
+
   packages/eslint-config:
     dependencies:
       eslint:

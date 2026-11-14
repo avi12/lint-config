@@ -1,4 +1,5 @@
 import { cppSteps } from "./cpp.js";
+import { csharpSteps } from "./csharp.js";
 import { clampConcurrency, eslintFlags, MIN_CONCURRENCY } from "./eslint-flags.js";
 import { kotlinSteps } from "./kotlin.js";
 import { ignoredGlobs, isIgnoredPath, LANGUAGE_PATTERNS } from "./languages.js";
@@ -48,6 +49,7 @@ const STYLE_PATTERN = /\.(?:css|svelte|vue|html)$/;
  * runner passes it only when Java and the jars are ready.
  * `rust` (`{ roots, tools, env, cwd }`, see `rustSteps`) adds the cargo fmt, clippy, machete and deny steps.
  * `cpp` (`{ files, local, tools, env, cwd }`, see `cppSteps`) adds the clang-format step and the clang-tidy step.
+ * `csharp` (`{ targets, tools, env, cwd }`, see `csharpSteps`) adds the dotnet format and dotnet build steps.
  * fallow gets `NODE_OPTIONS` capping the Node heap at 4 GB, since a dirty tree once ran it to 38 GB. Pure, so it is
  * testable.
  */
@@ -66,6 +68,7 @@ export function plan({
   kotlin,
   rust,
   cpp,
+  csharp,
   platform = "linux"
 }) {
   function hasAny(names) {
@@ -260,6 +263,16 @@ export function plan({
     );
   }
 
+  if (csharp) {
+    steps.push(
+      ...csharpSteps({
+        ...csharp,
+        changedFiles,
+        isFix
+      })
+    );
+  }
+
   return steps;
 }
 
@@ -297,7 +310,8 @@ function languageSteps({ hasFile, languages, changedFiles, isParallel }) {
         : undefined,
       env: {},
       isGuarded: true,
-      isParallel
+      isParallel,
+      family: language
     });
   }
 

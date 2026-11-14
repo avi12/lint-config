@@ -1,7 +1,7 @@
 {
   "name": "avi12-lint",
   "version": "0.9.0",
-  "description": "One command that runs oxlint, ESLint, oxfmt and stylelint, in parallel, for whichever configs a repo has, and ast-grep and a text check for Rust, C++, C# and Kotlin, and ktlint and detekt for Kotlin, and clang-format and clang-tidy for C++, and cargo fmt, clippy, machete and deny for Rust",
+  "description": "One command that runs oxlint, ESLint, oxfmt and stylelint, in parallel, for whichever configs a repo has, and ast-grep and a text check for Rust, C++, C# and Kotlin, and ktlint and detekt for Kotlin, and clang-format and clang-tidy for C++, and dotnet format and dotnet build for C#, and cargo fmt, clippy, machete and deny for Rust",
   "license": "Apache-2.0",
   "bin": {
     "avi12-lint": "bin/avi12-lint.js"
@@ -32,6 +32,8 @@
     "./cpp-config": "./src/cpp-config.js",
     "./cpp-tidy": "./src/cpp-tidy.js",
     "./cpp-tools": "./src/cpp-tools.js",
-    "./cpp-fixes": "./src/cpp-fixes.js"
+    "./cpp-fixes": "./src/cpp-fixes.js",
+    "./csharp": "./src/csharp.js",
+    "./csharp-config": "./src/csharp-config.js"
   }
 }
