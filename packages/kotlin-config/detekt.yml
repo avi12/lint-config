@@ -1,0 +1,166 @@
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+
+style:
+  VarCouldBeVal:
+    active: true
+  BracesOnIfStatements:
+    active: true
+    singleLine: always
+    multiLine: always
+  BracesOnWhenStatements:
+    active: true
+    singleLine: necessary
+    multiLine: consistent
+  MandatoryBracesLoops:
+    active: true
+  UnusedPrivateMember:
+    active: true
+  UnusedPrivateProperty:
+    active: true
+  UnusedParameter:
+    active: true
+  UnusedImports:
+    active: true
+  UnnecessaryAbstractClass:
+    active: true
+  UnnecessaryLet:
+    active: true
+  UnnecessaryParentheses:
+    active: true
+  CanBeNonNullable:
+    active: true
+  MagicNumber:
+    active: true
+    ignoreNumbers:
+      - "-1"
+      - "0"
+      - "1"
+      - "2"
+    ignoreHashCodeFunction: true
+    ignorePropertyDeclaration: true
+    ignoreConstantDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotation: true
+    ignoreNamedArgument: false
+    ignoreEnums: true
+    ignoreRanges: false
+    ignoreExtensionFunctions: false
+  ForbiddenComment:
+    active: true
+    comments:
+      - value: "FIXME"
+        reason: "Fix the problem now"
+      - value: "STOPSHIP"
+        reason: "Address the problem before shipping"
+      - value: "TODO"
+        reason: "A TODO needs an owner: TODO(owner)"
+      - value: "noinspection"
+        reason: "No suppress comment: an exemption lives in config with a reason"
+      - value: "ktlint-disable"
+        reason: "No suppress comment: an exemption lives in config with a reason"
+    allowedPatterns: 'TODO\([A-Za-z0-9_-]+\)'
+  # ktlint owns layout
+  MaxLineLength:
+    active: false
+  # Early returns are the house rule, so a cap on return statements would fight it
+  ReturnCount:
+    active: false
+  ForbiddenAnnotation:
+    active: true
+    annotations:
+      - value: "kotlin.Suppress"
+        reason: "No suppress annotation: an exemption lives in config with a reason"
+      - value: "java.lang.SuppressWarnings"
+        reason: "No suppress annotation: an exemption lives in config with a reason"
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+  VariableNaming:
+    active: true
+  ClassNaming:
+    active: true
+  MatchingDeclarationName:
+    active: true
+    mustBeFirst: true
+  EnumNaming:
+    active: true
+    enumEntryPattern: "[A-Z][A-Z0-9_]*"
+  TopLevelPropertyNaming:
+    active: true
+  ObjectPropertyNaming:
+    active: true
+    constantPattern: "[A-Z][_A-Z0-9]*"
+  BooleanPropertyNaming:
+    active: true
+    allowedPattern: "^(is|has|can|should)[A-Z]"
+  VariableMinLength:
+    active: true
+    minimumVariableNameLength: 2
+  FunctionMinLength:
+    active: true
+    minimumFunctionNameLength: 2
+
+potential-bugs:
+  active: true
+  UnsafeCallOnNullableType:
+    active: true
+  UnsafeCast:
+    active: true
+  LateinitUsage:
+    active: true
+  # The Kotlin compiler reports these exactly; detekt runs on the standard library only, so it misreads every
+  # call into an unresolved library as Nothing and flags the code after it
+  UnreachableCode:
+    active: false
+  UnreachableCatchBlock:
+    active: false
+
+complexity:
+  active: true
+  LongMethod:
+    active: true
+  LongParameterList:
+    active: true
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 11
+    thresholdInClasses: 11
+    thresholdInInterfaces: 11
+    thresholdInObjects: 11
+    thresholdInEnums: 11
+  NestedBlockDepth:
+    active: true
+    threshold: 4
+  ComplexCondition:
+    active: true
+  CyclomaticComplexMethod:
+    active: true
+  CognitiveComplexMethod:
+    active: true
+
+comments:
+  active: true
+  UndocumentedPublicClass:
+    active: true
+  UndocumentedPublicFunction:
+    active: true
+  UndocumentedPublicProperty:
+    active: false
+
+exceptions:
+  active: true
+  TooGenericExceptionThrown:
+    active: true
+  TooGenericExceptionCaught:
+    active: true
+
+empty-blocks:
+  active: true
+  EmptyCatchBlock:
+    active: true
