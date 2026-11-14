@@ -271,3 +271,31 @@ test("a sighmake buildscript supplies the flags, read from the repo", async () =
   const [entry] = JSON.parse(world.files.get("/r/.verify/clang-tidy/compile_commands.json"));
   assert.deepEqual(entry.arguments.slice(0, 6), ["clang-cl", "/std:c++20", "/EHsc", "/DA", "/DB", "/I/r/src"]);
 });
+
+test("findings inside an ignored path do not fail a unit, and one of ours still does", async () => {
+  const world = makeWorld(SOURCES);
+  const run = world.deps.run;
+  world.deps.run = async ({ command }) => {
+    const unit = command.at(-1);
+    if (command[1] === "--version" || unit === "/r/src/c.cpp") {
+      return run({ command });
+    }
+
+    const own = unit === "/r/src/b.cpp" ? "/r/src/b.cpp:1:1: error: mine [x,-warnings-as-errors]\n" : "";
+    return {
+      status: 1,
+      output: `${own}/r/build/gen/base.h:9:1: error: theirs [y,-warnings-as-errors]\n`
+    };
+  };
+  const tidy = tidyOf({
+    local: {
+      database: { flat: { standard: "17" } },
+      tidy: { ignoredPaths: { "/build/": "generated" } }
+    }
+  });
+  assert.equal(await runCppTidy({ tidy, deps: world.deps }), 1);
+  assert.deepEqual(
+    world.logs.filter(text => text.includes("error:")),
+    ["/r/src/b.cpp:1:1: error: mine [x,-warnings-as-errors]"]
+  );
+});

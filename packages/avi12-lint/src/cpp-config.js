@@ -13,6 +13,7 @@ const TIDY_LOCAL_KEYS = new Set([
   "options",
   "optionReasons",
   "directories",
+  "ignoredPaths",
   "headerFilterRegex",
   "warningsAsErrors"
 ]);
@@ -124,6 +125,13 @@ function validateLocal(local) {
     const isReasoned = typeof reason === "string" && reason.trim() !== "";
     if (!isReasoned) {
       problems.push(`${CPP_LOCAL_FILE}: tidy.options "${key}" needs a reason in tidy.optionReasons`);
+    }
+  }
+
+  for (const [pattern, reason] of Object.entries(local.tidy?.ignoredPaths ?? {})) {
+    const isReasoned = typeof reason === "string" && reason.trim() !== "";
+    if (!isReasoned) {
+      problems.push(`${CPP_LOCAL_FILE}: tidy.ignoredPaths "${pattern}" needs a reason`);
     }
   }
 

@@ -16,8 +16,7 @@ import {
 } from "./cpp.js";
 
 const ADMISSION_WAIT_MS = 200;
-const CALIBRATION_UNITS = 4;
-const CALIBRATION_MS = 4000;
+const CALIBRATION_UNITS = 3;
 const MS_PER_SECOND = 1000;
 
 function databaseEntries({ database, units, cwd, deps }) {
@@ -82,6 +81,31 @@ function analysed({ entry, cwd, deps }) {
   }));
 }
 
+/**
+ * Drops the diagnostics located in an ignored path (generated code the repo does not own); a unit whose every
+ * diagnostic was dropped passes.
+ */
+function keepOwnFindings({ result, ignored }) {
+  const isFailing = result.status !== 0 && ignored.length > 0;
+  if (!isFailing) {
+    return result;
+  }
+
+  const blocks = diagnosticBlocks(result.output);
+  const own = blocks.filter(block => !ignored.some(pattern => pattern.test(block.split("\n")[0])));
+  const isAllIgnored = blocks.length > 0 && own.length === 0;
+  return isAllIgnored
+    ? {
+        ...result,
+        status: 0,
+        output: ""
+      }
+    : {
+        ...result,
+        output: own.length > 0 ? own.join("\n") : result.output
+      };
+}
+
 function applyExportedFixes({ directory, count, deps }) {
   const replacements = Array.from({ length: count }, (_, index) => `${directory}/${index}.yaml`)
     .map(path => deps.readText(path))
@@ -104,13 +128,12 @@ function applyExportedFixes({ directory, count, deps }) {
 /**
  * Runs the jobs through at most `size` workers, admitting one only while the tree's memory plus one more unit's
  * measured peak fits the limit (a unit's cost is learned from the running ones: a C++/WinRT unit takes 1.5 GB where a
- * plain one takes 130 MB), and no more than `CALIBRATION_UNITS` until the first unit finishes or
- * `CALIBRATION_MS` have passed, so the cost shows before the pool fills.
+ * plain one takes 130 MB), and no more than `CALIBRATION_UNITS` until the first unit finishes, so the cost has
+ * shown before the pool fills.
  */
 async function runPool({ jobs, size, deps, limits, start }) {
   const queue = [...jobs];
   const results = [];
-  const begin = deps.now();
   let running = 0;
   let peakPerUnit = TIDY_MEGABYTES_PER_UNIT;
   function isAdmitted() {
@@ -118,7 +141,7 @@ async function runPool({ jobs, size, deps, limits, start }) {
       peakPerUnit = Math.max(peakPerUnit, deps.usageMegabytes() / running);
     }
 
-    const isCalibrating = results.length === 0 && deps.now() - begin < CALIBRATION_MS;
+    const isCalibrating = results.length === 0;
     const cap = isCalibrating ? Math.min(size, CALIBRATION_UNITS) : size;
     const isMemoryBound = running > 0 && deps.usageMegabytes() + peakPerUnit > limits.memoryLimitMb;
     return running < cap && !isMemoryBound;
@@ -260,8 +283,15 @@ export async function runCppTidy({ tidy, deps }) {
     limits,
     start
   });
-  const failed = results.filter(({ status }) => status !== 0);
-  for (const { job } of results.filter(({ status }) => status === 0 && !isFix)) {
+  const ignored = Object.keys(local.tidy?.ignoredPaths ?? {}).map(pattern => new RegExp(pattern));
+  const judged = results.map(result =>
+    keepOwnFindings({
+      result,
+      ignored
+    })
+  );
+  const failed = judged.filter(({ status }) => status !== 0);
+  for (const { job } of judged.filter(({ status }) => status === 0 && !isFix)) {
     deps.writeText({
       path: job.marker,
       text: ""
