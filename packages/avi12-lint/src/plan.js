@@ -1,4 +1,5 @@
 import { clampConcurrency, eslintFlags, MIN_CONCURRENCY } from "./eslint-flags.js";
+import { kotlinSteps } from "./kotlin.js";
 import { ignoredGlobs, isIgnoredPath, LANGUAGE_PATTERNS } from "./languages.js";
 import { isTextChecked as isTextCheckedFile } from "./text-check.js";
 
@@ -41,6 +42,8 @@ const STYLE_PATTERN = /\.(?:css|svelte|vue|html)$/;
  * matching file is skipped) and drops ESLint to concurrency 1 unless `concurrency` says otherwise; tsrs always
  * checks the whole project. fallow has no file list: it is planned only with `fallowBase` (a git ref), through its
  * own changed-files mode `fallow audit --base <ref>`, so a staged run, which has no base, leaves it out.
+ * `kotlin` (`{ java, tools, presetDirectory, consumerDetekt }`, see `kotlinSteps`) adds the ktlint and detekt steps; the
+ * runner passes it only when Java and the jars are ready.
  * fallow gets `NODE_OPTIONS` capping the Node heap at 4 GB, since a dirty tree once ran it to 38 GB. Pure, so it is
  * testable.
  */
@@ -56,6 +59,7 @@ export function plan({
   isFallowFull = false,
   isNestedConfigAllowed = false,
   languages = [],
+  kotlin,
   platform = "linux"
 }) {
   function hasAny(names) {
@@ -218,6 +222,18 @@ export function plan({
       isParallel
     })
   );
+
+  if (kotlin) {
+    steps.push(
+      ...kotlinSteps({
+        ...kotlin,
+        changedFiles,
+        isFix,
+        platform
+      })
+    );
+  }
+
   return steps;
 }
 

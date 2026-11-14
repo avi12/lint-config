@@ -16,6 +16,15 @@ import {
   treeUsage,
   watchdog
 } from "#src/guard.js";
+import { formatReport } from "#src/kotlin-report.js";
+import { ensureTool } from "#src/kotlin-tools.js";
+import {
+  javaCommand,
+  KOTLIN_CACHE_DIRECTORY,
+  KOTLIN_PRESET_DIRECTORY,
+  kotlinNotices,
+  parseJavaMajor
+} from "#src/kotlin.js";
 import { detectLanguages } from "#src/languages.js";
 import { languageNotices, plan } from "#src/plan.js";
 import { findingsOf, isTextChecked, parseExemptions, withoutExempted } from "#src/text-check.js";
@@ -131,6 +140,68 @@ function presetIgnores() {
 
 const languages = detectLanguages(repoHasMarker);
 
+const IS_KOTLIN_REQUIRED = process.env["AVI12_LINT_REQUIRE_KOTLIN"] === "1";
+const KOTLIN_TOOLS_FILE = `${KOTLIN_PRESET_DIRECTORY}/tools.json`;
+const DETEKT_CONFIG_NAME = "detekt.yml";
+
+function findConsumerDetekt() {
+  const [shallowest] = listProjectFiles()
+    .filter(file => path.basename(file) === DETEKT_CONFIG_NAME && !file.includes("node_modules/"))
+    .sort((left, right) => left.split("/").length - right.split("/").length);
+  return shallowest ? path.resolve(shallowest) : undefined;
+}
+
+async function prepareKotlin() {
+  const isPresetInstalled = existsSync(KOTLIN_TOOLS_FILE);
+  if (!isPresetInstalled) {
+    return { notices: ["avi12-lint: kotlin-config-avi12 is not installed, so ktlint and detekt were skipped"] };
+  }
+
+  const java = javaCommand(process.env);
+  const probe = spawnSync(java, ["-version"], { encoding: "utf8" });
+  const javaMajor = probe.error ? undefined : parseJavaMajor(`${probe.stderr}${probe.stdout}`);
+  const javaNotices = kotlinNotices({ javaMajor });
+  if (javaNotices.length > 0) {
+    return { notices: javaNotices };
+  }
+
+  try {
+    const { ktlint, detekt } = JSON.parse(readFileSync(KOTLIN_TOOLS_FILE, "utf8"));
+    const [ktlintJar, detektJar] = await Promise.all(
+      [ktlint, detekt].map(tool =>
+        ensureTool({
+          tool,
+          cacheDirectory: KOTLIN_CACHE_DIRECTORY
+        })
+      )
+    );
+    return {
+      notices: [],
+      kotlin: {
+        java,
+        tools: {
+          ktlint: path.resolve(ktlintJar),
+          detekt: path.resolve(detektJar)
+        },
+        presetDirectory: path.resolve(KOTLIN_PRESET_DIRECTORY),
+        consumerDetekt: findConsumerDetekt(),
+        projectFiles: listProjectFiles(),
+        isTypeResolved: process.env["AVI12_LINT_KOTLIN_TYPES"] !== "0"
+      }
+    };
+  } catch (error) {
+    const toolError = error instanceof Error ? error.message : String(error);
+    return {
+      notices: kotlinNotices({
+        javaMajor,
+        toolError
+      })
+    };
+  }
+}
+
+const kotlinPreparation = languages.includes("kotlin") ? await prepareKotlin() : { notices: [] };
+
 const steps = plan({
   hasFile: existsSync,
   hasSvelte: repoHas(SVELTE_GLOB),
@@ -143,6 +214,7 @@ const steps = plan({
   isNestedConfigAllowed: process.env["AVI12_LINT_NESTED_CONFIG"] === "1" || args.includes("--nested-config"),
   oxfmtIgnores: presetIgnores(),
   languages,
+  kotlin: kotlinPreparation.kotlin,
   platform: process.platform
 });
 
@@ -150,6 +222,10 @@ for (const notice of languageNotices({
   hasFile: existsSync,
   languages
 })) {
+  console.log(notice);
+}
+
+for (const notice of kotlinPreparation.notices) {
   console.log(notice);
 }
 
@@ -199,10 +275,11 @@ function terminate({ pid, usage }) {
   }
 }
 
-function run({ name, command, env, isFirst, isGuarded }) {
+function run({ name, command, env, isFirst, isGuarded, isDirect, reporter }) {
   return new Promise(resolve => {
-    const child = spawn("pnpm", ["exec", ...command], {
-      shell: true,
+    const [program, ...programArguments] = isDirect ? command : ["pnpm", "exec", ...command];
+    const child = spawn(program, programArguments, {
+      shell: !isDirect,
       env: {
         ...process.env,
         ...Object.fromEntries(
@@ -246,7 +323,16 @@ function run({ name, command, env, isFirst, isGuarded }) {
         console.log(`avi12-lint: ${name}`);
       }
 
-      process.stdout.write(Buffer.concat(chunks));
+      const output = Buffer.concat(chunks);
+      process.stdout.write(
+        reporter
+          ? formatReport({
+              tool: reporter,
+              text: output.toString(),
+              cwd: process.cwd()
+            })
+          : output
+      );
 
       if (failure) {
         console.log(failure);
@@ -259,16 +345,18 @@ function run({ name, command, env, isFirst, isGuarded }) {
 }
 
 function runStep(step) {
-  const { name, command, env, split, isGuarded } = step;
-  const commands = split
-    ? batchCommands({
-        ...split,
-        budget: argumentBudget({
-          platform: process.platform,
-          env: process.env
+  const { name, command, env, split, isGuarded, isDirect, reporter } = step;
+  const commands =
+    step.commands ??
+    (split
+      ? batchCommands({
+          ...split,
+          budget: argumentBudget({
+            platform: process.platform,
+            env: process.env
+          })
         })
-      })
-    : [command];
+      : [command]);
   return runSequentially({
     commands,
     runOne: ({ command: batch, isFirst }) =>
@@ -277,15 +365,21 @@ function runStep(step) {
         command: batch,
         env,
         isFirst,
-        isGuarded
+        isGuarded,
+        isDirect,
+        reporter
       })
   });
 }
 
-const parallel = steps.filter(({ isParallel }) => isParallel);
-const serial = steps.filter(({ isParallel }) => !isParallel);
+const isKotlinOnly = args.includes("--only=kotlin");
+const selected = isKotlinOnly ? steps.filter(({ isDirect }) => isDirect) : steps;
+const parallel = selected.filter(({ isParallel }) => isParallel);
+const serial = selected.filter(({ isParallel }) => !isParallel);
 const results = await Promise.all(parallel.map(runStep));
 for (const step of serial) {
   results.push(await runStep(step));
 }
-process.exit(results.includes(1) ? 1 : 0);
+const isKotlinSkipped = IS_KOTLIN_REQUIRED && kotlinPreparation.notices.length > 0;
+const isFailed = results.includes(1) || isKotlinSkipped;
+process.exit(isFailed ? 1 : 0);
