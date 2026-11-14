@@ -18,7 +18,8 @@ They are consumed straight from GitHub and never published to npm
 | `packages/house-rules` | the rule parity matrix (`rules.json`): each TypeScript house rule and its Rust, C++, C# and Kotlin equivalent; see `docs/non-ts-languages.md` |
 | `packages/ast-grep-rules` | ast-grep rule packs, one per language (`rust`, `cpp`, `csharp`, `kotlin`): the house rules no linter of those languages has; each rule has a fixture of must-flag and must-not-flag lines |
 | `packages/kotlin-config` | the Kotlin presets: `.editorconfig` for ktlint, `detekt.yml`, and `tools.json` with the pinned ktlint and detekt versions and checksums; fixtures of must-flag and must-not-flag files per rule |
-| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check, and for Kotlin also ktlint and detekt |
+| `packages/rust-config` | the Rust presets: `lints.toml` (every matrix row as a rustc or clippy lint level), `clippy.toml` (thresholds, the short-name idioms, tests may unwrap), `rustfmt.toml` (width 100) and `deny.toml` (advisories, licences, bans, sources); `avi12-lint rust-config` writes them into a repo; fixture crates mark the line each lint must flag |
+| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check, for Kotlin also ktlint and detekt, and for Rust also `cargo fmt`, `clippy`, `machete` and `deny` |
 
 ## Install
 
@@ -32,6 +33,7 @@ pnpm add -D "eslint-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages
 pnpm add -D "stylelint-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages/stylelint-config"
 pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages/fallow-config"
 pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.13&path:/packages/avi12-lint"
+pnpm add -D "rust-config-avi12@github:avi12/lint-config#v0.8.0&path:/packages/rust-config"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -154,6 +156,21 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.7.0
+
+- A repository with a `Cargo.toml` now also runs `cargo fmt --check`, `cargo clippy --all-targets --all-features --keep-going -- -D warnings`, `cargo machete` and `cargo deny check` per Cargo root (a `[workspace]` manifest, or a package that lies in none), one after another under a guard of their own (`AVI12_LINT_RUST_MEMORY_MB` 8192, `AVI12_LINT_RUST_TIME_LIMIT_MS` 30 minutes)
+  - add `rust-config-avi12` as a devDependency (`github:avi12/lint-config#v0.8.0&path:/packages/rust-config`) and run `avi12-lint rust-config` once; commit what it writes, and run it again after bumping the tag (the runner fails when the generated files are stale)
+  - clippy has no `extends`, so the generator writes `clippy.toml`, `rustfmt.toml` and `deny.toml` next to each root's manifest, and a block between `# avi12-lint:begin` and `# avi12-lint:end` at the end of every manifest: `[workspace.lints.*]` in the workspace root, `[lints] workspace = true` in each member, `[lints.*]` in a package outside a workspace
+  - a manifest that already has `[lints]` tables is reported, not overwritten: move them into `avi12-rust.local.toml` (next to the root manifest) and delete them
+  - an exemption is a key in `avi12-rust.local.toml` with a comment saying why, never an `#[allow]` (`clippy::allow_attributes` is denied): `[rust]` and `[clippy]` change a lint level for the workspace, `[member.<crate>.rust]` and `[member.<crate>.clippy]` for one crate (a crate that calls Win32 sets `unsafe_code = "allow"`), `[clippy-config]` and `[rustfmt]` change a `clippy.toml` or `rustfmt.toml` key, `[deny.<table>]` a `deny.toml` table (a key replaces the preset's, arrays included)
+  - the lints that bite an application crate hardest are `missing_docs`, `unreachable_pub`, `as_conversions`, `expect_used`, `indexing_slicing` and `min_ident_chars`; a Tauri app lists `missing_docs = "allow"` for its own package, since nothing in it is a public API
+  - clippy builds into `.verify/rust-target` (so it never waits for the lock of a dev build; add `.verify/` to `.gitignore`); `AVI12_LINT_RUST_TARGET=shared` uses Cargo's own target directory, and a `CARGO_TARGET_DIR` in the environment is respected; `CARGO_BUILD_JOBS` is 4
+  - `--fix` runs `cargo fmt` and `cargo clippy --fix --allow-dirty --allow-staged`; machete and deny never fix; `--changed` and `--staged` keep only the crates that own a changed `.rs` file (a changed manifest, lock file or lint config means the whole root, and `cargo deny` runs only then); `--only=rust` runs these steps alone
+  - a missing `cargo`, clippy, rustfmt, machete or deny is a one-line notice with the install command and the step is skipped (`AVI12_LINT_REQUIRE_RUST=1` turns a notice into a failure); `AVI12_LINT_RUST_DENY_FETCH=0` runs `cargo deny` offline
+  - `AVI12_LINT_RUST_PRESET` points the generator at a preset folder other than `node_modules/rust-config-avi12`
+- `--only=kotlin` now works through a `family` on each step, so `--only=rust` and `--only=kotlin` share one filter
+- The matrix text for the Rust rows says what the config does (thresholds, the short names that pass)
 
 ### Migrating from 0.6.0
 
@@ -312,6 +329,7 @@ Output is printed per tool when it finishes, so lines never interleave
 - A tool with no matching changed file is skipped
 - Rust, C++, C# and Kotlin: a language is detected by its marker file; each gets its own `ast-grep` step over its changed files outside `target`, `build`, `bin`, `obj`, `vendor` and other build or dependency folders (the whole project with those folders excluded otherwise), plus one `text-check` step; both are guarded like fallow (`AVI12_LINT_FALLOW_MEMORY_MB`, `AVI12_LINT_FALLOW_TIME_LIMIT_MS`)
 - Kotlin: `ktlint` and `detekt` run from cached CLI jars over the repo's Kotlin files (changed ones with `--changed`), batched to fit a Windows command line, in the same watchdog; the report is one line per finding, `file:line:column  tool/rule  message`, then a count; Java 17 or newer is required
+- Rust: per Cargo root, `cargo fmt --check`, `cargo clippy`, `cargo machete` and `cargo deny check` as serial guarded steps, with the report as the tool prints it; a stale generated config or a manifest with its own `[lints]` fails the run
 - `fallow audit` runs with its Node heap capped at 4 GB (`--max-old-space-size=4096`), a guard against a runaway audit on a dirty tree
 
 ### Measured on a 2263-file TypeScript and Svelte codebase
@@ -356,5 +374,6 @@ It was tested and rejected
 - naming: `allowedNames`, `allowedPatterns`, `presets` and `fileOverrides` work and demand a reason
 - presets: the browser and webextension globals, the library preset and the positional-parameters override, the former ESLint rules running in oxlint
 - runner: the plan (default, fix, changed, staged, type-aware, overrides), and the concurrency clamp
+- rust: the generator (preset merged with the local file, idempotent, CRLF-safe), the plan with a fake tool probe, and fixture crates run through the real tools: every configured lint flags exactly the marked lines, a clean crate flags nothing, `cargo fmt` and `clippy --fix` settle in one pass, deny and machete accept a clean crate; each skips with a message when the tool is not installed
 
 CI runs the same on every push (`.github/workflows/ci.yml`)

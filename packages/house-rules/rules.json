@@ -55,7 +55,10 @@
       "id": "max-nesting",
       "intent": "block nesting at most 3 deep, callbacks at most 3 deep",
       "ts": ["max-depth", "max-nested-callbacks"],
-      "rust": ["variant", "clippy cognitive_complexity with cognitive-complexity-threshold"],
+      "rust": [
+        "variant",
+        "clippy cognitive_complexity with cognitive-complexity-threshold (20; it counts branches, not nesting)"
+      ],
       "cpp": ["variant", "readability-function-cognitive-complexity"],
       "csharp": ["map", "Sonar S134 (max 3)"],
       "kotlin": ["map", "detekt NestedBlockDepth (threshold 4: a depth of 4 is flagged, so at most 3 deep passes)"]
@@ -91,7 +94,10 @@
       "id": "no-unchecked-cast",
       "intent": "no unsafe or unchecked cast",
       "ts": ["typescript/consistent-type-assertions"],
-      "rust": ["map", "rustc unsafe_code = forbid, clippy as_conversions, cast_possible_truncation"],
+      "rust": [
+        "map",
+        "rustc unsafe_code = forbid (a crate that calls Win32 allows it in avi12-rust.local.toml), clippy as_conversions, cast_possible_truncation"
+      ],
       "cpp": [
         "map",
         "google-readability-casting, cppcoreguidelines-pro-type-cstyle-cast, -const-cast, -reinterpret-cast"
@@ -103,7 +109,10 @@
       "id": "parameter-object",
       "intent": "two or more parameters become one parameter object",
       "ts": ["house/positional-parameters"],
-      "rust": ["variant", "clippy too_many_arguments with too-many-arguments-threshold"],
+      "rust": [
+        "variant",
+        "clippy too_many_arguments with too-many-arguments-threshold (5: from six parameters a struct says what each one is)"
+      ],
       "cpp": ["variant", "bugprone-easily-swappable-parameters"],
       "csharp": ["variant", "named arguments; CA1068 and Sonar S107 past a threshold"],
       "kotlin": ["variant", "named arguments; detekt LongParameterList past a threshold"]
@@ -121,7 +130,10 @@
       "id": "identifier-length",
       "intent": "names of at least 3 characters, with a short allow-list",
       "ts": ["id-length"],
-      "rust": ["map", "clippy min_ident_chars with allowed-idents-below-min-chars"],
+      "rust": [
+        "map",
+        "clippy min_ident_chars with allowed-idents-below-min-chars (threshold 2; i, j, x, y, id, to, on, ok, Io, T and E pass)"
+      ],
       "cpp": ["map", "readability-identifier-length (IgnoredVariableNames)"],
       "csharp": ["gap", "ast-grep house-identifier-length"],
       "kotlin": [
@@ -316,7 +328,7 @@
       "id": "size-limits",
       "intent": "functions and classes stay small",
       "ts": ["max-depth"],
-      "rust": ["map", "clippy too_many_lines, cognitive_complexity"],
+      "rust": ["map", "clippy too_many_lines (threshold 100), cognitive_complexity (threshold 20)"],
       "cpp": ["map", "readability-function-size, readability-function-cognitive-complexity"],
       "csharp": ["map", "CA1502, CA1506"],
       "kotlin": ["map", "detekt LongMethod, CyclomaticComplexMethod, TooManyFunctions"]
