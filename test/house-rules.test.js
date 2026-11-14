@@ -72,7 +72,10 @@ test("every tool rule id a cell names is in the committed id list of that tool",
   for (const row of rules.rules) {
     for (const language of LANGUAGES) {
       const [, text] = row[language];
-      for (const [tool, id] of extractIds({ language, text })) {
+      for (const [tool, id] of extractIds({
+        language,
+        text
+      })) {
         if (!lists.has(tool)) {
           lists.set(tool, readToolIds(tool));
         }
@@ -93,7 +96,12 @@ test("every id list is committed and the cells name at least one id per language
   }
 
   for (const language of LANGUAGES) {
-    const count = rules.rules.flatMap(row => extractIds({ language, text: row[language][1] })).length;
+    const count = rules.rules.flatMap(row =>
+      extractIds({
+        language,
+        text: row[language][1]
+      })
+    ).length;
     assert.ok(count > 5, `${language}: the id extractor found ${count} ids`);
   }
 });

@@ -1,7 +1,7 @@
 {
   "name": "avi12-lint",
   "version": "0.5.1",
-  "description": "One command that runs oxlint, ESLint, oxfmt and stylelint, in parallel, for whichever configs a repo has",
+  "description": "One command that runs oxlint, ESLint, oxfmt and stylelint, in parallel, for whichever configs a repo has, and ast-grep and a text check for Rust, C++, C# and Kotlin",
   "license": "Apache-2.0",
   "bin": {
     "avi12-lint": "bin/avi12-lint.js"
@@ -18,6 +18,8 @@
   "exports": {
     "./eslint-flags": "./src/eslint-flags.js",
     "./plan": "./src/plan.js",
+    "./languages": "./src/languages.js",
+    "./text-check": "./src/text-check.js",
     "./fallow-config": "./src/fallow-config.js",
     "./package.json": "./package.json"
   }

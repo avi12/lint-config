@@ -66,6 +66,8 @@ importers:
         specifier: ^10.4.2
         version: 10.4.2(eslint@10.14.0)
 
+  packages/ast-grep-rules: {}
+
   packages/avi12-lint: {}
 
   packages/biome-config:

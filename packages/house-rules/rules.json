@@ -266,7 +266,10 @@
       "intent": "no redundant closure, field name or object initializer",
       "ts": ["object-shorthand", "arrow-body-style"],
       "rust": ["map", "clippy redundant_closure, redundant_field_names"],
-      "cpp": ["map", "readability-redundant-member-init, readability-redundant-string-cstr, readability-redundant-smartptr-get, readability-redundant-control-flow"],
+      "cpp": [
+        "map",
+        "readability-redundant-member-init, readability-redundant-string-cstr, readability-redundant-smartptr-get, readability-redundant-control-flow"
+      ],
       "csharp": ["map", "IDE0017, IDE0028, IDE0090"],
       "kotlin": ["map", "detekt UnnecessaryLet, UnnecessaryParentheses"]
     },

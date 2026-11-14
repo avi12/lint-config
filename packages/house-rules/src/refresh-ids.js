@@ -6,18 +6,48 @@ import path from "node:path";
 const OUTPUT = new URL("../tool-ids/", import.meta.url);
 const NUGET = "https://api.nuget.org/v3-flatcontainer";
 const MAVEN = "https://repo1.maven.org/maven2";
+const LARGE_BUFFER = 536870912;
+const MEDIUM_BUFFER = 67108864;
 const DETEKT_VERSION = "1.23.8";
 const KTLINT_VERSION = "1.8.0";
 const SYSTEM_TAR = path.join(process.env["SystemRoot"] ?? "", "System32", "tar.exe");
 const TAR = process.platform === "win32" ? SYSTEM_TAR : "tar";
 const PACKAGES = [
-  { name: "Microsoft.CodeAnalysis.NetAnalyzers", version: "10.0.404", pattern: /\bCA\d{4}\b/g },
-  { name: "Microsoft.CodeAnalysis.CSharp.CodeStyle", version: "5.12.0", pattern: /\bIDE\d{4}\b/g },
-  { name: "Roslynator.Analyzers", version: "5.0.1", pattern: /\bRCS\d{4}\b/g },
-  { name: "Meziantou.Analyzer", version: "3.0.339", pattern: /\bMA\d{4}\b/g },
-  { name: "StyleCop.Analyzers", version: "1.3.180", pattern: /\bSA\d{4}\b/g },
-  { name: "Microsoft.CodeAnalysis.BannedApiAnalyzers", version: "5.6.0", pattern: /\bRS\d{4}\b/g },
-  { name: "SonarAnalyzer.CSharp", version: "10.36.0.15337", pattern: /\bS\d{3,4}\b/g }
+  {
+    name: "Microsoft.CodeAnalysis.NetAnalyzers",
+    version: "10.0.404",
+    pattern: /\bCA\d{4}\b/g
+  },
+  {
+    name: "Microsoft.CodeAnalysis.CSharp.CodeStyle",
+    version: "5.12.0",
+    pattern: /\bIDE\d{4}\b/g
+  },
+  {
+    name: "Roslynator.Analyzers",
+    version: "5.0.1",
+    pattern: /\bRCS\d{4}\b/g
+  },
+  {
+    name: "Meziantou.Analyzer",
+    version: "3.0.339",
+    pattern: /\bMA\d{4}\b/g
+  },
+  {
+    name: "StyleCop.Analyzers",
+    version: "1.3.180",
+    pattern: /\bSA\d{4}\b/g
+  },
+  {
+    name: "Microsoft.CodeAnalysis.BannedApiAnalyzers",
+    version: "5.6.0",
+    pattern: /\bRS\d{4}\b/g
+  },
+  {
+    name: "SonarAnalyzer.CSharp",
+    version: "10.36.0.15337",
+    pattern: /\bS\d{3,4}\b/g
+  }
 ];
 const COMPILER_PROBES = {
   CS1591: "/// <summary>x</summary>\npublic class Probe { public int Open; }",
@@ -31,7 +61,7 @@ function run({ command, args, cwd }) {
   return execFileSync(command, args, {
     cwd,
     encoding: "utf8",
-    maxBuffer: 1024 * 1024 * 512,
+    maxBuffer: LARGE_BUFFER,
     stdio: ["ignore", "pipe", "pipe"]
   });
 }
@@ -60,7 +90,12 @@ function filesUnder({ directory, extension }) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const full = path.join(directory, entry.name);
     if (entry.isDirectory()) {
-      found.push(...filesUnder({ directory: full, extension }));
+      found.push(
+        ...filesUnder({
+          directory: full,
+          extension
+        })
+      );
     } else if (full.endsWith(extension)) {
       found.push(full);
     }
@@ -82,7 +117,7 @@ function clippyAndRustc({ work }) {
   const clippyText = execFileSync("cargo", ["clippy", "--", "-W", "help"], {
     cwd: crate,
     encoding: "utf8",
-    maxBuffer: 1024 * 1024 * 64,
+    maxBuffer: MEDIUM_BUFFER,
     stdio: ["ignore", "pipe", "pipe"]
   });
   const clippy = clippyText.match(/clippy::[a-z0-9-]+/g) ?? [];
@@ -102,7 +137,12 @@ function clangTidy() {
     command: "clang-tidy",
     args: ["--list-checks", "-checks=*"]
   });
-  return normalize(text.split("\n").map(line => line.trim()).filter(line => /^[a-z0-9]+-[a-z0-9-]+$/.test(line)));
+  return normalize(
+    text
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => /^[a-z0-9]+-[a-z0-9-]+$/.test(line))
+  );
 }
 
 function scanBinary(file) {
@@ -119,8 +159,14 @@ async function roslynAnalyzers({ work }) {
       url: `${NUGET}/${name.toLowerCase()}/${version}/${name.toLowerCase()}.${version}.nupkg`,
       file: archive
     });
-    extract({ archive, directory });
-    for (const file of filesUnder({ directory, extension: ".dll" })) {
+    extract({
+      archive,
+      directory
+    });
+    for (const file of filesUnder({
+      directory,
+      extension: ".dll"
+    })) {
       for (const text of scanBinary(file)) {
         ids.push(...(text.match(pattern) ?? []));
       }
@@ -170,10 +216,17 @@ async function detekt({ work }) {
     file: archive
   });
   const directory = path.join(work, "detekt");
-  extract({ archive, directory });
+  extract({
+    archive,
+    directory
+  });
   run({
     command: "java",
-    args: ["-jar", path.join(directory, `detekt-cli-${DETEKT_VERSION}`, "lib", `detekt-cli-${DETEKT_VERSION}-all.jar`), "--generate-config"],
+    args: [
+      "-jar",
+      path.join(directory, `detekt-cli-${DETEKT_VERSION}`, "lib", `detekt-cli-${DETEKT_VERSION}-all.jar`),
+      "--generate-config"
+    ],
     cwd: directory
   });
   const lines = readFileSync(path.join(directory, "detekt.yml"), "utf8").split("\n");
@@ -195,12 +248,16 @@ async function ktlint({ work }) {
     file: archive
   });
   const directory = path.join(work, "ktlint");
-  extract({ archive, directory });
+  extract({
+    archive,
+    directory
+  });
   const rules = path.join(directory, "com", "pinterest", "ktlint", "ruleset", "standard", "rules");
   const ids = [];
   for (const file of readdirSync(rules)) {
     const match = /^([A-Za-z]+)Rule\.class$/.exec(file);
-    if (!match?.[1] || !statSync(path.join(rules, file)).isFile()) {
+    const isRuleClass = match?.[1] && statSync(path.join(rules, file)).isFile();
+    if (!isRuleClass) {
       continue;
     }
 
@@ -222,17 +279,40 @@ const work = mkdtempSync(path.join(tmpdir(), "avi12-ids-"));
 mkdirSync(OUTPUT, { recursive: true });
 try {
   const rust = clippyAndRustc({ work });
-  write({ tool: "clippy", source: `cargo clippy -- -W help`, ids: rust.clippy });
-  write({ tool: "rustc", source: `rustc -W help`, ids: rust.rustc });
-  write({ tool: "clang-tidy", source: `clang-tidy --list-checks -checks=*`, ids: clangTidy() });
+  write({
+    tool: "clippy",
+    source: `cargo clippy -- -W help`,
+    ids: rust.clippy
+  });
+  write({
+    tool: "rustc",
+    source: `rustc -W help`,
+    ids: rust.rustc
+  });
+  write({
+    tool: "clang-tidy",
+    source: `clang-tidy --list-checks -checks=*`,
+    ids: clangTidy()
+  });
   const analyzers = await roslynAnalyzers({ work });
   write({
     tool: "roslyn",
     source: `analyzer packages ${PACKAGES.map(item => `${item.name} ${item.version}`).join(", ")}; compiler warnings proved by dotnet build`,
     ids: normalize([...analyzers, ...compilerIds({ work })])
   });
-  write({ tool: "detekt", source: `detekt-cli ${DETEKT_VERSION} --generate-config (rule sets and rules)`, ids: await detekt({ work }) });
-  write({ tool: "ktlint", source: `ktlint-ruleset-standard ${KTLINT_VERSION}`, ids: await ktlint({ work }) });
+  write({
+    tool: "detekt",
+    source: `detekt-cli ${DETEKT_VERSION} --generate-config (rule sets and rules)`,
+    ids: await detekt({ work })
+  });
+  write({
+    tool: "ktlint",
+    source: `ktlint-ruleset-standard ${KTLINT_VERSION}`,
+    ids: await ktlint({ work })
+  });
 } finally {
-  rmSync(work, { recursive: true, force: true });
+  rmSync(work, {
+    recursive: true,
+    force: true
+  });
 }

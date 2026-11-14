@@ -28,11 +28,17 @@ function listIds({ text, pattern }) {
  */
 export function extractIds({ language, text }) {
   if (language === "rust") {
-    return listIds({ text, pattern: RUST_PATTERN });
+    return listIds({
+      text,
+      pattern: RUST_PATTERN
+    });
   }
 
   if (language === "kotlin") {
-    return listIds({ text, pattern: KOTLIN_PATTERN });
+    return listIds({
+      text,
+      pattern: KOTLIN_PATTERN
+    });
   }
 
   if (language === "cpp") {

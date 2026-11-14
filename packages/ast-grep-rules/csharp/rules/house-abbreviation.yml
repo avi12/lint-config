@@ -4,7 +4,7 @@ severity: error
 message: "house rule no-abbreviations: write the full word (direction, not dir); the deny-list is in this rule"
 rule:
   kind: identifier
-  regex: '(^|_)(dir|msg|cfg|btn|buf|tmp|idx|cnt|val|arr|obj|evt|req|res|resp|src|dst|pkg|func|cb|prev|curr|ptr|str|params|attr|elem|cmd|mgr|proc|num|fmt)(_|$)|(^|[a-z0-9])(Dir|Msg|Cfg|Btn|Buf|Tmp|Idx|Cnt|Val|Arr|Obj|Evt|Req|Res|Resp|Src|Dst|Pkg|Func|Cb|Prev|Curr|Ptr|Str|Params|Attr|Elem|Cmd|Mgr|Proc|Num|Fmt)([A-Z]|$)'
+  regex: "(^|_)(dir|msg|cfg|btn|buf|tmp|idx|cnt|val|arr|obj|evt|req|res|resp|src|dst|pkg|func|cb|prev|curr|ptr|str|params|attr|elem|cmd|mgr|proc|num|fmt)(_|$)|(^|[a-z0-9])(Dir|Msg|Cfg|Btn|Buf|Tmp|Idx|Cnt|Val|Arr|Obj|Evt|Req|Res|Resp|Src|Dst|Pkg|Func|Cb|Prev|Curr|Ptr|Str|Params|Attr|Elem|Cmd|Mgr|Proc|Num|Fmt)([A-Z]|$)"
   inside:
     field: name
     stopBy: neighbor

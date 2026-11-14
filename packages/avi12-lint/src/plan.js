@@ -1,4 +1,6 @@
 import { clampConcurrency, eslintFlags, MIN_CONCURRENCY } from "./eslint-flags.js";
+import { ignoredGlobs, isIgnoredPath, LANGUAGE_PATTERNS } from "./languages.js";
+import { isTextChecked as isTextCheckedFile } from "./text-check.js";
 
 const OXLINT_CONFIG = ".oxlintrc.json";
 const NESTED_CONFIG_FLAG = "--disable-nested-config";
@@ -12,6 +14,9 @@ const TSRS_LINT_BINARY = `${BIN_DIRECTORY}/tsrs-lint`;
 const OXFMT_BINARY = `${BIN_DIRECTORY}/oxfmt`;
 const FALLOW_NODE_OPTIONS = "--max-old-space-size=4096";
 const FALLOW_BINARY = `${BIN_DIRECTORY}/fallow`;
+const AST_GREP_BINARY = `${BIN_DIRECTORY}/ast-grep`;
+const AST_GREP_PACK = "node_modules/ast-grep-rules-avi12";
+const TEXT_CHECK_COMMAND = ["avi12-lint", "text-check"];
 const WINDOWS_LAUNCHER_EXTENSION = ".CMD";
 const IGNORE_FILES = [".gitignore", ".prettierignore"];
 const SCRIPT_PATTERN = /\.(?:[cm]?[jt]s|svelte|vue)$/;
@@ -50,6 +55,7 @@ export function plan({
   fallowBase,
   isFallowFull = false,
   isNestedConfigAllowed = false,
+  languages = [],
   platform = "linux"
 }) {
   function hasAny(names) {
@@ -186,6 +192,7 @@ export function plan({
       env: {
         NODE_OPTIONS: FALLOW_NODE_OPTIONS
       },
+      isGuarded: true,
       isParallel
     });
   }
@@ -198,9 +205,101 @@ export function plan({
       env: {
         NODE_OPTIONS: FALLOW_NODE_OPTIONS
       },
+      isGuarded: true,
+      isParallel
+    });
+  }
+
+  steps.push(
+    ...languageSteps({
+      hasFile,
+      languages,
+      changedFiles,
+      isParallel
+    })
+  );
+  return steps;
+}
+
+/**
+ * The steps for the repo's non-TypeScript languages (`languages`, from `detectLanguages`): one `ast-grep <language>`
+ * step per language, planned when the `ast-grep` binary and the `ast-grep-rules-avi12` pack are installed, and
+ * one `text-check` step (suppress comments and em dashes in any language). With `changedFiles` a step is given
+ * that language's changed files outside build, dependency and vendored folders and is skipped when it has none;
+ * without them ast-grep walks the project (it honours `.gitignore`) with those folders excluded. Both steps are
+ * guarded by the memory and time watchdog.
+ */
+function languageSteps({ hasFile, languages, changedFiles, isParallel }) {
+  const steps = [];
+  const isAstGrepInstalled = hasFile(AST_GREP_BINARY);
+  for (const language of languages) {
+    const config = `${AST_GREP_PACK}/${language}/sgconfig.yml`;
+    const isPackInstalled = hasFile(config);
+    const files = changedFiles?.filter(file => LANGUAGE_PATTERNS[language].test(file) && !isIgnoredPath(file));
+    const isSkipped = files?.length === 0;
+    if (!isAstGrepInstalled || !isPackInstalled || isSkipped) {
+      continue;
+    }
+
+    const head = ["ast-grep", "scan", "-c", config];
+    const excludes = ignoredGlobs().map(glob => `"${glob}"`);
+    steps.push({
+      name: `ast-grep ${language}`,
+      command: files ? [...head, ...files] : [...head, ...excludes.flatMap(glob => ["--globs", glob]), "."],
+      split: files
+        ? {
+            head,
+            files,
+            tail: []
+          }
+        : undefined,
+      env: {},
+      isGuarded: true,
+      isParallel
+    });
+  }
+
+  const hasLanguage = languages.length > 0;
+  const textFiles = changedFiles?.filter(file => isTextCheckedFile(file));
+  if (hasLanguage && textFiles?.length !== 0) {
+    steps.push({
+      name: "text-check",
+      command: [...TEXT_CHECK_COMMAND, ...(textFiles ?? [])],
+      split: textFiles
+        ? {
+            head: TEXT_CHECK_COMMAND,
+            files: textFiles,
+            tail: []
+          }
+        : undefined,
+      env: {},
+      isGuarded: true,
       isParallel
     });
   }
 
   return steps;
+}
+
+/**
+ * What `avi12-lint` says when a repo holds a language whose check cannot run: the `ast-grep` binary or a language's
+ * rule pack is missing. Pure; the runner prints each message.
+ */
+export function languageNotices({ hasFile, languages }) {
+  const notices = [];
+  const isAstGrepMissing = languages.length > 0 && !hasFile(AST_GREP_BINARY);
+  if (isAstGrepMissing) {
+    notices.push(
+      "avi12-lint: ast-grep is not installed, so the Rust, C++, C# and Kotlin rules were skipped; add @ast-grep/cli as a devDependency"
+    );
+  }
+
+  for (const language of languages) {
+    const isPackMissing = hasFile(AST_GREP_BINARY) && !hasFile(`${AST_GREP_PACK}/${language}/sgconfig.yml`);
+    if (isPackMissing) {
+      notices.push(`avi12-lint: ast-grep-rules-avi12 is not installed, so the ${language} rules were skipped`);
+    }
+  }
+
+  return notices;
 }

@@ -16,7 +16,9 @@ import {
   treeUsage,
   watchdog
 } from "#src/guard.js";
-import { plan } from "#src/plan.js";
+import { detectLanguages } from "#src/languages.js";
+import { languageNotices, plan } from "#src/plan.js";
+import { findingsOf, isTextChecked, parseExemptions, withoutExempted } from "#src/text-check.js";
 
 const args = process.argv.slice(2);
 
@@ -47,9 +49,43 @@ function writeFallowConfig() {
   console.log(`avi12-lint: wrote ${FALLOW_OUTPUT} from ${FALLOW_PRESET} and ${FALLOW_LOCAL}`);
 }
 
+const CONFIG_FILE = "avi12-lint.config.json";
+
+function listProjectFiles() {
+  const { stdout } = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" });
+  return stdout.split("\n").filter(Boolean);
+}
+
+function runTextCheck(requested) {
+  const config = existsSync(CONFIG_FILE) ? JSON.parse(readFileSync(CONFIG_FILE, "utf8")) : {};
+  const exemptions = parseExemptions(config);
+  const files = (requested.length > 0 ? requested : listProjectFiles()).filter(isTextChecked);
+  const findings = files
+    .filter(file => existsSync(file))
+    .flatMap(file =>
+      findingsOf({
+        file,
+        text: readFileSync(file, "utf8")
+      })
+    );
+  const reported = withoutExempted({
+    findings,
+    exemptions
+  });
+  for (const { file, line, rule, message } of reported) {
+    console.log(`${file}:${line}: ${rule}: ${message}`);
+  }
+
+  return reported.length === 0 ? 0 : 1;
+}
+
 if (args[0] === "fallow-config") {
   writeFallowConfig();
   process.exit(0);
+}
+
+if (args[0] === "text-check") {
+  process.exit(runTextCheck(args.slice(1)));
 }
 
 const concurrencyIndex = args.indexOf("--concurrency");
@@ -73,6 +109,15 @@ function repoHas(glob) {
   return status === 0 ? stdout.trim() !== "" : true;
 }
 
+function repoHasMarker(pathspec) {
+  const { stdout, status } = spawnSync(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard", "--", `:(glob)**/${pathspec}`],
+    { encoding: "utf8" }
+  );
+  return status === 0 && stdout.trim() !== "";
+}
+
 const OXFMT_PRESET = "oxfmt-config-avi12/oxfmt.json";
 
 function presetIgnores() {
@@ -83,6 +128,8 @@ function presetIgnores() {
     return [];
   }
 }
+
+const languages = detectLanguages(repoHasMarker);
 
 const steps = plan({
   hasFile: existsSync,
@@ -95,8 +142,16 @@ const steps = plan({
   isFallowFull: args.includes("--full") || process.env["AVI12_LINT_FALLOW_FULL"] === "1",
   isNestedConfigAllowed: process.env["AVI12_LINT_NESTED_CONFIG"] === "1" || args.includes("--nested-config"),
   oxfmtIgnores: presetIgnores(),
+  languages,
   platform: process.platform
 });
+
+for (const notice of languageNotices({
+  hasFile: existsSync,
+  languages
+})) {
+  console.log(notice);
+}
 
 const isFallowSkipped = isStaged && existsSync("node_modules/.bin/fallow");
 if (isFallowSkipped) {
@@ -144,9 +199,7 @@ function terminate({ pid, usage }) {
   }
 }
 
-const GUARDED_STEP = "fallow";
-
-function run({ name, command, env, isFirst }) {
+function run({ name, command, env, isFirst, isGuarded }) {
   return new Promise(resolve => {
     const child = spawn("pnpm", ["exec", ...command], {
       shell: true,
@@ -166,7 +219,6 @@ function run({ name, command, env, isFirst }) {
     const chunks = [];
     let isDone = false;
     let failure;
-    const isGuarded = name === GUARDED_STEP;
     if (isGuarded) {
       watchdog({
         ...guardLimits(process.env),
@@ -207,7 +259,7 @@ function run({ name, command, env, isFirst }) {
 }
 
 function runStep(step) {
-  const { name, command, env, split } = step;
+  const { name, command, env, split, isGuarded } = step;
   const commands = split
     ? batchCommands({
         ...split,
@@ -224,7 +276,8 @@ function runStep(step) {
         name,
         command: batch,
         env,
-        isFirst
+        isFirst,
+        isGuarded
       })
   });
 }

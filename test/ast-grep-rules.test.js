@@ -24,7 +24,10 @@ for (const language of LANGUAGES) {
   test(`${language}: every fixture flags exactly the lines marked and no other`, () => {
     const found = fixtures(language);
     assert.ok(found.length > 0, `${language} has no fixtures`);
-    const findings = astGrepFindings({ language, files: found.map(({ file }) => file) });
+    const findings = astGrepFindings({
+      language,
+      files: found.map(({ file }) => file)
+    });
     const mismatches = [];
     for (const { file, rule, lines } of found) {
       const expected = lines.flatMap((line, index) => (line.includes(FLAG_MARKER) ? [index + 1] : []));
@@ -76,10 +79,36 @@ test("every rule has its file name as id, its language, severity error and a mes
   const rowIds = new Set(RULES.rules.map(row => row.id));
   for (const language of LANGUAGES) {
     for (const { id, text } of ruleFiles(language)) {
-      assert.equal(field({ text, key: "id" }), id, `${language}/${id}: id`);
-      assert.equal(field({ text, key: "language" }), language, `${language}/${id}: language`);
-      assert.equal(field({ text, key: "severity" }), "error", `${language}/${id}: severity`);
-      const row = /^house rule ([a-z-]+): /.exec(field({ text, key: "message" }) ?? "")?.[1];
+      assert.equal(
+        field({
+          text,
+          key: "id"
+        }),
+        id,
+        `${language}/${id}: id`
+      );
+      assert.equal(
+        field({
+          text,
+          key: "language"
+        }),
+        language,
+        `${language}/${id}: language`
+      );
+      assert.equal(
+        field({
+          text,
+          key: "severity"
+        }),
+        "error",
+        `${language}/${id}: severity`
+      );
+      const row = /^house rule ([a-z-]+): /.exec(
+        field({
+          text,
+          key: "message"
+        }) ?? ""
+      )?.[1];
       assert.ok(rowIds.has(row), `${language}/${id}: the message names a row of rules.json`);
     }
   }
@@ -90,7 +119,13 @@ test("a rule shared by languages says the same thing in each", () => {
   for (const language of LANGUAGES) {
     for (const { id, text } of ruleFiles(language)) {
       const entry = byId.get(id) ?? [];
-      entry.push({ message: field({ text, key: "message" }), regex: /regex: '([^']{100,})'/.exec(text)?.[1] });
+      entry.push({
+        message: field({
+          text,
+          key: "message"
+        }),
+        regex: /regex: '([^']{100,})'/.exec(text)?.[1]
+      });
       byId.set(id, entry);
     }
   }
@@ -98,7 +133,10 @@ test("a rule shared by languages says the same thing in each", () => {
   for (const [id, entries] of byId) {
     const messages = new Set(entries.map(({ message }) => message));
     const regexes = new Set(entries.map(({ regex }) => regex).filter(Boolean));
-    assert.ok(messages.size === 1 || id.startsWith("house-no-") || id === "house-null-forgiving", `${id}: messages differ`);
+    assert.ok(
+      messages.size === 1 || id.startsWith("house-no-") || id === "house-null-forgiving",
+      `${id}: messages differ`
+    );
     assert.ok(regexes.size <= 1, `${id}: the deny-list differs between languages`);
   }
 });
@@ -107,7 +145,10 @@ test("an exemption (ignores or files) in a rule carries a note saying why", () =
   for (const language of LANGUAGES) {
     for (const { id, text } of ruleFiles(language)) {
       const hasExemption = /^(ignores|files):/m.test(text);
-      const note = field({ text, key: "note" });
+      const note = field({
+        text,
+        key: "note"
+      });
       assert.ok(!hasExemption || (note?.length ?? 0) > 10, `${language}/${id}: ignores or files needs a note`);
     }
   }
