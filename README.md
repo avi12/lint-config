@@ -15,6 +15,7 @@ They are consumed straight from GitHub and never published to npm
 | `packages/stylelint-config` | stylelint preset for CSS and Svelte, Vue or HTML style blocks |
 | `packages/fallow-config` | fallow preset for the dead-code audit |
 | `packages/biome-config` | optional and minimal: only `noFloatingPromises` |
+| `packages/house-rules` | the rule parity matrix (`rules.json`): each TypeScript house rule and its Rust, C++, C# and Kotlin equivalent; see `docs/non-ts-languages.md` |
 | `packages/avi12-lint` | `avi12-lint` runs the tools one after another |
 
 ## Install
