@@ -1,0 +1,27 @@
+id: house-index-prefix
+language: rust
+severity: error
+message: "house rule index-prefix: an index variable is i-prefixed (i_item) or a bare i or j"
+rule:
+  kind: identifier
+  not:
+    regex: ^(i|j|i[A-Z][A-Za-z0-9]*|i_[a-z0-9_]+)$
+  any:
+    - inside:
+        field: pattern
+        stopBy: neighbor
+        kind: for_expression
+        has:
+          field: value
+          kind: range_expression
+    - inside:
+        stopBy: neighbor
+        kind: tuple_pattern
+        inside:
+          field: pattern
+          stopBy: neighbor
+          kind: for_expression
+          has:
+            field: value
+            pattern: $ITEMS.enumerate()
+      nthChild: 1

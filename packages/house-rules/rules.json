@@ -49,7 +49,7 @@
       "rust": ["map", "clippy redundant_else, collapsible_else_if"],
       "cpp": ["map", "readability-else-after-return"],
       "csharp": ["map", "RCS1208"],
-      "kotlin": ["gap", "ast-grep house-else-after-return"]
+      "kotlin": ["gap", "ast-grep house-else-after-return, house-lonely-if"]
     },
     {
       "id": "max-nesting",
@@ -203,8 +203,8 @@
       "intent": "no disable or suppress comment or attribute; exemptions live in config with a reason",
       "ts": ["no-warning-comments", "typescript/ban-ts-comment"],
       "rust": ["map", "clippy allow_attributes, allow_attributes_without_reason"],
-      "cpp": ["gap", "ast-grep house-no-nolint (NOLINT comments)"],
-      "csharp": ["gap", "ast-grep house-no-pragma-disable; BannedApiAnalyzers for SuppressMessage"],
+      "cpp": ["gap", "avi12-lint text check no-suppress-comment (NOLINT and clang diagnostic pragmas)"],
+      "csharp": ["gap", "avi12-lint text check no-suppress-comment (pragma warning disable, SuppressMessage)"],
       "kotlin": ["map", "detekt ForbiddenAnnotation (Suppress), ForbiddenComment"]
     },
     {
@@ -220,10 +220,10 @@
       "id": "no-em-dash",
       "intent": "no em dash in code, comments or docs",
       "ts": ["house/no-em-dash"],
-      "rust": ["gap", "avi12-lint text check (language-independent)"],
-      "cpp": ["gap", "avi12-lint text check (language-independent)"],
-      "csharp": ["gap", "avi12-lint text check (language-independent)"],
-      "kotlin": ["gap", "avi12-lint text check (language-independent)"]
+      "rust": ["gap", "avi12-lint text check no-em-dash"],
+      "cpp": ["gap", "avi12-lint text check no-em-dash"],
+      "csharp": ["gap", "avi12-lint text check no-em-dash"],
+      "kotlin": ["gap", "avi12-lint text check no-em-dash"]
     },
     {
       "id": "banned-apis",
@@ -302,7 +302,7 @@
       "intent": "one concern per file, named after its main declaration",
       "ts": ["doc:CLAUDE.md Code style"],
       "rust": ["na", "a file is a module"],
-      "cpp": ["gap", "ast-grep house-file-name (header and source pair)"],
+      "cpp": ["gap", "review only: a header and source pair is a file-system rule, no linter sees it"],
       "csharp": ["map", "StyleCop SA1649, SA1402"],
       "kotlin": ["map", "ktlint filename; detekt MatchingDeclarationName"]
     },

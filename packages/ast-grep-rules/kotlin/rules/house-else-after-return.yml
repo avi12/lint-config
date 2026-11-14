@@ -1,0 +1,33 @@
+id: house-else-after-return
+language: kotlin
+severity: error
+message: "house rule early-return: no else after a branch that returns or throws; drop the else and unindent"
+rule:
+  kind: if_expression
+  has:
+    field: alternative
+    stopBy: neighbor
+    kind: control_structure_body
+    not:
+      has:
+        kind: if_expression
+        stopBy: neighbor
+  all:
+    - has:
+        field: consequence
+        stopBy: neighbor
+        any:
+          - has:
+              kind: statements
+              stopBy: neighbor
+              has:
+                kind: jump_expression
+                regex: ^(return|throw)\b
+                stopBy: neighbor
+                nthChild:
+                  position: 1
+                  reverse: true
+          - has:
+              kind: jump_expression
+              regex: ^(return|throw)\b
+              stopBy: neighbor

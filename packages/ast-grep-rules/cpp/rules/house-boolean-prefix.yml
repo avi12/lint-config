@@ -1,0 +1,40 @@
+id: house-boolean-prefix
+language: cpp
+severity: error
+message: "house rule boolean-prefix: a boolean starts with is, has, can or should (is_ in snake_case)"
+rule:
+  any:
+    - kind: identifier
+      inside:
+        field: declarator
+        stopBy: neighbor
+        kind: init_declarator
+        inside:
+          stopBy: neighbor
+          kind: declaration
+          has:
+            field: type
+            regex: ^bool$
+    - kind: identifier
+      inside:
+        field: declarator
+        stopBy: neighbor
+        any:
+          - kind: declaration
+            has:
+              field: type
+              regex: ^bool$
+          - kind: parameter_declaration
+            has:
+              field: type
+              regex: ^bool$
+    - kind: field_identifier
+      inside:
+        field: declarator
+        stopBy: neighbor
+        kind: field_declaration
+        has:
+          field: type
+          regex: ^bool$
+  not:
+    regex: ^(is|has|can|should)[A-Z_]

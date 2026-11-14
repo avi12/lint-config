@@ -1,0 +1,18 @@
+id: house-compound-condition
+language: cpp
+severity: error
+message: "house rule named-boolean-condition: extract a compound or comparing condition into a named boolean first"
+rule:
+  kind: binary_expression
+  has:
+    field: operator
+    regex: ^(&&|\|\||==|!=|<=|>=|<|>)$
+  inside:
+    field: value
+    stopBy: neighbor
+    kind: condition_clause
+    inside:
+      stopBy: neighbor
+      any:
+        - kind: if_statement
+        - kind: while_statement

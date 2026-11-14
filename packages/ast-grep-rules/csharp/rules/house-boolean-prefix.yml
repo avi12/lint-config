@@ -1,0 +1,27 @@
+id: house-boolean-prefix
+language: csharp
+severity: error
+message: "house rule boolean-prefix: a boolean starts with is, has, can or should (is_ in snake_case)"
+rule:
+  kind: identifier
+  inside:
+    field: name
+    stopBy: neighbor
+    any:
+      - kind: variable_declarator
+        inside:
+          stopBy: neighbor
+          kind: variable_declaration
+          has:
+            field: type
+            regex: ^bool$
+      - kind: parameter
+        has:
+          field: type
+          regex: ^bool$
+      - kind: property_declaration
+        has:
+          field: type
+          regex: ^bool$
+  not:
+    regex: ^(is|has|can|should|Is|Has|Can|Should)[A-Z0-9_]

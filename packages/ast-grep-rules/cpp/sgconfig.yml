@@ -1,0 +1,11 @@
+ruleDirs:
+  - rules
+languageGlobs:
+  cpp:
+    - "*.h"
+    - "*.hpp"
+    - "*.hh"
+    - "*.hxx"
+    - "*.ipp"
+    - "*.cc"
+    - "*.cxx"

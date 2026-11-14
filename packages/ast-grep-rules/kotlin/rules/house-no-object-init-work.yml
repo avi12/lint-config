@@ -1,0 +1,14 @@
+id: house-no-object-init-work
+language: kotlin
+severity: error
+message: "house rule no-import-work: no init block in an object; work at load runs when the class loads, so use by lazy or a function"
+rule:
+  kind: anonymous_initializer
+  inside:
+    stopBy: neighbor
+    kind: class_body
+    inside:
+      stopBy: neighbor
+      any:
+        - kind: object_declaration
+        - kind: companion_object

@@ -1,0 +1,6 @@
+id: house-no-super-path
+language: rust
+severity: error
+message: "house rule no-parent-imports: import from the crate root (crate::...), never a super:: climb"
+rule:
+  kind: super

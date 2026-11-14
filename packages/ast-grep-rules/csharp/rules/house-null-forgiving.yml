@@ -1,0 +1,9 @@
+id: house-null-forgiving
+language: csharp
+severity: error
+message: "house rule no-unchecked-unwrap: no null-forgiving operator (!); check for null or make the type non-nullable"
+rule:
+  kind: postfix_unary_expression
+  has:
+    regex: ^!$
+    stopBy: neighbor

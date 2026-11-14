@@ -1,0 +1,29 @@
+id: house-boolean-prefix
+language: rust
+severity: error
+message: "house rule boolean-prefix: a boolean starts with is, has, can or should (is_ in snake_case)"
+rule:
+  any:
+    - kind: identifier
+      inside:
+        field: pattern
+        stopBy: neighbor
+        any:
+          - kind: let_declaration
+            has:
+              field: type
+              regex: ^bool$
+          - kind: parameter
+            has:
+              field: type
+              regex: ^bool$
+    - kind: field_identifier
+      inside:
+        field: name
+        stopBy: neighbor
+        kind: field_declaration
+        has:
+          field: type
+          regex: ^bool$
+  not:
+    regex: ^(is|has|can|should)_[a-z0-9_]+$

@@ -1,0 +1,20 @@
+id: house-compound-condition
+language: kotlin
+severity: error
+message: "house rule named-boolean-condition: extract a compound or comparing condition into a named boolean first"
+rule:
+  any:
+    - kind: conjunction_expression
+    - kind: disjunction_expression
+    - kind: comparison_expression
+    - kind: equality_expression
+  inside:
+    stopBy: neighbor
+    any:
+      - kind: if_expression
+      - kind: while_statement
+      - kind: do_while_statement
+  not:
+    inside:
+      stopBy: neighbor
+      kind: control_structure_body

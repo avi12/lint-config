@@ -1,0 +1,25 @@
+{
+  "name": "ast-grep-rules-avi12",
+  "version": "0.5.1",
+  "description": "ast-grep rules that carry the TypeScript house rules to Rust, C++, C# and Kotlin where no linter has them",
+  "license": "Apache-2.0",
+  "files": [
+    "rust/sgconfig.yml",
+    "rust/rules",
+    "cpp/sgconfig.yml",
+    "cpp/rules",
+    "csharp/sgconfig.yml",
+    "csharp/rules",
+    "kotlin/sgconfig.yml",
+    "kotlin/rules"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./rust/sgconfig.yml": "./rust/sgconfig.yml",
+    "./cpp/sgconfig.yml": "./cpp/sgconfig.yml",
+    "./csharp/sgconfig.yml": "./csharp/sgconfig.yml",
+    "./kotlin/sgconfig.yml": "./kotlin/sgconfig.yml",
+    "./package.json": "./package.json"
+  }
+}

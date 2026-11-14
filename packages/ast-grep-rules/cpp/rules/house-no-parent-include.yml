@@ -1,0 +1,9 @@
+id: house-no-parent-include
+language: cpp
+severity: error
+message: "house rule no-parent-imports: include from the project root, never a ../ climb"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    regex: '(^|[<"/\x5C])\.\.[/\x5C]'

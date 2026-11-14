@@ -1,0 +1,9 @@
+id: house-null-forgiving
+language: kotlin
+severity: error
+message: "house rule no-unchecked-unwrap: no !! operator; check for null, use a safe call or make the type non-nullable"
+rule:
+  kind: postfix_expression
+  has:
+    regex: ^!!$
+    stopBy: neighbor

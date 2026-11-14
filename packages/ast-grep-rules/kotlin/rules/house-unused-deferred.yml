@@ -1,0 +1,10 @@
+id: house-unused-deferred
+language: kotlin
+severity: error
+message: "house rule no-floating-result: the Deferred from async is dropped; await it, keep it, or use launch"
+rule:
+  kind: call_expression
+  regex: ^(\w+\.)?async\b
+  inside:
+    stopBy: neighbor
+    kind: statements

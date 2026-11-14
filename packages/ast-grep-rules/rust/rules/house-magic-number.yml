@@ -1,0 +1,28 @@
+id: house-magic-number
+language: rust
+severity: error
+message: "house rule no-magic-numbers: a number other than 0, 1, 2 (and -1) is a named constant"
+rule:
+  all:
+    - any:
+        - kind: integer_literal
+          not:
+            regex: ^[012](_?[iu](8|16|32|64|128|size))?$
+        - kind: float_literal
+          not:
+            regex: ^[012](\.0)?(_?f(32|64))?$
+    - not:
+        inside:
+          stopBy: end
+          any:
+            - kind: const_item
+            - kind: static_item
+            - kind: attribute_item
+            - kind: enum_variant
+            - kind: array_type
+            - kind: macro_invocation
+    - not:
+        inside:
+          field: length
+          stopBy: neighbor
+          kind: array_expression

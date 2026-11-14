@@ -1,0 +1,17 @@
+id: house-index-prefix
+language: kotlin
+severity: error
+message: "house rule index-prefix: an index variable is i-prefixed (iItem) or a bare i or j"
+rule:
+  kind: simple_identifier
+  not:
+    regex: ^(i|j|i[A-Z][A-Za-z0-9]*)$
+  inside:
+    stopBy: neighbor
+    kind: variable_declaration
+    inside:
+      stopBy: neighbor
+      kind: for_statement
+      has:
+        kind: range_expression
+        stopBy: neighbor

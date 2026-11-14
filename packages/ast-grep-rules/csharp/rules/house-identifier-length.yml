@@ -1,0 +1,18 @@
+id: house-identifier-length
+language: csharp
+severity: error
+message: "house rule identifier-length: names have at least 3 characters (allowed: i, j, x, y, id, to, on, ok, _)"
+rule:
+  kind: identifier
+  regex: ^[A-Za-z_][A-Za-z0-9_]?$
+  not:
+    regex: ^(i|j|x|y|id|to|on|ok|_)$
+  inside:
+    field: name
+    stopBy: neighbor
+    any:
+      - kind: variable_declarator
+      - kind: parameter
+      - kind: method_declaration
+      - kind: property_declaration
+      - kind: local_function_statement

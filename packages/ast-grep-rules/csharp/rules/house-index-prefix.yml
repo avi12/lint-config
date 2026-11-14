@@ -1,0 +1,19 @@
+id: house-index-prefix
+language: csharp
+severity: error
+message: "house rule index-prefix: an index variable is i-prefixed (iItem) or a bare i or j"
+rule:
+  kind: identifier
+  not:
+    regex: ^(i|j|i[A-Z][A-Za-z0-9]*|i_[a-z0-9_]+)$
+  inside:
+    field: name
+    stopBy: neighbor
+    kind: variable_declarator
+    inside:
+      stopBy: neighbor
+      kind: variable_declaration
+      inside:
+        field: initializer
+        stopBy: neighbor
+        kind: for_statement

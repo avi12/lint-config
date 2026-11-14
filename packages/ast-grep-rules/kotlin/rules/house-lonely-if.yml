@@ -1,0 +1,21 @@
+id: house-lonely-if
+language: kotlin
+severity: error
+message: "house rule early-return: an if as the only statement of an else is an else if"
+rule:
+  kind: if_expression
+  has:
+    field: alternative
+    stopBy: neighbor
+    has:
+      kind: statements
+      stopBy: neighbor
+      all:
+        - has:
+            kind: if_expression
+            nthChild: 1
+            stopBy: neighbor
+        - not:
+            has:
+              nthChild: 2
+              stopBy: neighbor
