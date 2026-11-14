@@ -18,7 +18,7 @@ class Counter {
   [[nodiscard]] int Total() const;
 
  private:
-  int total = 0;
+  int total_ = 0;
 };
 
 [[nodiscard]] int Clamp(int value, int limit);

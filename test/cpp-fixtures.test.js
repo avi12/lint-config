@@ -61,7 +61,7 @@ test(
     const { directory } = materialize({ fixture: "ok" });
     runCli({ directory });
     const header = join(directory, "src", "ok.h");
-    writeFileSync(header, readFileSync(header, "utf8").replace("int total = 0;", "int Total_ = 0;"));
+    writeFileSync(header, readFileSync(header, "utf8").replace("int total_ = 0;", "int Bad_Name = 0;"));
     const third = runCli({ directory });
     assert.equal(third.status, 1);
     assert.match(third.output, /clang-tidy 1 units, 0 cached, 1 analysed/);
@@ -75,7 +75,7 @@ test(
   () => {
     const { directory } = materialize({ fixture: "ok" });
     const source = join(directory, "src", "ok.cpp");
-    writeFileSync(source, readFileSync(source, "utf8").replace("total += amount;", "total   +=   amount ;"));
+    writeFileSync(source, readFileSync(source, "utf8").replace("total_ += amount;", "total_   +=   amount ;"));
     const checked = runCli({ directory });
     assert.equal(checked.status, 1);
     assert.match(checked.output, /ok\.cpp:\d+:\d+: (?:error|warning): code should be clang-formatted/);

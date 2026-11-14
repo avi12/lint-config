@@ -3,11 +3,11 @@
 namespace ok {
 
 void Counter::Add(int amount) {
-  total += amount;
+  total_ += amount;
 }
 
 int Counter::Total() const {
-  return total;
+  return total_;
 }
 
 int Clamp(int value, int limit) {
