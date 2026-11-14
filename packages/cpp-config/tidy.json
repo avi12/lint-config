@@ -68,7 +68,8 @@
     "modernize-macro-to-enum": "the macros are Win32 and build values the code does not own",
     "google-runtime-int": "the Win32 ABI types (DWORD, LONG, ULONG) are the contract",
     "modernize-return-braced-init-list": "a named constructor call reads clearer at a return",
-    "modernize-use-ranges": "its fixer writes std::ranges::sort(range, , comparator) with an empty argument, which does not compile (LLVM 22.1.7)"
+    "modernize-use-ranges": "its fixer writes std::ranges::sort(range, , comparator) with an empty argument, which does not compile (LLVM 22.1.7)",
+    "misc-use-internal-linkage": "its fixer adds static to DllMain and wmain, which the loader and the linker find by name"
   },
   "headerFilterRegex": "(^|[/\\\\])(src|include)[/\\\\].*\\.(h|hpp)$",
   "warningsAsErrors": "*",
@@ -128,6 +129,8 @@
     "readability-identifier-naming.PrivateMemberCase": "camelBack",
     "readability-identifier-naming.PrivateMemberSuffix": "_",
     "readability-identifier-naming.ProtectedMemberCase": "camelBack",
-    "readability-identifier-naming.ProtectedMemberSuffix": "_"
+    "readability-identifier-naming.ProtectedMemberSuffix": "_",
+    "readability-identifier-naming.FunctionIgnoredRegexp": "^(main|wmain|WinMain|wWinMain|DllMain)$",
+    "readability-identifier-naming.GlobalVariableIgnoredRegexp": "^__.*"
   }
 }
