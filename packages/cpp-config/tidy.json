@@ -67,7 +67,8 @@
     "modernize-raw-string-literal": "an escaped literal is as readable and diffs smaller",
     "modernize-macro-to-enum": "the macros are Win32 and build values the code does not own",
     "google-runtime-int": "the Win32 ABI types (DWORD, LONG, ULONG) are the contract",
-    "modernize-return-braced-init-list": "a named constructor call reads clearer at a return"
+    "modernize-return-braced-init-list": "a named constructor call reads clearer at a return",
+    "modernize-use-ranges": "its fixer writes std::ranges::sort(range, , comparator) with an empty argument, which does not compile (LLVM 22.1.7)"
   },
   "headerFilterRegex": "(^|[/\\\\])(src|include)[/\\\\].*\\.(h|hpp)$",
   "warningsAsErrors": "*",
@@ -123,6 +124,10 @@
     "readability-identifier-naming.MacroDefinitionCase": "UPPER_CASE",
     "readability-identifier-naming.StaticVariableCase": "camelBack",
     "readability-identifier-naming.StaticVariablePrefix": "s_",
-    "readability-identifier-naming.MacroDefinitionIgnoredRegexp": "^[A-Z0-9_]+_H_$"
+    "readability-identifier-naming.MacroDefinitionIgnoredRegexp": "^[A-Z0-9_]+_H_$",
+    "readability-identifier-naming.PrivateMemberCase": "camelBack",
+    "readability-identifier-naming.PrivateMemberSuffix": "_",
+    "readability-identifier-naming.ProtectedMemberCase": "camelBack",
+    "readability-identifier-naming.ProtectedMemberSuffix": "_"
   }
 }

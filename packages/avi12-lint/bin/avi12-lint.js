@@ -586,7 +586,7 @@ function run({ name, command, env, rawEnv, limits, isFirst, isGuarded, isDirect,
   });
 }
 
-const USAGE_TTL_MS = 2000;
+const USAGE_TTL_MS = 700;
 let usageReadAt = 0;
 let usageMegabytes = 0;
 

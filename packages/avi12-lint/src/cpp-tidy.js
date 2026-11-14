@@ -16,6 +16,8 @@ import {
 } from "./cpp.js";
 
 const ADMISSION_WAIT_MS = 200;
+const CALIBRATION_UNITS = 4;
+const CALIBRATION_MS = 4000;
 const MS_PER_SECOND = 1000;
 
 function databaseEntries({ database, units, cwd, deps }) {
@@ -99,15 +101,32 @@ function applyExportedFixes({ directory, count, deps }) {
   return merged.size;
 }
 
+/**
+ * Runs the jobs through at most `size` workers, admitting one only while the tree's memory plus one more unit's
+ * measured peak fits the limit (a unit's cost is learned from the running ones: a C++/WinRT unit takes 1.5 GB where a
+ * plain one takes 130 MB), and no more than `CALIBRATION_UNITS` until the first unit finishes or
+ * `CALIBRATION_MS` have passed, so the cost shows before the pool fills.
+ */
 async function runPool({ jobs, size, deps, limits, start }) {
   const queue = [...jobs];
   const results = [];
+  const begin = deps.now();
   let running = 0;
+  let peakPerUnit = TIDY_MEGABYTES_PER_UNIT;
+  function isAdmitted() {
+    if (running > 0) {
+      peakPerUnit = Math.max(peakPerUnit, deps.usageMegabytes() / running);
+    }
+
+    const isCalibrating = results.length === 0 && deps.now() - begin < CALIBRATION_MS;
+    const cap = isCalibrating ? Math.min(size, CALIBRATION_UNITS) : size;
+    const isMemoryBound = running > 0 && deps.usageMegabytes() + peakPerUnit > limits.memoryLimitMb;
+    return running < cap && !isMemoryBound;
+  }
+
   async function worker() {
     while (queue.length > 0) {
-      const isOverMemory = deps.usageMegabytes() + TIDY_MEGABYTES_PER_UNIT > limits.memoryLimitMb;
-      const isWaiting = isOverMemory && running > 0;
-      if (isWaiting) {
+      if (!isAdmitted()) {
         await deps.wait(ADMISSION_WAIT_MS);
         continue;
       }

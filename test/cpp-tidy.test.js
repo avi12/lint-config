@@ -229,6 +229,27 @@ test("the pool stops starting units while memory is over the limit and something
   assert.equal(world.runs.length, 3);
 });
 
+test("a heavy unit shrinks the pool: admission follows the measured cost of the running units", async () => {
+  const units = ["a", "b", "c", "d", "e", "f"].map(name => `src/${name}.cpp`);
+  const world = makeWorld({
+    ...SOURCES,
+    ...Object.fromEntries(units.map(unit => [`/r/${unit}`, "int main() {}\n"]))
+  });
+  let live = 0;
+  const run = world.deps.run;
+  world.deps.run = async ({ command }) => {
+    live += 1;
+    const outcome = await run({ command });
+    live -= 1;
+    return outcome;
+  };
+  world.deps.usageMegabytes = () => live * 3000;
+  world.deps.wait = () => new Promise(done => setTimeout(done, 1));
+  await runCppTidy({ tidy: tidyOf({ units }), deps: world.deps });
+  assert.equal(world.runs.length, 6);
+  assert.ok(world.peak() <= 2, `peak ${world.peak()}`);
+});
+
 test("a sighmake buildscript supplies the flags, read from the repo", async () => {
   const world = makeWorld({
     ...SOURCES,

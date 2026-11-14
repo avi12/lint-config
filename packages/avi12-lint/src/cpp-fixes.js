@@ -1,3 +1,5 @@
+import { posix } from "node:path";
+
 const HEX_RADIX = 16;
 const HEX_ESCAPE_LENGTH = 4;
 const ESCAPES = {
@@ -57,6 +59,15 @@ function readScalar({ text, start }) {
   };
 }
 
+/**
+ * One spelling of a file path: forward slashes, `..` and `.` segments resolved, an upper-case drive letter. A unit in
+ * `test/` reports a header it includes as `test/../src/x.h`, which is the same file as `src/x.h`. Pure.
+ */
+export function canonicalPath(path) {
+  const normalized = posix.normalize(path.replaceAll("\\", "/"));
+  return normalized.replace(/^[a-z]:/, drive => drive.toUpperCase());
+}
+
 function replacementsOf(block) {
   const replacements = [];
   const entry = /^\s*- FilePath:\s*/gm;
@@ -77,7 +88,7 @@ function replacementsOf(block) {
       start: body.lastIndex
     });
     replacements.push({
-      file: file.value.replaceAll("\\", "/"),
+      file: canonicalPath(file.value),
       offset: Number(numbers[1]),
       length: Number(numbers[2]),
       text: text.value

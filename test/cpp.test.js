@@ -426,3 +426,20 @@ test("a folder gets its own .clang-tidy that inherits the root one and changes o
   assert.match(nested, /^ {2}readability-function-size\.LineThreshold: '300'$/m);
   assert.match(nested, /^#   readability-magic-numbers: tests state their expected numbers$/m);
 });
+
+test("two spellings of one header merge into one file, so its fixes apply once", () => {
+  const diagnostic = file => `  - DiagnosticName: x
+    DiagnosticMessage:
+      Replacements:
+        - FilePath:        '${file}'
+          Offset:          4
+          Length:          3
+          ReplacementText: 'bar'
+`;
+  const merged = mergeReplacements([
+    ...parseFixes(`---\nDiagnostics:\n${diagnostic("c:/r/test/../src/a.h")}`),
+    ...parseFixes(`---\nDiagnostics:\n${diagnostic("C:/r/src/a.h")}`)
+  ]);
+  assert.deepEqual([...merged.keys()], ["C:/r/src/a.h"]);
+  assert.equal(merged.get("C:/r/src/a.h").length, 1);
+});
