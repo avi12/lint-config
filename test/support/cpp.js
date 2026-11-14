@@ -38,6 +38,9 @@ export const FIXTURE_LOCAL = {
     headerFilterRegex: "src[/\\\\].*\\.h$",
     options: {
       "readability-function-cognitive-complexity.Threshold": "6"
+    },
+    optionReasons: {
+      "readability-function-cognitive-complexity.Threshold": "the fixture nests deeply on purpose"
     }
   }
 };

@@ -17,6 +17,7 @@ import {
   tidyPoolSize
 } from "avi12-lint/cpp";
 import { planCppConfig, staleCppFiles } from "avi12-lint/cpp-config";
+import { applyReplacements, mergeReplacements, parseFixes } from "avi12-lint/cpp-fixes";
 import { detectLanguages } from "avi12-lint/languages";
 import { plan } from "avi12-lint/plan";
 
@@ -77,6 +78,7 @@ test("a local file adds checks, switches checks off with a reason and sets optio
         enable: ["misc-include-cleaner"],
         disable: { "readability-magic-numbers": "offsets mirror the reversed binary" },
         options: { "readability-function-size.LineThreshold": "120" },
+        optionReasons: { "readability-function-size.LineThreshold": "the state machines are long by design" },
         headerFilterRegex: "^src/"
       }
     }
@@ -90,6 +92,7 @@ test("a local file adds checks, switches checks off with a reason and sets optio
   assert.match(tidy, /^ {2}misc-include-cleaner,$/m);
   assert.doesNotMatch(tidy, /^#   misc-include-cleaner/m);
   assert.match(tidy, /^ {2}readability-function-size.LineThreshold: '120'$/m);
+  assert.match(tidy, /^#   readability-function-size.LineThreshold: the state machines are long by design$/m);
   assert.match(tidy, /^HeaderFilterRegex: '\^src\/'$/m);
 });
 
@@ -99,12 +102,14 @@ test("a disabled check without a reason, and an unknown key, are problems", () =
     local: {
       tidy: {
         disable: { "misc-no-recursion": " " },
+        options: { "readability-function-size.LineThreshold": "1" },
         unknown: 1
       },
       extra: true
     }
   });
-  assert.equal(problems.length, 3);
+  assert.equal(problems.length, 4);
+  assert.match(problems.join("\n"), /tidy\.options "readability-function-size\.LineThreshold" needs a reason/);
   assert.match(problems.join("\n"), /tidy\.disable "misc-no-recursion" needs a reason/);
 });
 
@@ -146,11 +151,12 @@ test("a fix run formats in place, and clang-tidy fix is opt in", () => {
   const [format, tidy] = stepsOf({ isFix: true });
   assert.deepEqual(format.split.head, ["clang-format", "-i", "--style=file"]);
   assert.equal(tidy.tidy.isFix, false);
-  const [, fixing] = stepsOf({
+  const [fixing, formatAfter] = stepsOf({
     isFix: true,
     env: { AVI12_LINT_TIDY_FIX: "1" }
   });
   assert.equal(fixing.tidy.isFix, true);
+  assert.equal(formatAfter.name, "clang-format");
 });
 
 test("a changed run limits both steps to the changed covered files, and a config change widens it", () => {
@@ -355,4 +361,68 @@ test("diagnostics repeat across units and collapse to one block each, without th
   assert.equal(blocks.length, 2);
   assert.match(blocks[0], /^src\/a\.h:3:5: error: bad/);
   assert.deepEqual(diagnosticBlocks(`${output}\n${output}`).length, 4);
+});
+
+test("exported fixes parse, merge across units without duplicates or overlaps, and apply to the original bytes", () => {
+  const yaml = [
+    "---",
+    "Diagnostics:",
+    "  - DiagnosticName:  x",
+    "    DiagnosticMessage:",
+    "      FilePath:        'C:\\r\\a.h'",
+    "      Replacements:",
+    "        - FilePath:        'C:\\r\\a.h'",
+    "          Offset:          4",
+    "          Length:          3",
+    "          ReplacementText: 'it''s'",
+    "        - FilePath:        'C:/r/a.h'",
+    "          Offset:          10",
+    "          Length:          1",
+    '          ReplacementText: "X\n\x41"',
+    "..."
+  ].join("\n");
+  const [diagnostic] = parseFixes(yaml);
+  assert.deepEqual(diagnostic.replacements, [
+    { file: "C:/r/a.h", offset: 4, length: 3, text: "it's" },
+    { file: "C:/r/a.h", offset: 10, length: 1, text: "X\nA" }
+  ]);
+  const clash = {
+    replacements: [
+      { file: "C:/r/a.h", offset: 5, length: 1, text: "overlap" },
+      { file: "C:/r/a.h", offset: 20, length: 1, text: "never applied alone" }
+    ]
+  };
+  assert.deepEqual(mergeReplacements([diagnostic, diagnostic, clash]).get("C:/r/a.h"), diagnostic.replacements);
+  const bytes = Buffer.from("int foo = 1;");
+  const renamed = applyReplacements({ bytes, replacements: [{ file: "f", offset: 4, length: 3, text: "bar" }] });
+  assert.equal(renamed.toString(), "int bar = 1;");
+  assert.equal(applyReplacements({ bytes, replacements: [] }).toString(), "int foo = 1;");
+});
+
+test("a folder gets its own .clang-tidy that inherits the root one and changes only what it names", () => {
+  const { files, problems } = planCppConfig({
+    preset: presetJson(),
+    local: {
+      tidy: {
+        directories: {
+          "app/test": {
+            disable: { "readability-magic-numbers": "tests state their expected numbers" },
+            options: { "readability-function-size.LineThreshold": "300" },
+            optionReasons: { "readability-function-size.LineThreshold": "a table of cases is long" }
+          },
+          "app/other": {
+            disable: { "misc-no-recursion": "" }
+          }
+        }
+      }
+    }
+  });
+  assert.deepEqual(problems, [
+    'avi12-cpp.local.json: tidy.directories "app/other" disable "misc-no-recursion" needs a reason'
+  ]);
+  const nested = files.get("app/test/.clang-tidy");
+  assert.match(nested, /^InheritParentConfig: true$/m);
+  assert.match(nested, /^Checks: '-readability-magic-numbers'$/m);
+  assert.match(nested, /^ {2}readability-function-size\.LineThreshold: '300'$/m);
+  assert.match(nested, /^#   readability-magic-numbers: tests state their expected numbers$/m);
 });
