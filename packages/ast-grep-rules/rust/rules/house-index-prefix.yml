@@ -1,7 +1,7 @@
 id: house-index-prefix
 language: rust
 severity: error
-message: "house rule index-prefix: an index variable is i-prefixed (i_item) or a bare i or j"
+message: "house rule index-prefix: an index variable is i-prefixed (iItem, i_item in snake_case) or a bare i or j"
 rule:
   kind: identifier
   not:

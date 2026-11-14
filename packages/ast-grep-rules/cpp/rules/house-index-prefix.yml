@@ -1,7 +1,7 @@
 id: house-index-prefix
 language: cpp
 severity: error
-message: "house rule index-prefix: an index variable is i-prefixed (iItem) or a bare i or j"
+message: "house rule index-prefix: an index variable is i-prefixed (iItem, i_item in snake_case) or a bare i or j"
 rule:
   kind: identifier
   not:
