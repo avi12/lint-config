@@ -31,6 +31,7 @@
     "./cpp": "./src/cpp.js",
     "./cpp-config": "./src/cpp-config.js",
     "./cpp-tidy": "./src/cpp-tidy.js",
-    "./cpp-tools": "./src/cpp-tools.js"
+    "./cpp-tools": "./src/cpp-tools.js",
+    "./cpp-fixes": "./src/cpp-fixes.js"
   }
 }

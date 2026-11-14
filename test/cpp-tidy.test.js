@@ -165,11 +165,50 @@ test("a changed-files run reaches the changed units and the units through a chan
   );
 });
 
-test("a fix run is serial, passes --fix and never reads or writes the cache", async () => {
-  const world = makeWorld(SOURCES);
+const EXPORT_FLAG = "--export-fixes=";
+
+function exportedYaml({ unit }) {
+  return [
+    "---",
+    "Diagnostics:",
+    "  - DiagnosticName: readability-identifier-naming",
+    "    DiagnosticMessage:",
+    "      Replacements:",
+    "        - FilePath:        '/r/src/shared.h'",
+    "          Offset:          4",
+    "          Length:          8",
+    "          ReplacementText: 'oldName'",
+    `        - FilePath:        '${unit}'`,
+    "          Offset:          0",
+    "          Length:          0",
+    '          ReplacementText: "// seen\\n"',
+    "..."
+  ].join("\n");
+}
+
+test("a fix run merges the fixes of every unit and applies them once, so a rename reaches every use", async () => {
+  const world = makeWorld({
+    ...SOURCES,
+    "/r/src/shared.h": "int old_name;\n"
+  });
+  const written = new Map();
+  world.deps.readBytes = path => Buffer.from(written.get(path) ?? world.files.get(path));
+  world.deps.writeBytes = ({ path, bytes }) => written.set(path, bytes.toString());
+  const run = world.deps.run;
+  world.deps.run = ({ command }) => {
+    const flag = command.find(argument => argument.startsWith(EXPORT_FLAG));
+    if (flag) {
+      world.files.set(flag.slice(EXPORT_FLAG.length), exportedYaml({ unit: command.at(-1) }));
+    }
+
+    return run({ command });
+  };
   await runCppTidy({ tidy: tidyOf({ isFix: true }), deps: world.deps });
-  assert.equal(world.peak(), 1);
-  assert.ok(world.runs.every(command => command.includes("--fix") && command.includes("--fix-errors")));
+  assert.equal(written.get("/r/src/shared.h"), "int oldName;\n");
+  assert.match(written.get("/r/src/a.cpp"), /^\/\/ seen\n#include/);
+  assert.ok(world.runs.every(command => command.some(argument => argument.startsWith(EXPORT_FLAG))));
+  assert.ok(world.runs.every(command => !command.includes("--fix")));
+  assert.match(world.logs.join("\n"), /fixed 4 files/);
   assert.equal([...world.files.keys()].filter(path => path.startsWith("/r/.verify/clang-tidy-cache/")).length, 0);
 });
 

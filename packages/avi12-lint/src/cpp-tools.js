@@ -117,6 +117,8 @@ export function cppDependencies({ toolEnv, usageMegabytes, log }) {
   return {
     readText: path => (existsSync(path) ? readFileSync(path, "utf8").replaceAll("\r\n", "\n") : undefined),
     writeText: ({ path, text }) => writeFileSync(path, text),
+    readBytes: path => readFileSync(path),
+    writeBytes: ({ path, bytes }) => writeFileSync(path, bytes),
     exists: existsSync,
     makeDirectory: path => mkdirSync(path, { recursive: true }),
     hashText: text => createHash("sha256").update(text).digest("hex"),

@@ -1,3 +1,4 @@
+import { applyReplacements, mergeReplacements, parseFixes } from "./cpp-fixes.js";
 import {
   buildscriptFlags,
   cacheKey,
@@ -79,6 +80,25 @@ function analysed({ entry, cwd, deps }) {
   }));
 }
 
+function applyExportedFixes({ directory, count, deps }) {
+  const replacements = Array.from({ length: count }, (_, index) => `${directory}/${index}.yaml`)
+    .map(path => deps.readText(path))
+    .filter(text => text !== undefined)
+    .flatMap(text => parseFixes(text));
+  const merged = mergeReplacements(replacements);
+  for (const [file, list] of merged) {
+    deps.writeBytes({
+      path: file,
+      bytes: applyReplacements({
+        bytes: deps.readBytes(file),
+        replacements: list
+      })
+    });
+  }
+
+  return merged.size;
+}
+
 async function runPool({ jobs, size, deps, limits, start }) {
   const queue = [...jobs];
   const results = [];
@@ -124,8 +144,10 @@ async function runPool({ jobs, size, deps, limits, start }) {
  * Runs clang-tidy over the translation units of `tidy` (see `cppSteps`): builds the compile database under
  * `.verify/clang-tidy`, skips every unit whose key (tool version, `.clang-tidy`, compile arguments, content of the
  * unit and of every project header it includes) already passed, runs the rest through a pool bounded by memory,
- * and records each pass. With `tidy.isFix` it runs one unit at a time with `--fix --fix-errors` and no cache.
- * `deps` is `{ readText, writeText, exists, makeDirectory, hashText, run, wait, now, freeMegabytes, cpus,
+ * and records each pass. With `tidy.isFix` every unit exports its fixes (`--export-fixes`), the fixes of all units are
+ * merged and applied once to the files as they were (a rename in one unit must reach the uses in every other unit,
+ * which an in-place `--fix` per unit cannot do), and nothing is cached.
+ * `deps` is `{ readText, writeText, readBytes, writeBytes, exists, makeDirectory, hashText, run, wait, now, freeMegabytes, cpus,
  * usageMegabytes, log }`. Resolves 0 or 1.
  */
 export async function runCppTidy({ tidy, deps }) {
@@ -186,20 +208,33 @@ export async function runCppTidy({ tidy, deps }) {
   });
   const pending = planned.filter(({ marker }) => isFix || !deps.exists(marker));
   const hits = planned.length - pending.length;
-  const size = isFix
-    ? 1
-    : tidyPoolSize({
-        freeMegabytes: deps.freeMegabytes(),
-        cpus: deps.cpus(),
-        unitCount: pending.length,
-        env: {
-          AVI12_LINT_TIDY_JOBS: tidy.jobsOverride
-        }
-      });
+  const size = tidyPoolSize({
+    freeMegabytes: deps.freeMegabytes(),
+    cpus: deps.cpus(),
+    unitCount: pending.length,
+    env: {
+      AVI12_LINT_TIDY_JOBS: tidy.jobsOverride
+    }
+  });
+  const fixDirectory = `${databaseDirectory}/fixes`;
+  deps.makeDirectory(fixDirectory);
+  for (const index of pending.keys()) {
+    deps.writeText({
+      path: `${fixDirectory}/${index}.yaml`,
+      text: ""
+    });
+  }
   const results = await runPool({
-    jobs: pending.map(item => ({
+    jobs: pending.map((item, index) => ({
       ...item,
-      command: [tool, "--quiet", "-p", databaseDirectory, ...(isFix ? ["--fix", "--fix-errors"] : []), item.file]
+      command: [
+        tool,
+        "--quiet",
+        "-p",
+        databaseDirectory,
+        ...(isFix ? [`--export-fixes=${fixDirectory}/${index}.yaml`] : []),
+        item.file
+      ]
     })),
     size,
     deps,
@@ -214,6 +249,13 @@ export async function runCppTidy({ tidy, deps }) {
     });
   }
 
+  const fixedFiles = isFix
+    ? applyExportedFixes({
+        directory: fixDirectory,
+        count: pending.length,
+        deps
+      })
+    : 0;
   const reported = new Set();
   for (const { output } of failed) {
     const blocks = diagnosticBlocks(output);
@@ -224,6 +266,10 @@ export async function runCppTidy({ tidy, deps }) {
         deps.log(block);
       }
     }
+  }
+
+  if (isFix) {
+    deps.log(`avi12-lint: clang-tidy fixed ${fixedFiles} files; run again to see what is left`);
   }
 
   deps.log(

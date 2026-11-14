@@ -384,7 +384,8 @@ export function cppNotices({ tools, isPresetInstalled, staleFiles = [], problems
 /**
  * The C++ steps: `clang-format` over every covered file (or the changed ones), and the clang-tidy step, a data
  * description `avi12-lint` hands to `runCppTidy`. `files` are the tracked files, `local` the parsed local file,
- * `tools` is `{ format, tidy }` with the executable of each or undefined when missing. Pure.
+ * `tools` is `{ format, tidy }` with the executable of each or undefined when missing. When clang-tidy applies
+ * fixes (`AVI12_LINT_TIDY_FIX=1`) it runs before clang-format, which then lays out what the fixes wrote. Pure.
  */
 export function cppSteps({ files, local, tools, changedFiles, isFix, env = {}, cwd = "." }) {
   const scope = cppScope({
@@ -428,13 +429,13 @@ export function cppSteps({ files, local, tools, changedFiles, isFix, env = {}, c
         isFix: env["AVI12_LINT_TIDY_FIX"] === "1",
         limits: cppLimits(env),
         jobsOverride: env["AVI12_LINT_TIDY_JOBS"],
-        cwd,
-        isFormatFix: isFix
+        cwd
       }
     });
   }
 
-  return steps;
+  const isTidyFixing = isFix && env["AVI12_LINT_TIDY_FIX"] === "1";
+  return isTidyFixing ? steps.reverse() : steps;
 }
 
 /** Seconds as `12.3 s`, for the step report. Pure. */
