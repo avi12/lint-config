@@ -1,0 +1,8 @@
+# formatting: width 100; the edition comes from Cargo.toml, so it is not set here
+# Only stable options: group_imports and imports_granularity need nightly
+max_width = 100
+newline_style = "Unix"
+use_field_init_shorthand = true
+use_try_shorthand = true
+reorder_imports = true
+reorder_modules = true

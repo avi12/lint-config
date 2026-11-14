@@ -1,0 +1,20 @@
+{
+  "name": "rust-config-avi12",
+  "version": "0.7.0",
+  "description": "Cargo lint levels, clippy.toml, rustfmt.toml and deny.toml for Avi's Rust repositories; avi12-lint rust-config writes them into a repo",
+  "license": "Apache-2.0",
+  "files": [
+    "lints.toml",
+    "clippy.toml",
+    "rustfmt.toml",
+    "deny.toml"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./lints.toml": "./lints.toml",
+    "./clippy.toml": "./clippy.toml",
+    "./rustfmt.toml": "./rustfmt.toml",
+    "./deny.toml": "./deny.toml"
+  }
+}
