@@ -1,6 +1,6 @@
 {
   "name": "kotlin-config-avi12",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "ktlint and detekt presets for Avi's Kotlin repositories, with the pinned CLI versions avi12-lint downloads",
   "license": "Apache-2.0",
   "files": [

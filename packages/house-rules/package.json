@@ -1,6 +1,6 @@
 {
   "name": "house-rules-avi12",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "The rule parity matrix: each TypeScript house rule and its equivalent in Rust, C++, C# and Kotlin tooling",
   "license": "Apache-2.0",
   "files": [

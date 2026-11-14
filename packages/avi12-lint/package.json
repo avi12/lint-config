@@ -1,6 +1,6 @@
 {
   "name": "avi12-lint",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "One command that runs oxlint, ESLint, oxfmt and stylelint, in parallel, for whichever configs a repo has, and ast-grep and a text check for Rust, C++, C# and Kotlin, and ktlint and detekt for Kotlin, and cargo fmt, clippy, machete and deny for Rust",
   "license": "Apache-2.0",
   "bin": {
