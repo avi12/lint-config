@@ -168,6 +168,7 @@ test("a full run plans fmt, clippy, machete and deny per root, serially, with th
     "--workspace",
     "--all-targets",
     "--all-features",
+    "--keep-going",
     "--",
     "-D",
     "warnings"

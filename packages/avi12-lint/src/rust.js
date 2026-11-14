@@ -197,6 +197,7 @@ export function rustSteps({ roots, tools, changedFiles, isFix, env = {}, cwd = "
             }),
             "--all-targets",
             "--all-features",
+            "--keep-going",
             ...(isFix ? ["--fix", "--allow-dirty", "--allow-staged"] : []),
             "--",
             "-D",
@@ -233,7 +234,8 @@ export function rustSteps({ roots, tools, changedFiles, isFix, env = {}, cwd = "
             "--config",
             root.directory === "." ? "deny.toml" : `${root.directory}/deny.toml`,
             ...(isFetchDisabled ? ["--offline"] : []),
-            "check"
+            "check",
+            "--hide-inclusion-graph"
           ],
           rawEnv: {}
         })

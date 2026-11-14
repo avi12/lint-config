@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { clippyFindings, FIXTURES, hasCargoTool, materialize } from "./support/rust.js";
 
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const CLI = join(ROOT, "packages", "avi12-lint", "bin", "avi12-lint.js");
+const PRESET_DIRECTORY = join(ROOT, "packages", "rust-config");
 const FLAG = /\/\/ flag(-next)?: (.+)$/;
 const hasClippy = hasCargoTool("clippy");
 const hasFmt = hasCargoTool("fmt");
@@ -140,4 +145,32 @@ test("cargo machete passes a clean crate", { skip: !hasCargoTool("machete") }, (
     }).status,
     0
   );
+});
+
+test("rust-config writes into a repo, treats CRLF files as current and keeps their line endings", () => {
+  const directory = mkdtempSync(join(tmpdir(), "avi12-rust-cli-"));
+  cpSync(join(FIXTURES, "ok"), directory, { recursive: true });
+  const run = args =>
+    spawnSync(process.execPath, [CLI, ...args], {
+      cwd: directory,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        AVI12_LINT_RUST_PRESET: PRESET_DIRECTORY
+      }
+    });
+  spawnSync("git", ["init", "-q"], { cwd: directory });
+  spawnSync("git", ["add", "-A"], { cwd: directory });
+  assert.equal(run(["rust-config", "--check"]).status, 1);
+  assert.equal(run(["rust-config"]).status, 0);
+  assert.equal(run(["rust-config", "--check"]).status, 0);
+  for (const file of ["Cargo.toml", "clippy.toml"]) {
+    const path = join(directory, file);
+    writeFileSync(path, readFileSync(path, "utf8").replaceAll("\n", "\r\n"));
+  }
+
+  spawnSync("git", ["add", "-A"], { cwd: directory });
+  assert.equal(run(["rust-config", "--check"]).status, 0);
+  assert.equal(run(["rust-config"]).status, 0);
+  assert.match(readFileSync(join(directory, "Cargo.toml"), "utf8"), /\r\n/);
 });

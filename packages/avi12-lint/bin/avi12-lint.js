@@ -112,6 +112,10 @@ const RUST_PRESET_FILES = {
   deny: "deny.toml"
 };
 
+function readRustText(file) {
+  return readFileSync(file, "utf8").replaceAll("\r\n", "\n");
+}
+
 function rustPresetFile(file) {
   const directory = process.env["AVI12_LINT_RUST_PRESET"] ?? path.join(process.cwd(), RUST_PRESET_DIRECTORY);
   return path.join(directory, file);
@@ -119,19 +123,19 @@ function rustPresetFile(file) {
 
 function readRustPlan() {
   const preset = Object.fromEntries(
-    Object.entries(RUST_PRESET_FILES).map(([name, file]) => [name, readFileSync(rustPresetFile(file), "utf8")])
+    Object.entries(RUST_PRESET_FILES).map(([name, file]) => [name, readRustText(rustPresetFile(file))])
   );
   const manifests = listProjectFiles()
     .filter(file => path.basename(file) === "Cargo.toml" && !isIgnoredPath(file))
     .map(file => ({
       path: file,
-      text: readFileSync(file, "utf8")
+      text: readRustText(file)
     }));
   const locals = new Map();
   for (const root of cargoRoots(manifests)) {
     const localPath = root.directory === "." ? RUST_LOCAL_FILE : `${root.directory}/${RUST_LOCAL_FILE}`;
     if (existsSync(localPath)) {
-      locals.set(root.directory, readFileSync(localPath, "utf8"));
+      locals.set(root.directory, readRustText(localPath));
     }
   }
 
@@ -140,9 +144,7 @@ function readRustPlan() {
     manifests,
     locals
   });
-  const existing = new Map(
-    [...files.keys()].map(file => [file, existsSync(file) ? readFileSync(file, "utf8") : undefined])
-  );
+  const existing = new Map([...files.keys()].map(file => [file, existsSync(file) ? readRustText(file) : undefined]));
   return {
     files,
     problems,
@@ -170,7 +172,9 @@ function runRustConfig() {
   }
 
   for (const file of stale) {
-    writeFileSync(file, files.get(file));
+    const isCrlf = existsSync(file) && readFileSync(file, "utf8").includes("\r\n");
+    const text = files.get(file);
+    writeFileSync(file, isCrlf ? text.replaceAll("\n", "\r\n") : text);
     console.log(`avi12-lint: wrote ${file}`);
   }
 
@@ -306,7 +310,7 @@ function prepareRust() {
     .filter(file => path.basename(file) === "Cargo.toml" && !isIgnoredPath(file))
     .map(file => ({
       path: file,
-      text: readFileSync(file, "utf8")
+      text: readRustText(file)
     }));
   return {
     notices: rustNotices({
