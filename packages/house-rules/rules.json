@@ -85,7 +85,7 @@
       "rust": ["map", "clippy unwrap_used, expect_used"],
       "cpp": ["map", "bugprone-unchecked-optional-access"],
       "csharp": ["gap", "ast-grep house-null-forgiving, with CS8602 as an error"],
-      "kotlin": ["map", "detekt UnsafeCallOnNullableType, ast-grep for the !! operator"]
+      "kotlin": ["map", "detekt UnsafeCallOnNullableType; ast-grep house-null-forgiving for the !! operator"]
     },
     {
       "id": "no-unchecked-cast",
@@ -247,7 +247,7 @@
       "id": "no-floating-result",
       "intent": "an ignored result or promise is deliberate",
       "ts": ["no-void"],
-      "rust": ["map", "rustc unused_must_use, clippy let_underscore_future"],
+      "rust": ["map", "rustc unused_must_use; clippy let_underscore_future"],
       "cpp": ["map", "modernize-use-nodiscard, bugprone-unused-return-value"],
       "csharp": ["map", "CS4014"],
       "kotlin": ["gap", "none free; ast-grep house-unused-deferred"]
@@ -266,7 +266,7 @@
       "intent": "no redundant closure, field name or object initializer",
       "ts": ["object-shorthand", "arrow-body-style"],
       "rust": ["map", "clippy redundant_closure, redundant_field_names"],
-      "cpp": ["map", "readability-redundant-*"],
+      "cpp": ["map", "readability-redundant-member-init, readability-redundant-string-cstr, readability-redundant-smartptr-get, readability-redundant-control-flow"],
       "csharp": ["map", "IDE0017, IDE0028, IDE0090"],
       "kotlin": ["map", "detekt UnnecessaryLet, UnnecessaryParentheses"]
     },
@@ -319,7 +319,7 @@
       "id": "no-dead-code",
       "intent": "no unused export, file or dependency",
       "ts": ["doc:fallow"],
-      "rust": ["map", "rustc dead_code, cargo-machete"],
+      "rust": ["map", "rustc dead_code; cargo-machete"],
       "cpp": ["variant", "-Wunused, linker --gc-sections report; no cross-file tool"],
       "csharp": ["variant", "IDE0051, IDE0052 for private; public is a gap"],
       "kotlin": ["variant", "compiler warnings, detekt UnusedPrivateMember; public is a gap"]
@@ -340,7 +340,7 @@
       "rust": ["map", "cargo clippy -- -D warnings"],
       "cpp": ["map", "WarningsAsErrors: '*' in .clang-tidy"],
       "csharp": ["map", "TreatWarningsAsErrors, AnalysisMode"],
-      "kotlin": ["map", "allWarningsAsErrors, detekt maxIssues 0"]
+      "kotlin": ["map", "allWarningsAsErrors; maxIssues 0 in detekt.yml"]
     },
     {
       "id": "formatting",
@@ -349,7 +349,7 @@
       "rust": ["map", "rustfmt (width 100)"],
       "cpp": ["map", "clang-format BasedOnStyle Google"],
       "csharp": ["map", "dotnet format with .editorconfig"],
-      "kotlin": ["map", "ktlint format"]
+      "kotlin": ["map", "the formatter is ktlint"]
     }
   ]
 }

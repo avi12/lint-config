@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { injectMatrix, LANGUAGES, readRules, renderMatrix } from "house-rules-avi12/render";
+import { extractIds, readToolIds } from "house-rules-avi12/tool-ids";
 
 const ROOT = new URL("../packages/", import.meta.url);
 const DOCUMENT = new URL("../docs/non-ts-languages.md", import.meta.url);
@@ -63,4 +64,36 @@ test("docs/non-ts-languages.md carries the matrix exactly as rules.json renders 
     table: renderMatrix(rules)
   });
   assert.equal(markdown, expected, "run: node packages/house-rules/src/write-docs.js");
+});
+
+test("every tool rule id a cell names is in the committed id list of that tool", () => {
+  const lists = new Map();
+  const missing = [];
+  for (const row of rules.rules) {
+    for (const language of LANGUAGES) {
+      const [, text] = row[language];
+      for (const [tool, id] of extractIds({ language, text })) {
+        if (!lists.has(tool)) {
+          lists.set(tool, readToolIds(tool));
+        }
+
+        if (!lists.get(tool).has(id)) {
+          missing.push(`${row.id}/${language}: ${tool} ${id}`);
+        }
+      }
+    }
+  }
+
+  assert.deepEqual(missing, []);
+});
+
+test("every id list is committed and the cells name at least one id per language", () => {
+  for (const tool of ["clippy", "rustc", "clang-tidy", "roslyn", "detekt", "ktlint"]) {
+    assert.ok(readToolIds(tool).size > 50, `${tool} list is empty; run pnpm ids:refresh`);
+  }
+
+  for (const language of LANGUAGES) {
+    const count = rules.rules.flatMap(row => extractIds({ language, text: row[language][1] })).length;
+    assert.ok(count > 5, `${language}: the id extractor found ${count} ids`);
+  }
 });
