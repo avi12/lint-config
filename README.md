@@ -20,7 +20,8 @@ They are consumed straight from GitHub and never published to npm
 | `packages/kotlin-config` | the Kotlin presets: `.editorconfig` for ktlint, `detekt.yml`, and `tools.json` with the pinned ktlint and detekt versions and checksums; fixtures of must-flag and must-not-flag files per rule |
 | `packages/rust-config` | the Rust presets: `lints.toml` (every matrix row as a rustc or clippy lint level), `clippy.toml` (thresholds, the short-name idioms, tests may unwrap), `rustfmt.toml` (width 100) and `deny.toml` (advisories, licences, bans, sources); `avi12-lint rust-config` writes them into a repo; fixture crates mark the line each lint must flag |
 | `packages/cpp-config` | the C++ presets: `format.json` (Google, 80 columns, `InsertBraces`) and `tidy.json` (every matrix row for C++ as clang-tidy checks, the house naming and the thresholds, a reason for each check that is off); `avi12-lint cpp-config` writes `.clang-format` and `.clang-tidy` into a repo; fixtures mark the line each check must flag |
-| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check, for Kotlin also ktlint and detekt, for Rust also `cargo fmt`, `clippy`, `machete` and `deny`, and for C++ also `clang-format` and a cached, memory-bounded `clang-tidy` |
+| `packages/csharp-config` | the C# presets: `analyzers.json` (Roslynator, Meziantou, StyleCop for two rules, banned API and Sonar for four rules, at pinned versions), `style.json` (the Google layout and the house naming), `diagnostics.json` (a severity per rule, a reason for each rule that is off, the thresholds), `sonar.json` and `banned.json`; `avi12-lint csharp-config` writes `.editorconfig`, `Directory.Build.props` and `.avi12-csharp/` into a repo; fixtures mark the line each rule must flag |
+| `packages/avi12-lint` | `avi12-lint` runs the tools one after another; for Rust, C++, C# and Kotlin it runs ast-grep and a text check, for Kotlin also ktlint and detekt, for Rust also `cargo fmt`, `clippy`, `machete` and `deny`, for C++ also `clang-format` and a cached, memory-bounded `clang-tidy`, and for C# also `dotnet format` and `dotnet build` with every analyzer warning an error |
 
 ## Install
 
@@ -36,6 +37,7 @@ pnpm add -D "fallow-config-avi12@github:avi12/lint-config#v0.4.13&path:/packages
 pnpm add -D "avi12-lint@github:avi12/lint-config#v0.4.13&path:/packages/avi12-lint"
 pnpm add -D "rust-config-avi12@github:avi12/lint-config#v0.8.0&path:/packages/rust-config"
 pnpm add -D "cpp-config-avi12@github:avi12/lint-config#v0.9.0&path:/packages/cpp-config"
+pnpm add -D "csharp-config-avi12@github:avi12/lint-config#v0.10.0&path:/packages/csharp-config"
 ```
 
 Add only the ones you use; `avi12-lint` runs whichever tools have a config file
@@ -158,6 +160,18 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | `.forEach` and `.reduce` bans | `unicorn/no-array-for-each`, `unicorn/no-array-reduce` |
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
+
+### Migrating from 0.9.0
+
+- A repository with C# (a `*.csproj`) now also runs `dotnet format` and `dotnet build` with the analyzers as errors
+  - add `csharp-config-avi12` as a devDependency (`github:avi12/lint-config#v0.10.0&path:/packages/csharp-config`), keep the repo's own exemptions in `avi12-csharp.local.json` at the repo root and run `avi12-lint csharp-config`; commit what it writes (`.editorconfig`, `Directory.Build.props`, `.avi12-csharp/`) and run it again after bumping the tag; the runner fails when a generated file is stale; add `.verify/` to `.gitignore`
+  - the generated `.editorconfig` replaces the repo's own: layout is the Google one (2-space indents, K&R braces), constants are CONSTANT_CASE, fields and locals are camelCase with no underscore, and every rule that is off says why; a repo with its own `Directory.Build.props` imports `.avi12-csharp/analyzers.props` from it
+  - `dotnet format` runs with the fixers that delete a member or change a type visibility excluded, because the workspace it loads has no XAML-generated code: do not run `dotnet format` by hand without `--exclude-diagnostics IDE0051 IDE0052 IDE0060 RCS1213 RCS1163 CA1515` in a WinUI or WPF app
+  - the .NET SDK 8 or newer is found on the PATH (a missing one is a one-line notice and the steps are skipped; `AVI12_LINT_REQUIRE_CSHARP=1` turns a notice into a failure); the build goes into `.verify/csharp-artifacts` and never touches bin or obj; `AVI12_LINT_CSHARP_MEMORY_MB` (6144) and `AVI12_LINT_CSHARP_TIME_LIMIT_MS` (1200000) set the guard
+  - `avi12-csharp.local.json` keys: `diagnostics`, `files` and `directories` (a rule id to a severity and a reason), `options`, `properties` and `thresholds` (a value and a reason), `banned` and `unbanned`, `generatedPaths` (a glob to a reason), `sections` (extra `.editorconfig` sections, such as `end_of_line = crlf`) and `targets`
+  - `--only=csharp` runs these steps and the ast-grep C# pack; `--changed` formats the changed files and builds the target that owns them
+- The `plan` export gained a `csharp` argument and a `family` on every ast-grep step, so `--only=rust`, `--only=cpp`, `--only=csharp` and `--only=kotlin` now include that language's ast-grep step; the `avi12-lint` exports `csharp` and `csharp-config` are new
+- `house-rules`: the C# cells for `no-unchecked-cast` (IDE0020 instead of IDE0038) and `narrowest-visibility` (CA1515 added) changed
 
 ### Migrating from 0.8.0
 

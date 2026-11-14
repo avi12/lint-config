@@ -102,7 +102,7 @@
         "map",
         "google-readability-casting, cppcoreguidelines-pro-type-cstyle-cast, -const-cast, -reinterpret-cast"
       ],
-      "csharp": ["map", "AllowUnsafeBlocks off, IDE0019, IDE0038"],
+      "csharp": ["map", "AllowUnsafeBlocks off, IDE0019, IDE0020"],
       "kotlin": ["map", "detekt UnsafeCast (only a cast that can never succeed)"]
     },
     {
@@ -348,7 +348,7 @@
       "ts": ["typescript/explicit-member-accessibility"],
       "rust": ["map", "rustc unreachable_pub"],
       "cpp": ["map", "misc-use-internal-linkage, misc-use-anonymous-namespace"],
-      "csharp": ["map", "IDE0040, CA1812"],
+      "csharp": ["map", "IDE0040, CA1812, CA1515"],
       "kotlin": ["map", "compiler -Xexplicit-api=strict"]
     },
     {

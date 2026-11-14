@@ -1,7 +1,7 @@
 # Linting Rust, C++, C# and Kotlin
 
 Research for extending lint-config beyond TypeScript
-Status: phases 0 to 2 done (0.7.0): the matrix with every tool id verified, the ast-grep rule packs, the runner steps and the Kotlin presets with their ktlint and detekt step; phases 3 to 6 are open
+Status: phases 0 to 5 done (0.10.0): the matrix with every tool id verified, the ast-grep rule packs, the runner steps and the Kotlin presets with their ktlint and detekt step; phase 6 is open
 
 ## Summary
 
@@ -78,7 +78,7 @@ Cell legend: a plain cell is an existing rule to configure, `~` an idiomatic var
 | named-boolean-condition | a compound or comparing condition is extracted into a named boolean first | `house/google-syntax` | **gap**: ast-grep house-compound-condition | **gap**: ast-grep house-compound-condition | **gap**: ast-grep house-compound-condition | **gap**: ast-grep house-compound-condition |
 | no-magic-numbers | a number other than 0, 1, -1, 2 is a named constant | `house/no-magic-numbers` | **gap**: ast-grep house-magic-number | readability-magic-numbers (IgnoredIntegerValues) | Sonar S109 | detekt MagicNumber (ignoreNumbers) |
 | no-unchecked-unwrap | no non-null assertion and no unwrap of an absent value | `typescript/no-non-null-assertion` | clippy unwrap_used, expect_used | bugprone-unchecked-optional-access | **gap**: ast-grep house-null-forgiving, with CS8602 as an error | detekt UnsafeCallOnNullableType; ast-grep house-null-forgiving for the !! operator |
-| no-unchecked-cast | no unsafe or unchecked cast | `typescript/consistent-type-assertions` | rustc unsafe_code = forbid (a crate that calls Win32 allows it in avi12-rust.local.toml), clippy as_conversions, cast_possible_truncation | google-readability-casting, cppcoreguidelines-pro-type-cstyle-cast, -const-cast, -reinterpret-cast | AllowUnsafeBlocks off, IDE0019, IDE0038 | detekt UnsafeCast (only a cast that can never succeed) |
+| no-unchecked-cast | no unsafe or unchecked cast | `typescript/consistent-type-assertions` | rustc unsafe_code = forbid (a crate that calls Win32 allows it in avi12-rust.local.toml), clippy as_conversions, cast_possible_truncation | google-readability-casting, cppcoreguidelines-pro-type-cstyle-cast, -const-cast, -reinterpret-cast | AllowUnsafeBlocks off, IDE0019, IDE0020 | detekt UnsafeCast (only a cast that can never succeed) |
 | parameter-object | two or more parameters become one parameter object | `house/positional-parameters` | ~ clippy too_many_arguments with too-many-arguments-threshold (5: from six parameters a struct says what each one is) | ~ bugprone-easily-swappable-parameters | ~ named arguments; CA1068 and Sonar S107 past a threshold | ~ named arguments; detekt LongParameterList past a threshold |
 | no-written-return-types | infer return types instead of writing them | `house/house-syntax` | n/a: the language requires them | n/a: the language requires them | n/a: the language requires them | n/a: the language style guide wins |
 | identifier-length | names of at least 3 characters, with a short allow-list | `id-length` | clippy min_ident_chars with allowed-idents-below-min-chars (threshold 2; i, j, x, y, id, to, on, ok, Io, T and E pass) | readability-identifier-length (IgnoredVariableNames) | **gap**: ast-grep house-identifier-length | detekt VariableMinLength, FunctionMinLength (minimum 2; a single letter such as i, x or y is flagged, and of, on, to and id pass) |
@@ -104,7 +104,7 @@ Cell legend: a plain cell is an existing rule to configure, `~` an idiomatic var
 | file-per-concern | one concern per file, named after its main declaration | `doc:CLAUDE.md Code style` | n/a: a file is a module | **gap**: review only: a header and source pair is a file-system rule, no linter sees it | StyleCop SA1649, SA1402 | ktlint filename; detekt MatchingDeclarationName |
 | size-limits | functions and classes stay small | `max-depth` | clippy too_many_lines (threshold 100), cognitive_complexity (threshold 20) | readability-function-size, readability-function-cognitive-complexity | CA1502, CA1506 | detekt LongMethod, CyclomaticComplexMethod, TooManyFunctions |
 | no-dead-code | no unused export, file or dependency | `doc:fallow` | rustc dead_code; cargo-machete | ~ -Wunused, linker --gc-sections report; no cross-file tool | ~ IDE0051, IDE0052 for private; public is a gap | ~ compiler warnings, detekt UnusedPrivateMember; public is a gap |
-| narrowest-visibility | private or internal by default | `typescript/explicit-member-accessibility` | rustc unreachable_pub | misc-use-internal-linkage, misc-use-anonymous-namespace | IDE0040, CA1812 | compiler -Xexplicit-api=strict |
+| narrowest-visibility | private or internal by default | `typescript/explicit-member-accessibility` | rustc unreachable_pub | misc-use-internal-linkage, misc-use-anonymous-namespace | IDE0040, CA1812, CA1515 | compiler -Xexplicit-api=strict |
 | warnings-are-errors | correctness findings fail the run | `doc:categories.correctness` | cargo clippy -- -D warnings | WarningsAsErrors: '*' in .clang-tidy | TreatWarningsAsErrors, AnalysisMode | allWarningsAsErrors; maxIssues 0 in detekt.yml |
 | formatting | the formatter owns layout; the language style guide wins over house layout rules | `doc:oxfmt` | rustfmt (width 100) | clang-format BasedOnStyle Google | dotnet format with .editorconfig | the formatter is ktlint |
 
@@ -154,7 +154,11 @@ One run each on this machine, one at a time, wall time and peak working set of t
 | clang-tidy, warm | edge-plus | 4.0 s | 98 MB |
 | clang-tidy, cold | windows-skin-switcher, 13 C++/WinRT units | 68.9 s | 13356 MB |
 | clang-tidy, warm | windows-skin-switcher | 3.5 s | 179 MB |
-| `dotnet build` with analyzers | companion, 5.3k lines, cold | 9.8 s | 634 MB |
+| csharp steps (`dotnet format`, `dotnet build` with analyzers), cold | companion, 5.3k lines, WinUI 3, restore and compile | 25.7 s | 602 MB |
+| csharp steps, warm | companion | 20.4 s | 693 MB |
+| csharp steps, cold | windows-skin-switcher, 1.2k lines, WinUI 3 | 26.6 s | 595 MB |
+| csharp steps, warm | windows-skin-switcher | 20.9 s | 600 MB |
+| csharp steps, `--changed` with one file | companion | 20.4 s | 708 MB |
 | ast-grep, one rule | companion | 0.5 s | 81 MB |
 | ktlint | ide-code-walkthrough, 19k lines | 4.0 s | 827 MB |
 | detekt | ide-code-walkthrough | 6.0 s | 511 MB |
@@ -178,7 +182,7 @@ packages/
   ast-grep-rules/     one rule pack, one file per rule, a `language:` per file, shared ids
   rust-config/        Cargo [lints] snippet, clippy.toml, rustfmt.toml, deny.toml
   cpp-config/         .clang-format, .clang-tidy (Google, house checks), run-clang-tidy settings
-  csharp-config/      Directory.Build.props, .editorconfig severities, BannedSymbols.txt
+  csharp-config/      analyzers.json (packages, project properties, fixer exclusions), style.json (layout, naming), diagnostics.json (a severity per rule, a reason for each rule that is off, thresholds), sonar.json, banned.json; the generator writes .editorconfig, Directory.Build.props and .avi12-csharp/
   kotlin-config/      detekt.yml, .editorconfig for ktlint, Gradle snippet
   avi12-lint/         detects languages, plans and guards the runs
 ```
@@ -208,6 +212,15 @@ the runner integration and the per-language presets; nothing else until a measur
 - C++ runs one `clang-format` call over every covered file and one `clang-tidy` process per translation unit through a pool; a passed unit is cached by the tool version, the `.clang-tidy`, the compile arguments, the unit and the project headers it includes (found by following its `#include` lines), so a header edit reruns every unit that includes it and nothing else
 - clang-tidy `--fix` is opt in (`AVI12_LINT_TIDY_FIX=1`) and runs as export, merge and apply: an in-place fix per unit renames a declaration and only the uses in that unit, so every unit analysed after it fails to compile; the merge is per diagnostic (whole or not at all) and keys a file by its canonical path, because a unit in `test/` names a header as `test/../src/x.h`
 - Four fixer defects found by the pilots: `modernize-use-ranges` writes `std::ranges::sort(range, , comparator)` (off in the preset), `misc-use-internal-linkage` makes `DllMain` and `wmain` static (off in the preset), a rename of `__ImageBase` or `wmain` breaks the link (ignored by default), and `readability-identifier-naming` renames a hand-declared mirror of a Windows type (each repo ignores its mirrors, with a reason)
+- C# runs `dotnet format` and `dotnet build -warnaserror` per solution, or per project no solution covers, serially, with one MSBuild node, no node reuse and no compiler server (`-m:1 -nodeReuse:false -p:UseSharedCompilation=false --no-incremental`), so no process outlives its step; the build goes into `.verify/csharp-artifacts` (`--artifacts-path`), so the dev build bin and obj are never touched or locked, and the guard is 6 GB and 20 minutes (`AVI12_LINT_CSHARP_MEMORY_MB`, `AVI12_LINT_CSHARP_TIME_LIMIT_MS`)
+- `avi12-lint csharp-config` writes `.editorconfig`, `.avi12-csharp/analyzers.props` (the analyzer package references, `Nullable`, `TreatWarningsAsErrors`, `EnforceCodeStyleInBuild`), `BannedSymbols.txt`, `CodeMetricsConfig.txt`, `SonarLint.xml` and a `Directory.Build.props` that imports the props (a repo with its own `Directory.Build.props` imports `.avi12-csharp/analyzers.props` itself); `avi12-csharp.local.json` holds the repo exemptions, each with its reason: `diagnostics` (a rule id to a severity and a reason), `files` (the same for one file), `directories` (the same, written as a nested `.editorconfig`), `options` and `properties` (a value and a reason), `thresholds` (a value and a reason), `banned` and `unbanned`, `generatedPaths` (a glob to a reason), `sections` (extra `.editorconfig` sections such as `end_of_line = crlf`) and `targets` (the solutions or projects to build)
+- `dotnet format` never fixes `IDE0051`, `IDE0052`, `IDE0060`, `RCS1213`, `RCS1163` or `CA1515` (`formatExcludes` in `analyzers.json`): the workspace it loads has no XAML-generated code, so a handler only the markup binds looks unused and the fixer deleted `OnSkinPicked` and a dozen more in windows-skin-switcher, and the `CA1515` fixer made the XAML `App` class internal; `dotnet build` still reports the rules
+- Compiler warnings are errors, and CS1591 (XML comment on a public member) is only reported by a compile that has no other error, so its fixture is a project of its own
+- Sonar category switches do not work (a category name holds spaces, which a `.editorconfig` key cannot), so the generator writes `none` for every Sonar rule id but the four kept (`S107`, `S109`, `S134`, `S1135`); StyleCop is switched off by its eight category names but `SA1402` and `SA1649`
+- Rules the pilots made the preset turn off, each with its reason in `diagnostics.json`: `CA1707` (CONSTANT_CASE needs underscores), `MA0006`, `MA0011`, `MA0016`, `MA0004`, `MA0026`, `MA0046`, `MA0048`, `MA0051` and `MA0134` (each duplicates a rule another package owns, or targets a library surface)
+- The pilots turned off per repo, with the reason in `avi12-csharp.local.json`: `CA1031` where every catch is an app boundary, `RCS1075` for two best-effort cleanups, `CS1591`, `CA1515` and `MA0147` in WinUI apps (the XAML compiler makes the window public and async void is how a handler is written), `IDE1006` for a file that mirrors windows.h, `S107` for a six-parameter Win32 callback
+- `S109` has no allow-list, so `/ 2` and bit shifts are reported; the house rule allows 2, which the pilots meet with a named constant; `IDE1006` has no Fix All, so a rename is a scripted pass checked by the compiler, and it cannot tell a positional record parameter from a parameter (a record is written with its members)
+- `--only=csharp` runs these steps and the ast-grep C# pack; `--changed` formats the changed `.cs` files and builds only the target that owns a changed file (a changed `.editorconfig`, props, local file or `.avi12-csharp` input means every target)
 - Per-folder exemptions are a `.clang-tidy` with `InheritParentConfig: true`, written by the generator from `tidy.directories`; findings in generated code are `tidy.ignoredPaths`
 - Rust runs `cargo fmt`, `cargo clippy --keep-going`, `cargo machete` and `cargo deny` per Cargo root, serially, with `CARGO_BUILD_JOBS` 4 and a guard of 8 GB and 30 minutes (a cold Tauri tree peaks near 2.8 GB)
 - clippy has no `extends`, so `avi12-lint rust-config` writes `clippy.toml`, `rustfmt.toml`, `deny.toml` and a managed `[lints]` block into each root; `avi12-rust.local.toml` holds the repo's exemptions, each with its reason, per workspace or per member crate
@@ -230,7 +243,7 @@ the runner integration and the per-language presets; nothing else until a measur
 | 2 | Done (0.7.0): `kotlin-config`: detekt and ktlint presets read from the matrix, CLI-jar runner step with pinned checksums, fixtures and a fixer-stability test; winui-svelte `ide/webstorm`, ide-code-walkthrough and sb-companion converge on it | 1 day |
 | 3 | Done (0.8.0): `rust-config`: lint levels, `clippy.toml`, `rustfmt.toml`, `deny.toml`, the generator `avi12-lint rust-config`, fmt, clippy, machete and deny steps, fixture crates; pilots winui-svelte `launcher`, pade, edge-plus, any-stt and agentic-gaming-assistant | 1 day |
 | 4 | Done (0.9.0): `cpp-config`: `.clang-format` and `.clang-tidy` presets with fixtures, the generator `avi12-lint cpp-config`, a compile database from CMake, a sighmake buildscript or a flat description, vcvars read once, one clang-format call, a cached memory-bounded clang-tidy pool, merged parallel fixes, changed units only; pilots edge-plus, any-stt and windows-skin-switcher | 1.5 days |
-| 5 | `csharp-config`: `Directory.Build.props`, `.editorconfig` severities, analyzer references, `BannedSymbols.txt`, `dotnet format` step | 1.5 days |
+| 5 | Done (0.10.0): `csharp-config`: Roslyn analyzer references, a generated `.editorconfig` (Google layout, house naming, one severity per rule, a reason for each rule that is off), banned symbols, code metrics and Sonar thresholds, the generator `avi12-lint csharp-config`, serial guarded `dotnet format` and `dotnet build -warnaserror` steps, fixtures that mark the line each rule must flag, a fixer-stability test; pilots companion and windows-skin-switcher | 1.5 days |
 | 6 | Optional, only for measured gaps that need types: a detekt rule, a Roslyn analyzer or a dylint lint | 2 days |
 
 Consumers migrate one repository per phase, after the tag, each in its own change
