@@ -1,6 +1,6 @@
 {
   "name": "stylelint-config-avi12",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "stylelint preset for CSS and the style blocks of Svelte and HTML files, on stylelint-config-ccb",
   "license": "Apache-2.0",
   "files": [
