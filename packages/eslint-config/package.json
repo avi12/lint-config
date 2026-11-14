@@ -1,6 +1,6 @@
 {
   "name": "eslint-config-avi12",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "ESLint flat configs for Svelte and Vue files only: the template rules oxlint and oxfmt cannot see",
   "license": "Apache-2.0",
   "files": [
