@@ -4,7 +4,8 @@
   "description": "One command that runs oxlint, ESLint, oxfmt and stylelint, in parallel, for whichever configs a repo has, and ast-grep and a text check for Rust, C++, C# and Kotlin, and ktlint and detekt for Kotlin, and clang-format and clang-tidy for C++, and dotnet format and dotnet build for C#, and cargo fmt, clippy, machete and deny for Rust",
   "license": "Apache-2.0",
   "bin": {
-    "avi12-lint": "bin/avi12-lint.js"
+    "avi12-lint": "bin/avi12-lint.js",
+    "avi12-svelte-check": "bin/svelte-check.js"
   },
   "files": [
     "bin",
@@ -34,6 +35,7 @@
     "./cpp-tools": "./src/cpp-tools.js",
     "./cpp-fixes": "./src/cpp-fixes.js",
     "./csharp": "./src/csharp.js",
-    "./csharp-config": "./src/csharp-config.js"
+    "./csharp-config": "./src/csharp-config.js",
+    "./svelte-check": "./src/svelte-check.js"
   }
 }

@@ -161,6 +161,14 @@ Where one program or one build must see several packages, keep `@/` for the pack
 | the `Reflect` ban | `no-restricted-globals` |
 | `import-newlines`, the `formatter: "eslint"` layout rules | dropped: oxfmt formats |
 
+### Migrating from 0.10.0
+
+- `avi12-lint` ships a second command, `avi12-svelte-check`, for a repo with `svelte-check` and `tsrs` installed
+  - it runs the repo's own svelte-check with `--tsgo`, its TypeScript 7 mode, and hands that mode to tsrs: svelte-check finds its compiler by the names `@typescript/native` and `@typescript/native-preview`, and the command makes it find `tsrs` first
+  - the rewrite happens in memory when the command runs, so there is no pnpm patch to keep: a repo that patched svelte-check for this drops the patch and sets the script to `avi12-svelte-check --tsconfig ./tsconfig.json`
+  - TypeScript 6 stays installed, svelte-check still uses it to turn Svelte into TypeScript; only the type check of those files runs on tsrs
+  - svelte-check releases that move the code it rewrites make the command stop with a message instead of running half-patched; `avi12-lint/svelte-check` exports the pure `patchSvelteCheck`
+
 ### Migrating from 0.9.0
 
 - A repository with C# (a `*.csproj`) now also runs `dotnet format` and `dotnet build` with the analyzers as errors
